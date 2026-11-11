@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Euclid’s Elements, Book I, Proposition 1</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f5f1e8;--card:#fffdf7;--ink:#24282b;--mute:#6d7176;--line:#d8d2c3;--c1:#2a6f97;--c2:#b5532f;--gold:#c9961a;--ok:#2f6d4f}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#14171a;--card:#1e2226;--ink:#ece8df;--mute:#9a9ea1;--line:#363b40;--c1:#6bb2dc;--c2:#e3865f;--gold:#e8b94a;--ok:#6fc29a}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#14171a;--card:#1e2226;--ink:#ece8df;--mute:#9a9ea1;--line:#363b40;--c1:#6bb2dc;--c2:#e3865f;--gold:#e8b94a;--ok:#6fc29a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}*{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Georgia,"Times New Roman",serif}
+main{max-width:760px;margin:0 auto;padding:14px 12px 40px}
+h1{font-size:26px;margin:4px 0}.sub{color:var(--mute);margin:0 0 10px;font-size:15px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:10px 0}
+svg{width:100%;height:auto;display:block;touch-action:none;background:var(--card);border:1px solid var(--line);border-radius:14px;user-select:none}
+#msg{min-height:2.6em;margin:8px 0;font-size:16px}
+ul{list-style:none;padding:0;margin:0}li{padding:4px 0 4px 28px;position:relative;color:var(--mute);font-size:15px}li::before{content:"○";position:absolute;left:4px}li.on{color:var(--ink)}li.on::before{content:"✔";color:var(--ok)}
+button{font:600 15px system-ui,sans-serif;padding:9px 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;margin-right:6px}button.p{background:var(--ok);color:#fff;border-color:var(--ok)}
+.arc{fill:none;stroke:var(--mute);stroke-width:2;opacity:.8}.arc.h1{stroke:var(--c1);stroke-width:3.5;opacity:1}.arc.h2{stroke:var(--c2);stroke-width:3.5;opacity:1}
+.seg{stroke:var(--ink);stroke-width:3;stroke-linecap:round}.seg.h1{stroke:var(--c1);stroke-width:5}.seg.h2{stroke:var(--c2);stroke-width:5}.seg.g{stroke:var(--gold);stroke-width:6}
+.pt{fill:var(--ink);stroke:var(--card);stroke-width:2;cursor:grab}.pt.new{fill:var(--gold);animation:pl 1s infinite}@keyframes pl{50%{r:13}}
+.lab{font:700 18px Georgia,serif;fill:var(--ink);pointer-events:none}.tri{fill:var(--gold);opacity:.18}
+#modal{position:fixed;inset:0;background:#0008;display:none;place-items:center;z-index:5}#modal.on{display:grid}#modal div{background:var(--card);padding:24px;border-radius:16px;max-width:320px;text-align:center}#modal h2{margin:0 0 8px}
+.lock{opacity:.55;font-size:14px;margin:4px 0}
+</style>
+</head>
+<body>
+<main>
+<h1>Proposition 1</h1>
+<p class="sub">Book I of Euclid’s Elements: on a given finite straight line, construct an equilateral triangle.</p>
+<svg id="s" viewBox="0 0 640 400" role="img" aria-label="Construction area"></svg>
+<div id="msg"></div>
+<div class="card"><b>Your proof so far</b><ul id="steps"></ul></div>
+<p><button id="reset">Start over</button><button id="hint">Hint</button></p>
+<div class="card"><b>Coming next</b><p class="lock">🔒 Proposition 2: place a line equal to a given line at a given point (uses this proof)</p><p class="lock">🔒 Proposition 3: cut off from a longer line a part equal to a shorter one</p></div>
+<p class="sub">Read the original text: <a href="https://mathcs.clarku.edu/~djoyce/java/elements/elements.html" target="_blank" rel="noopener">David Joyce’s free edition of Euclid’s Elements</a>.</p>
+</main>
+<div id="modal"><div><h2>Congratulations!</h2><p>Now we can make a triangle!</p><button class="p" id="replay">Watch the proof again</button><button id="again">Start over</button></div></div>
+<script>
+const $=id=>document.getElementById(id),svg=$("s"),R=180,P={A:[230,200],B:[410,200],C:[320,200-R*Math.sqrt(3)/2],D:[320,200+R*Math.sqrt(3)/2]};
+const OK=new Set(["AB","AC","AD","BC","BD"]);let st;
+function init(){st={line:false,cov:{A:new Uint8Array(360),B:new Uint8Array(360)},done:{A:false,B:false},seg:new Set(),drag:null,play:0,won:false};say("Drag from point A to point B to draw a line.");draw()}
+function say(t){$("msg").textContent=t}
+const both=()=>st.done.A&&st.done.B,ptsAvail=()=>both()?["A","B","C","D"]:["A","B"];
+function pos(id){return st.drag&&st.drag.mode==="comp"&&st.drag.id===id?st.drag.cur:P[id]}
+function arc(c){let d="",prev=false;for(let k=0;k<360;k++){if(st.cov[c][k]){const a=k*Math.PI/180;d+=(prev?"L":"M")+(P[c][0]+R*Math.cos(a)).toFixed(1)+" "+(P[c][1]+R*Math.sin(a)).toFixed(1);prev=true}else prev=false}return d}
+function draw(){let h="";const ph=st.play,sg=k=>[...st.seg].includes(k);
+if(ph===3)h+=`<polygon class="tri" points="${[P.A,P.B,sg("AC")?P.C:P.D].map(p=>p.join(",")).join(" ")}"/>`;
+for(const c of["A","B"])h+=`<path class="arc ${ph===1&&c==="A"||ph===2&&c==="B"?(c==="A"?"h1":"h2"):""}" d="${arc(c)}"/>`;
+for(const k of st.seg){const a=pos(k[0]),b=pos(k[1]);let cls="";if(ph===1&&(k==="AB"||k[0]==="A"))cls="h1";if(ph===2&&(k==="AB"||k[0]==="B"||k[1]==="B"&&k!=="AB"&&false))cls="h2";if(ph===2&&k==="AB")cls="h2";if(ph===1&&k==="AB")cls="h1";if(ph===2&&k[0]==="B")cls="h2";if(ph===3)cls="g";h+=`<line class="seg ${cls}" x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}"/>`}
+if(st.drag){const d=st.drag;if(d.mode==="line"){h+=`<line class="seg" stroke-dasharray="6 6" x1="${P[d.id][0]}" y1="${P[d.id][1]}" x2="${d.cur[0]}" y2="${d.cur[1]}"/>`}else{const o=P[d.center];h+=`<line class="seg" stroke-dasharray="6 6" x1="${o[0]}" y1="${o[1]}" x2="${d.cur[0]}" y2="${d.cur[1]}"/>`}}
+for(const id of ptsAvail()){const p=pos(id);h+=`<circle class="pt ${id>"B"?"new":""}" cx="${p[0]}" cy="${p[1]}" r="9"/><text class="lab" x="${p[0]+12}" y="${p[1]-12}">${id}</text>`}
+if(ph===3)h+=`<text class="lab" x="320" y="385" text-anchor="middle" style="font-size:22px">Equilateral triangle: AB = AC = BC</text>`;
+svg.innerHTML=h;steps()}
+function steps(){const s=st.seg,tri=st.won,L=[[st.line,"Draw the line AB (Postulate 1: a straight line can join two points)."],[st.done.B,"Circle with centre A and radius AB (Postulate 3: a circle can be drawn with any centre and radius)."],[st.done.A,"Circle with centre B and radius BA."],[both(),"The circles meet at C (and D)."],[s.has("AC")&&s.has("BC")||s.has("AD")&&s.has("BD"),"Join the centres to C: AC and BC."],[tri,"AC = AB (radii of one circle) and BC = AB (radii of the other). Things equal to the same thing are equal to each other (Common Notion 1), so the triangle is equilateral."]];
+$("steps").innerHTML=L.map(x=>`<li class="${x[0]?"on":""}">${x[1]}</li>`).join("")}
+function xy(e){const r=svg.getBoundingClientRect();return[(e.clientX-r.left)*640/r.width,(e.clientY-r.top)*400/r.height]}
+function near(p){let b=null,bd=28;for(const id of ptsAvail()){const q=P[id],d=Math.hypot(q[0]-p[0],q[1]-p[1]);if(d<bd){bd=d;b=id}}return b}
+svg.addEventListener("pointerdown",e=>{if(st.won||st.play)return;const p=xy(e),id=near(p);if(!id)return;svg.setPointerCapture(e.pointerId);
+if(st.line&&!both()&&(id==="A"||id==="B")){const c=id==="A"?"B":"A",a=Math.atan2(P[id][1]-P[c][1],P[id][0]-P[c][0]);st.drag={mode:"comp",id,center:c,prev:a,cur:P[id]};say("Sweep the point around the centre to draw the circle.")}
+else st.drag={mode:"line",id,cur:p};draw()});
+svg.addEventListener("pointermove",e=>{const d=st.drag;if(!d)return;const p=xy(e);if(d.mode==="line"){d.cur=p}else{const o=P[d.center],a=Math.atan2(p[1]-o[1],p[0]-o[0]);let dl=a-d.prev;while(dl>Math.PI)dl-=2*Math.PI;while(dl<-Math.PI)dl+=2*Math.PI;const n=Math.ceil(Math.abs(dl)*180/Math.PI);for(let i=0;i<=n;i++){const t=d.prev+dl*(n?i/n:0);st.cov[d.center][Math.floor(((t*180/Math.PI)%360+360)%360)]=1}d.prev=a;d.cur=[o[0]+R*Math.cos(a),o[1]+R*Math.sin(a)]}draw()});
+svg.addEventListener("pointerup",e=>{const d=st.drag;if(!d)return;st.drag=null;
+if(d.mode==="comp"){const n=st.cov[d.center].reduce((a,b)=>a+b,0);if(n>=340){st.cov[d.center].fill(1);st.done[d.center]=true}
+if(both())say("The two circles cross at two new points. Join A and B to C (or D): drag from one point to another.");else say(st.done[d.center]?"Circle done. Now lift the other end of the line to draw the second circle.":"Keep going all the way round to finish the circle.")}
+else{const t=near(xy(e));if(t&&t!==d.id){const k=[d.id,t].sort().join("");if(!st.line&&k==="AB"){st.line=true;st.seg.add("AB");say("Now lift an end of the line: drag point B around A to draw a circle.")}
+else if(st.line&&OK.has(k)&&both()){if(!st.seg.has(k)){st.seg.add(k);say("Good: that line is a radius, so it stays.")}}
+else if(st.line&&k!=="AB"){say("That line isn’t a radius of either circle, so it disappears. Join a centre (A or B) to a point on its circle.")}}
+else if(!st.line)say("Drag from A all the way to B to draw the line.")}
+draw();check()});
+function check(){const s=st.seg;if(st.won||!(s.has("AB")&&(s.has("AC")&&s.has("BC")||s.has("AD")&&s.has("BD"))))return;st.won=true;run()}
+function run(){st.play=1;say("Circle A: AC and AB are both radii of it, so they are equal.");draw();setTimeout(()=>{st.play=2;say("Circle B: BC and BA are both radii of it, so they are equal.");draw()},2400);setTimeout(()=>{st.play=3;say("All three sides equal the same line AB, so they are equal to each other: an equilateral triangle.");draw()},4800);setTimeout(()=>{st.play=0;draw();$("modal").classList.add("on")},7600)}
+$("reset").onclick=$("again").onclick=()=>{$("modal").classList.remove("on");init()};
+$("replay").onclick=()=>{$("modal").classList.remove("on");run()};
+$("hint").onclick=()=>say(!st.line?"Drag from A to B to join them.":!both()?"Lift an end of the line (drag it around the other end) to sweep a circle. You need one circle from each end.":"Join a centre to a point where the circles cross: A–C and B–C.");
+init();
+</script>
+</body>
+</html>
