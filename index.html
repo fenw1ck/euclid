@@ -25,6 +25,12 @@ button.chip{padding:4px 10px;font-size:14px;border-radius:20px}
 #fxbox{position:absolute;inset:0;pointer-events:none;overflow:hidden;border-radius:14px}.fx{position:absolute;left:50%;top:42%}.fx i{position:absolute;width:9px;height:9px;border-radius:50%;background:hsl(var(--h) 90% 55%);animation:fw 1.7s ease-out forwards}
 @keyframes fw{to{transform:translate(var(--dx),var(--dy));opacity:0}}.fxt{position:absolute;transform:translate(-50%,-50%);font:700 30px Georgia,serif;background:var(--card);padding:6px 16px;border-radius:12px;border:2px solid var(--ok);white-space:nowrap;animation:ft 2.1s forwards}@keyframes ft{80%{opacity:1}to{opacity:0}}
 .hl{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0}.item{display:flex;justify-content:space-between;gap:8px;align-items:center}.item b{font-size:16px}
+.pulse{fill:none;stroke:var(--c2);stroke-width:4;animation:pu 1.1s infinite}@keyframes pu{0%{r:10;opacity:1}100%{r:30;opacity:0}}
+.cursor{font-size:30px;pointer-events:none}.seg.dot2{stroke-dasharray:2 8}.angarc{fill:none;stroke:var(--g);stroke-width:5}
+.row button.z{padding:9px 12px}details.card summary{cursor:pointer}ol.lg{padding-left:22px;margin:6px 0}ol.lg li{margin:4px 0;font-size:15px}
+.pulse{fill:none;stroke:var(--c2);stroke-width:4;animation:pu 1.1s infinite}@keyframes pu{0%{r:10;opacity:1}100%{r:30;opacity:0}}
+.cursor{font-size:30px;pointer-events:none}.seg.dot2{stroke-dasharray:2 8}.angarc{fill:none;stroke:var(--g);stroke-width:5}
+.row button.z{padding:9px 12px}details.card summary{cursor:pointer}ol.lg{padding-left:22px;margin:6px 0}ol.lg li{margin:4px 0;font-size:15px}
 </style>
 </head>
 <body>
@@ -36,11 +42,13 @@ button.chip{padding:4px 10px;font-size:14px;border-radius:20px}
 <div class="card"><b>How this helps us</b><div id="gives"></div><div id="usedby" class="sub"></div></div>
 <div class="card" id="relies"></div>
 <div id="stage"><svg id="s" viewBox="0 0 640 420" role="img" aria-label="Construction area"></svg><div id="fxbox"></div></div>
-<div class="row" id="tools"></div><div id="msg"></div>
-<div class="card"><b>Your proof so far</b><ul id="steps"></ul><div id="after"></div></div>
-<div class="row"><button id="reset">Start over</button><button id="hint">Hint</button></div>
+<div class="row" id="ctl"><button class="p" id="solve">Solve it for me</button><button id="stop" style="display:none">Stop</button><button id="reset">Start over</button><button class="z" id="zin" aria-label="Zoom in">＋</button><button class="z" id="zout" aria-label="Zoom out">－</button><button class="z" id="zfit">Fit</button></div>
+<div class="row" id="uses"></div><div id="msg"></div><div class="sub" id="prg"></div>
+<div class="card" id="stepcard"><b>Logic</b><ul id="steps"></ul><div id="after"></div></div>
+<details class="card" id="logicd"><summary><b>Logic</b> (the written proof)</summary><ol class="lg" id="logic"></ol></details>
+<div id="done"></div>
 <div class="row"><button data-r="home">Home</button><button id="prev">Previous</button><button id="next" class="p">Next</button></div>
-<p class="sub">Replay colours: <span class="key"></span>solid blue, <span class="key b"></span>dashed orange, <span class="key c"></span>thick green. Line style as well as colour. Source: <a href="https://mathcs.clarku.edu/~djoyce/java/elements/elements.html" target="_blank" rel="noopener">David Joyce’s Elements</a>.</p>
+<p class="sub">Replay colours: <span class="key"></span>solid blue, <span class="key b"></span>dashed orange, <span class="key c"></span>thick green. Line style as well as colour. Full wording: <a href="https://mathcs.clarku.edu/~djoyce/java/elements/elements.html" target="_blank" rel="noopener">David Joyce’s Elements</a>. Statements here are shortened.</p>
 </div>
 </main>
 <script>
@@ -51,36 +59,27 @@ const angleAt=(a,b,c)=>{const u=[a[0]-b[0],a[1]-b[1]],v=[c[0]-b[0],c[1]-b[1]];re
 const parallel=(a,b,c,d,t=1.5)=>{const u=[b[0]-a[0],b[1]-a[1]],v=[d[0]-c[0],d[1]-c[1]];return Math.abs((u[0]*v[1]-u[1]*v[0])/(Math.hypot(...u)*Math.hypot(...v)))<Math.sin(t*Math.PI/180)};
 function icc(p,r1,q,r2){const d=dist(p,q),a=(r1*r1-r2*r2+d*d)/(2*d),h=Math.sqrt(Math.max(r1*r1-a*a,0)),mx=p[0]+a*(q[0]-p[0])/d,my=p[1]+a*(q[1]-p[1])/d,ox=-h*(q[1]-p[1])/d,oy=h*(q[0]-p[0])/d;return[[mx+ox,my+oy],[mx-ox,my-oy]]}
 function icr(c,r,o,t){const L=dist(o,t),u=[(t[0]-o[0])/L,(t[1]-o[1])/L],w=[o[0]-c[0],o[1]-c[1]],b=u[0]*w[0]+u[1]*w[1],k=w[0]*w[0]+w[1]*w[1]-r*r,disc=b*b-k;if(disc<0)return null;const ts=[-b-Math.sqrt(disc),-b+Math.sqrt(disc)].filter(x=>x>=0);if(!ts.length)return null;const tt=Math.max(...ts);return[o[0]+u[0]*tt,o[1]+u[1]*tt]}
-const has=(W,k)=>W.segs.has(k),done=(W,k)=>W.circs.some(c=>c.c+">"+c.p===k&&c.done);
-/* ---- proposition data ---- */
+function icl(c,r,a,b){const L=dist(a,b),u=[(b[0]-a[0])/L,(b[1]-a[1])/L],w=[a[0]-c[0],a[1]-c[1]],bb=u[0]*w[0]+u[1]*w[1],k=w[0]*w[0]+w[1]*w[1]-r*r,disc=bb*bb-k;if(disc<0)return null;return[-bb-Math.sqrt(disc),-bb+Math.sqrt(disc)].map(t=>[a[0]+u[0]*t,a[1]+u[1]*t])}
+function irs(o,t,a,b){const d=[t[0]-o[0],t[1]-o[1]],e=[b[0]-a[0],b[1]-a[1]],den=d[0]*e[1]-d[1]*e[0];if(Math.abs(den)<1e-9)return null;const w=[a[0]-o[0],a[1]-o[1]],s=(w[0]*e[1]-w[1]*e[0])/den,u=(w[0]*d[1]-w[1]*d[0])/den;if(s<0||u<-.001||u>1.001)return null;return[o[0]+s*d[0],o[1]+s*d[1]]}
 const ALL=[
-{id:1,t:"Construct an equilateral triangle",stmt:"On a given finite straight line to construct an equilateral triangle.",uses:[],kind:"play",auto:true,tools:[],
- gives:"We can build an equilateral triangle on any line, and we can use circles to compare the lengths of lines.",
- pts:{A:[230,230],B:[410,230]},segs0:[],lineOK:["AB"],allowSeg:["AB","AC","BC","AD","BD"],circ:[["A","B"],["B","A"]],rays:[],
- reveal:[{n:"C",of:["A>B","B>A"],pick:"up"},{n:"D",of:["A>B","B>A"],pick:"down"}],excl:[["C","D"]],
- goal:W=>["C","D"].some(n=>has(W,"AB")&&has(W,"A"+n)&&has(W,"B"+n)),
- steps:[["Draw the line AB: drag from A to B (dotted while you drag, solid when it lands).",W=>has(W,"AB"),"Drag from A to B."],["Draw the circle with centre A through B: grab B and sweep it all the way round A.",W=>done(W,"A>B"),"Grab B and drag it round A."],["Draw the circle with centre B through A: grab A and sweep it round B.",W=>done(W,"B>A"),"Grab A and drag it round B."],["The circles meet at C and D. Grab A or B and slide the line along its circle to C or D.",W=>!!W.pts.C,"Finish both circles."],["Make AC and BC (or AD and BD). The other point goes grey.",W=>W.won,"Slide AB along circle A to the meeting point, then along circle B to the same point."]],
- play:W=>{const T=has(W,"AC")?"C":"D";return[{c:["A>B"],s:["AB","A"+T],cls:"h1",txt:"Circle A (solid blue): AB and A"+T+" are both radii, so they are equal."},{c:["B>A"],s:["AB","B"+T],cls:"h2",txt:"Circle B (dashed orange): BA and B"+T+" are both radii, so they are equal."},{s:["AB","A"+T,"B"+T],cls:"g",txt:"All three sides equal AB, so they equal each other (Common Notion 1)."}]},
- prove:W=>{const T=has(W,"AC")?"C":"D",P=W.pts;return`Equilateral triangle: angles ${angleAt(P.B,P.A,P[T]).toFixed(0)}°, ${angleAt(P.A,P.B,P[T]).toFixed(0)}°, ${angleAt(P.A,P[T],P.B).toFixed(0)}°.`},
+{id:1,t:"Construct an equilateral triangle",stmt:"On a given finite straight line to construct an equilateral triangle.",uses:[],kind:"play",gives:"We can build an equilateral triangle on any line, and we can use circles to compare the lengths of lines.",
+ pts:{A:[230,230],B:[410,230]},segs0:[],alts:["C","D"],
+ ops:[["line","A","B"],["circ","A","B"],["circ","B","A"],["pt","C",["A>B","B>A"],"up",{g:"C"}],["pt","D",["A>B","B>A"],"down",{g:"D"}],["line","A","C",{pv:1,g:"C"}],["line","B","C",{pv:1,g:"C"}],["line","A","D",{pv:1,g:"D"}],["line","B","D",{pv:1,g:"D"}]],
+ core:[["line","A","B"],["circ","A","B"],["circ","B","A"],["pt","C",["A>B","B>A"],"up"],["tri","A","B","C"]],
+ phases:W=>{const T=W.chosen||"C";return[{c:["A>B"],s:["AB","A"+T],cls:"h1",txt:"Circle A (solid blue): AB and A"+T+" are both radii, so they are equal."},{c:["B>A"],s:["AB","B"+T],cls:"h2",txt:"Circle B (dashed orange): BA and B"+T+" are both radii, so they are equal."},{s:["AB","A"+T,"B"+T],cls:"g",txt:"All three sides equal AB, so they equal each other."}]},
+ proof:["AB is the given line. Draw the circle with centre A and radius AB, and the circle with centre B and radius BA (Postulate 3).","The circles meet at C. Join CA and CB (Postulate 1).","A is the centre of the first circle, so AC = AB. B is the centre of the second, so BC = BA.","Things equal to the same thing are equal to each other (Common Notion 1), so AC = BC.","So AB = BC = CA, and triangle ABC is equilateral."],
  winTxt:"Equilateral triangle! Now we can change a line’s position without changing its length, make an equilateral triangle and use circles to compare lengths of lines."},
-{id:2,t:"Place a line equal to a given line at a point",stmt:"To place at a given point (as an extremity) a straight line equal to a given straight line.",uses:[1],kind:"play",tools:["line","compass","extend"],
- gives:"We can put a line of a specific length anywhere we want it.",
- pts:{A:[210,300],B:[310,300],C:[362,330]},segs0:["BC"],lineOK:["AB","AE"],allowSeg:["AB","BC","AD","BD","AE"],circ:[["A","B"],["B","A"],["B","C"],["D","F"]],rays:[["D","A"],["D","B"]],
- reveal:[{n:"D",of:["A>B","B>A"],pick:"up"},{n:"F",of:["B>C","ray:D>B"],pick:"far"},{n:"E",of:["D>F","ray:D>A"],pick:"far"}],excl:[],tri:true,
- macro:{label:"Use Proposition 1 for me",id:1},
- goal:W=>!!W.pts.E&&has(W,"AE")&&equalLen(W.pts.A,W.pts.E,W.pts.B,W.pts.C),
- steps:[["Start with line CB and point A. Draw a line from A to B (dotted, then solid).",W=>has(W,"AB"),"Line tool: drag from A to B."],["Use A or B to draw two circles (Compass tool). They meet at D.",W=>!!W.pts.D,"Compass tool: sweep B round A, then A round B."],["Tap the dotted triangle to remove the circles and make the triangle solid. That is Proposition 1.",W=>W.triSolid,"Tap inside the dotted triangle."],["Extend DB beyond B and DA beyond A (Extend tool).",W=>W.rays.length>=2,"Extend tool: pull B and A outward."],["Circle with centre B through C (Compass). It cuts DB’s extension at F, so BF = CB.",W=>done(W,"B>C"),"Compass tool: sweep C round B."],["Circle with centre D through F (Compass). It cuts DA’s extension at E.",W=>done(W,"D>F"),"Compass tool: sweep F round D."],["Join A to E. Then AE = BF = CB.",W=>W.won,"Line tool: drag from A to E."]],
- play:W=>[{c:["B>C"],s:["BC"],r:["D>B"],cls:"h1",txt:"Circle B (solid blue): BF and BC are radii, so BF = BC."},{c:["D>F"],r:["D>A","D>B"],hide:["AD","BD","AB"],cls:"h2",txt:"The triangle disappears. Circle D (dashed orange): DE and DF are radii, so DE = DF. DA = DB, so AE = BF."},{s:["AE","BC"],cls:"g",txt:"AE, BF and CB are all the same length."}],
- prove:W=>`AE = ${dist(W.pts.A,W.pts.E).toFixed(0)}, CB = ${dist(W.pts.B,W.pts.C).toFixed(0)}.`,
+{id:2,t:"Place a line equal to a given line at a point",stmt:"To place at a given point (as an extremity) a straight line equal to a given straight line.",uses:[1],kind:"play",gives:"We can put a line of a specific length anywhere we want it.",
+ pts:{A:[210,300],B:[310,300],C:[362,330]},segs0:["BC"],
+ ops:[["use",1,{A:"A",B:"B"},{C:"D"}],["ext","D","B"],["ext","D","A"],["circ","B","C"],["ptr","F","B>C","D>B"],["circ","D","F"],["ptr","E","D>F","D>A"],["line","A","E"]],
+ phases:W=>[{c:["B>C"],s:["BC"],cls:"h1",txt:"Circle B (solid blue): BF and BC are radii, so BF = BC."},{c:["D>F"],hide:["AD","BD","AB"],cls:"h2",txt:"The triangle fades. Circle D (dashed orange): DE and DF are radii, so DE = DF. DA = DB, so AE = BF."},{s:["AE","BC"],cls:"g",txt:"AE, BF and CB are all the same length."}],
+ proof:["Join AB, and build the equilateral triangle ABD on it (Proposition 1).","Extend DA to E and DB to F (Postulate 2).","Draw the circle with centre B and radius BC. It cuts DF at G, so BG = BC. (This page calls that point F.)","Draw the circle with centre D and radius DG. It cuts DA extended at L, so DL = DG. (This page calls that point E.)","DL = DG and DA = DB, so the remainders are equal: AL = BG.","BG = BC, so AL = BC (Common Notion 1). A line equal to BC now starts at A."],
  winTxt:"We learned how to put a line of specific length anywhere we want it."},
-{id:3,t:"Cut off a line equal to a shorter one",stmt:"Construct equal segments by section: given two unequal straight lines, to cut off from the greater a straight line equal to the less.",uses:[2],kind:"play",tools:["compass"],
- gives:"We can shorten a long line so it matches the length of any shorter line.",
- pts:{A:[150,250],B:[590,250],P:[300,100],Q:[420,100]},noLab:["P","Q"],segs0:["AB","PQ"],segLabel:{PQ:"C"},lineOK:[],allowSeg:["AB","PQ","AD","AE"],circ:[["A","D"]],rays:[],hiddenRays:[["A","B"]],
- reveal:[{n:"E",of:["A>D","ray:A>B"],pick:"far"}],excl:[],macro:{label:"Use Proposition 2 on C",id:2},
- goal:W=>!!W.pts.E&&done(W,"A>D"),
- steps:[["Use Proposition 2 to move line C so it starts at A. Call its end D.",W=>!!W.pts.D,"Tap “Use Proposition 2 on C”."],["Hold D and sweep it round A to draw a circle (Compass tool).",W=>done(W,"A>D"),"Compass tool: drag D round A."],["The circle meets AB at E. AE = AD = C.",W=>W.won,"Finish the circle."]],
- play:W=>[{c:["A>D"],s:["AD","AE"],cls:"h1",txt:"AE and AD are radii of the same circle, so AE = AD. AD = C, so AE = C."},{s:["AE"],cls:"g",txt:"AE is the part of AB that equals C."}],
- prove:W=>`AE = ${dist(W.pts.A,W.pts.E).toFixed(0)}, C = ${dist(W.pts.P,W.pts.Q).toFixed(0)}.`,
+{id:3,t:"Cut off a line equal to a shorter one",stmt:"Construct equal segments by section: given two unequal straight lines, to cut off from the greater a straight line equal to the less.",uses:[2],kind:"play",gives:"We can shorten a long line so it matches the length of any shorter line.",
+ pts:{A:[150,250],B:[590,250],P:[300,100],Q:[420,100]},noLab:["P","Q"],segs0:["AB","PQ"],segLabel:{PQ:"C"},finalSeg:["AE"],bold:["AE"],
+ ops:[["use",2,{A:"A",B:"P",C:"Q"},{E:"D"}],["circ","A","D"],["ptr","E","A>D","A>B"]],
+ phases:W=>[{c:["A>D"],s:["AD","AE"],cls:"h1",txt:"AE and AD are radii of the same circle, so AE = AD. AD = C, so AE = C."},{s:["AE"],cls:"g",txt:"AE is the part of AB that equals C."}],
+ proof:["Let AB be the greater line and C the less.","At A place AD equal to C (Proposition 2).","With centre A and radius AD, draw a circle. It cuts AB at E.","A is the centre, so AE = AD.","AD = C, so AE = C (Common Notion 1). AE has been cut off from AB equal to C."],
  winTxt:"We learned how to shorten a line to equal an existing line."},
 {id:4,t:"Two sides and the angle between them",stmt:"If two triangles have the two sides equal to two sides respectively, and have the angles contained by the equal straight lines equal, they will also have the base equal to the base, the triangle will be equal to the triangle, and the remaining angles will be equal to the remaining angles respectively, namely those which the equal sides subtend.",uses:[],kind:"read",gives:"We can prove two triangles are exactly the same by matching two sides and the angle between them.",
  proof:["Triangles ABC and DEF have AB = DE, AC = DF, and angle BAC = angle EDF.","Lay triangle ABC onto DEF so that A sits on D and AB lies along DE.","Because AB = DE, point B lands on E. Because the angles are equal, AC lies along DF, and because AC = DF, point C lands on F.","So BC fits exactly on EF: BC = EF.","Therefore the triangles are equal, and the remaining angles are equal: ABC = DEF and ACB = DFE."]},
@@ -92,13 +91,21 @@ const ALL=[
  proof:["Take AC and CB on base AB meeting at C. Suppose AD = AC and DB = CB meet at another point D on the same side.","Join CD. Since AC = AD, angle ACD = angle ADC (Proposition 5). So angle ADC is greater than angle DCB.","So angle CDB is much greater than angle DCB.","Since CB = DB, angle CDB = angle DCB (Proposition 5).","But we showed CDB is much greater than DCB. That is impossible, so no such D exists."]},
 {id:8,t:"Three equal sides make equal triangles",stmt:"If two triangles have the two sides equal to two sides respectively, and have also the base equal to the base, they will also have the angles equal which are contained by the equal straight lines.",uses:[7],kind:"read",gives:"We can prove triangles are the same just from their three side lengths.",
  proof:["Triangles ABC and DEF have AB = DE, AC = DF and BC = EF.","Move ABC onto DEF with B on E and BC along EF. Since BC = EF, C lands on F.","If A did not land on D, there would be two triangles on the same base with equal sides. Proposition 7 forbids that.","So A lands on D, and angle BAC = angle EDF."]},
-{id:9,t:"Bisect an angle",stmt:"To bisect a given rectilineal angle.",uses:[1,3,8],kind:"read",gives:"We can cut any angle exactly in half.",
+{id:9,t:"Bisect an angle",stmt:"To bisect a given rectilineal angle.",uses:[1,3,8],kind:"play",pts:{A:[200,320],B:[520,320],C:[380,100]},segs0:["AB","AC"],
+ ops:[["place","D",{on:"AB",t:.45}],["circ","A","D",{vanish:1}],["ptr","E","A>D","A>C"],["line","D","E"],["use",1,{A:"D",B:"E"},{C:"F"},"away:A"],["line","A","F"]],
+ phases:W=>[{c:["A>D"],s:["AD","AE"],cls:"h1",txt:"AD and AE are radii of one circle, so AD = AE."},{s:["DF","EF","DE"],cls:"h2",txt:"DEF is equilateral, so DF = EF."},{s:["AF"],ang:[["A","B","F"],["A","F","C"]],cls:"g",txt:"AF is shared and the three sides match, so the two angles at A are equal. The angle is cut in half."}],gives:"We can cut any angle exactly in half.",
  proof:["Angle BAC is given. Choose any point D on AB.","Cut off AE = AD on AC (Proposition 3). Join DE.","Build an equilateral triangle DEF on DE (Proposition 1). Join AF.","AD = AE, AF is shared, and DF = EF. So angle DAF = angle EAF (Proposition 8).","The angle BAC is bisected by AF."]},
-{id:10,t:"Bisect a line",stmt:"To bisect a given finite straight line.",uses:[1,4,9],kind:"read",gives:"We can find the exact middle of any line.",
+{id:10,t:"Bisect a line",stmt:"To bisect a given finite straight line.",uses:[1,4,9],kind:"play",pts:{A:[150,300],B:[500,300]},segs0:["AB"],bold:["AM","BM"],
+ ops:[["use",1,{A:"A",B:"B"},{C:"C"},"up"],["use",9,{A:"C",B:"A",C:"B"},{F:"F"}],["ptl","M","C","F","A","B"]],
+ phases:W=>[{s:["AC","BC"],cls:"h1",txt:"AC = BC, from the equilateral triangle."},{s:["CF"],cls:"h2",txt:"CM cuts the angle at C into two equal angles."},{s:["AM","BM"],cls:"g",txt:"CM is shared, so AM = MB: the line is cut in half at M."}],gives:"We can find the exact middle of any line.",
  proof:["Line AB is given. Build an equilateral triangle ABC on it (Proposition 1).","Bisect angle ACB with a line meeting AB at D (Proposition 9).","AC = CB, CD is shared, and angle ACD = angle BCD. So AD = DB (Proposition 4).","AB is bisected at D."]},
-{id:11,t:"Draw a perpendicular at a point on a line",stmt:"To draw a straight line at right angles to a given straight line from a given point on it.",uses:[1,3,8],kind:"read",gives:"We can draw a right angle on a line at any point we choose.",
+{id:11,t:"Draw a perpendicular at a point on a line",stmt:"To draw a straight line at right angles to a given straight line from a given point on it.",uses:[1,3,8],kind:"play",pts:{A:[120,300],B:[540,300],C:[330,300]},segs0:["AB"],
+ ops:[["place","D",{on:"CA",t:.5}],["circ","C","D"],["ptr","E","C>D","C>B"],["use",1,{A:"D",B:"E"},{C:"F"},"up"],["line","C","F"]],
+ phases:W=>[{c:["C>D"],cls:"h1",txt:"CD and CE are radii of one circle: CD = CE."},{s:["DF","EF"],cls:"h2",txt:"DEF is equilateral: DF = EF."},{s:["CF"],ang:[["C","D","F"],["C","F","E"]],cls:"g",txt:"CF is shared, so the two angles at C are equal. Equal angles side by side on a straight line are right angles."}],gives:"We can draw a right angle on a line at any point we choose.",
  proof:["Line AB and point C on it are given. Choose any point D on AC.","Cut off CE = CD on CB (Proposition 3).","Build an equilateral triangle DFE on DE (Proposition 1). Join FC.","DC = CE, CF is shared, and DF = EF. So angle DCF = angle ECF (Proposition 8).","Equal adjacent angles on a straight line are right angles (Definition 10), so FC is perpendicular to AB."]},
-{id:12,t:"Draw a perpendicular from a point off a line",stmt:"To a given infinite straight line, from a given point which is not on it, to draw a perpendicular straight line.",uses:[8,10],kind:"read",gives:"We can drop a perpendicular from any point to any line.",
+{id:12,t:"Draw a perpendicular from a point off a line",stmt:"To a given infinite straight line, from a given point which is not on it, to draw a perpendicular straight line.",uses:[8,10],kind:"play",pts:{A:[100,320],B:[540,320],C:[330,200]},segs0:["AB"],
+ ops:[["place","D",{free:1,away:"C",line:"AB",rec:[330,395]}],["line","C","D"],["circ","C","D"],["pt2","F","G","C>D","A","B"],["use",10,{A:"F",B:"G"},{M:"H"}],["line","C","H"]],
+ phases:W=>[{c:["C>D"],cls:"h1",txt:"F and G are on the circle with centre C, so CF = CG."},{s:["CH"],ang:[["H","C","G"],["H","C","F"]],cls:"g",txt:"H is the middle of FG, so the two angles at H are equal and side by side on a line. Both are right angles: CH is perpendicular to AB."}],gives:"We can drop a perpendicular from any point to any line.",
  proof:["Line AB and point C off it are given. Choose a point D on the far side of AB.","With centre C and radius CD, draw a circle meeting AB at F and G.","Bisect FG at H (Proposition 10). Join CF, CH and CG.","FH = HG, HC is shared, and CF = CG (radii). So angle CHF = angle CHG (Proposition 8).","They are equal and adjacent on a straight line, so CH is perpendicular to AB."]},
 {id:13,t:"Angles on a straight line",stmt:"If a straight line set up on a straight line make angles, it will make either two right angles or angles equal to two right angles.",uses:[11],kind:"read",gives:"We know angles that sit along a straight line always add up to two right angles.",
  proof:["Line CD stands on AB at C, making angles ACD and DCB.","If CD is perpendicular, both angles are right angles and the claim is true (Definition 10).","If not, draw CE perpendicular to AB (Proposition 11).","Angle ACD + angle DCB = angle ACE + angle ECD + angle DCB. And ECD + DCB = ECB.","So ACD + DCB = ACE + ECB, which is two right angles."]},
@@ -108,12 +115,14 @@ const ALL=[
  proof:["Lines AB and CD cut at E. We want angle AEC = angle DEB and angle CEB = angle AED.","Angle AEC + angle CEB = two right angles (Proposition 13).","Angle CEB + angle BED = two right angles (Proposition 13).","So AEC + CEB = CEB + BED. Taking away CEB, angle AEC = angle BED.","In the same way angle CEB = angle AED.","Porism: when two lines cut, the four angles at the point add up to four right angles."]},
 {id:16,t:"The outside angle is bigger",stmt:"In any triangle, if one of the sides be produced, the exterior angle is greater than either of the interior and opposite angles.",uses:[3,4,10,15],kind:"read",gives:"We can compare an outside angle of a triangle with the inside angles opposite to it.",
  proof:["Triangle ABC has BC extended to D. We want angle ACD greater than angle BAC.","Bisect AC at E (Proposition 10). Extend BE to F with EF = BE (Proposition 3). Join FC and extend AC to G.","AE = EC, BE = EF, and angle AEB = angle FEC (vertical angles, Proposition 15).","So triangles ABE and CFE are equal (Proposition 4): angle BAE = angle ECF.","But angle ECD is greater than angle ECF. So angle ACD is greater than angle BAE.","In the same way, bisecting BC shows angle BCG, which equals ACD, is greater than angle ABC."]}];
+
 const BYID={};ALL.forEach(p=>BYID[p.id]=p);
-/* ---- router, home, map ---- */
-let P,W,prog=[],cur=0,route="home";try{prog=JSON.parse(localStorage.getItem("euclid3")||"[]")}catch(e){}
+let P,W,prog=[],cur=0,route="home",OPS=[],HN=0;try{prog=JSON.parse(localStorage.getItem("euclid4")||"[]")}catch(e){}
+const sk=(a,b)=>[a,b].sort().join("");
 const chip=id=>`<button class="chip" data-go="${id}">I.${id} ${BYID[id].t}</button>`;
+/* ---- router, home, map ---- */
 function go(r){route=r;$("home").style.display=r==="home"?"":"none";$("map").style.display=r==="map"?"":"none";$("prop").style.display=typeof r==="number"?"":"none";if(r==="home")renderHome();else if(r==="map")renderMap(null);else load(r)}
-function renderHome(){$("home").innerHTML=`<h1>Euclid’s Elements, Book I</h1><p class="sub">Build each proof yourself. ✔ means you have finished it.</p><div class="card warn"><b>Before you jump ahead:</b> later propositions rely on earlier ones. You can open any proposition, and each page lists what it relies on so you can go back to the earlier proofs.</div>`+ALL.map(p=>`<div class="card"><div class="item"><b>I.${p.id} ${p.t} ${prog.includes(p.id)?"✔":""}</b><button class="p" data-go="${p.id}">Open</button></div><div class="sub">${p.kind==="play"?"Interactive construction":"Proof steps (interactive figure coming)"}</div>${p.uses.length?`<div class="hl">Relies on: ${p.uses.map(chip).join("")}</div>`:`<div class="sub">Relies on nothing earlier.</div>`}</div>`).join("")+`<p class="sub">Propositions 17 to 48 are not built yet.</p>`}
+function renderHome(){$("home").innerHTML=`<h1>Euclid’s Elements, Book I</h1><p class="sub">Build each proof yourself, or watch it solved. ✔ means you have finished it.</p><div class="card warn"><b>Before you jump ahead:</b> later propositions rely on earlier ones. You can open any proposition, and each page lists what it relies on so you can go back to the earlier proofs.</div>`+ALL.map(p=>`<div class="card"><div class="item"><b>I.${p.id} ${p.t} ${prog.includes(p.id)?"✔":""}</b><button class="p" data-go="${p.id}">Open</button></div><div class="sub">${p.kind==="play"?"Interactive construction":"Proof steps (interactive figure coming)"}</div>${p.uses.length?`<div class="hl">Relies on: ${p.uses.map(chip).join("")}</div>`:`<div class="sub">Relies on nothing earlier.</div>`}</div>`).join("")+`<p class="sub">Propositions 17 to 48 are not built yet.</p>`}
 const memo={};const depth=id=>memo[id]||(memo[id]=1+Math.max(0,...BYID[id].uses.map(depth)));
 function renderMap(sel){const cols={};ALL.forEach(p=>(cols[depth(p.id)]=cols[depth(p.id)]||[]).push(p.id));const mx=Math.max(...Object.keys(cols).map(Number)),pos={};
 for(const d in cols)cols[d].forEach((id,i)=>pos[id]=[40+(d-1)*(560/(mx-1)),50+(i+1)*(320/(cols[d].length+1))]);
@@ -122,83 +131,154 @@ for(const p of ALL)for(const u of p.uses){const a=pos[u],b=pos[p.id],on=sel&&((p
 for(const p of ALL){const q=pos[p.id],on=p.id===sel;n+=`<g data-node="${p.id}" style="cursor:pointer"><circle cx="${q[0]}" cy="${q[1]}" r="17" fill="${on?"var(--ok)":par.includes(p.id)?"var(--c1)":chd.includes(p.id)?"var(--c2)":"var(--card)"}" stroke="var(--ink)" stroke-width="2"/><text x="${q[0]}" y="${q[1]+5}" text-anchor="middle" font-size="14" font-weight="700" fill="${on||par.includes(p.id)||chd.includes(p.id)?"#fff":"var(--ink)"}">${p.id}</text></g>`}
 $("map").innerHTML=`<h1>Relationship map</h1><p class="sub">Each arrow points from a proposition to one that relies on it. Tap a number to see its parents (what it relies on) and children (what relies on it).</p><svg viewBox="0 0 640 420"><defs><marker id="ar" markerWidth="8" markerHeight="8" refX="22" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="var(--mute)"/></marker></defs>${e}${n}</svg>`+
 (sel?`<div class="card"><b>I.${sel} ${BYID[sel].t}</b><p><b>Parents (relies on, solid blue arrows in):</b> ${par.length?par.map(chip).join(" "):"none"}</p><p><b>Children (used by, dashed orange arrows out):</b> ${chd.length?chd.map(chip).join(" "):"none yet"}</p><button class="p" data-go="${sel}">Open I.${sel}</button></div>`:`<p class="sub">Tap a number to begin.</p>`)}
-/* ---- fireworks ---- */
 function fx(text){const d=document.createElement("div");d.className="fx";d.innerHTML=`<div class="fxt">${text}</div>`+Array.from({length:30},(_,i)=>{const a=i/30*6.283,r=90+Math.random()*110;return`<i style="--dx:${(Math.cos(a)*r).toFixed(0)}px;--dy:${(Math.sin(a)*r).toFixed(0)}px;--h:${i*12}"></i>`}).join("");$("fxbox").appendChild(d);setTimeout(()=>d.remove(),2300)}
-/* ---- engine ---- */
-const sk=(a,b)=>[a,b].sort().join("");
-function load(id){cur=ALL.findIndex(p=>p.id===id);P=ALL[cur];W={pts:P.pts?JSON.parse(JSON.stringify(P.pts)):{},segs:new Set(P.segs0||[]),rays:(P.hiddenRays||[]).map(r=>r.slice()),circs:[],drag:null,hl:null,won:false,busy:false,tool:"line",triSolid:false,bold:new Set(),cap:""};
+/* ---- recipes: flatten nested propositions into primitive moves ---- */
+function newH(){return "abcdefghijklmnopqrstuvwxyz"[HN++]}
+function flat(ops,tr,out,pk,tag0){ops.forEach((o,i)=>{const t=o[0],tag=tag0===undefined?i:tag0,lastO=o[o.length-1],opt=(t!=="place"&&t!=="use"&&lastO&&typeof lastO==="object"&&!Array.isArray(lastO))?lastO:{},tn=s=>s.split(">").map(tr).join(">");
+if(t==="use"){const sub=BYID[o[1]],loc={},im=o[2],om=o[3]||{};let pkx=typeof o[4]==="string"?o[4]:null;if(pkx&&pkx.startsWith("away:"))pkx="away:"+tr(pkx.slice(5));
+const ctr=n=>im[n]!==undefined?tr(im[n]):om[n]!==undefined?tr(om[n]):(loc[n]=loc[n]||newH());flat(sub.core||sub.ops,ctr,out,pkx,tag);return}
+const b={t,u:tag,...opt};
+if(t==="line"){const a=tr(o[1]),c=tr(o[2]);if(out.some(x=>x.t==="line"&&sk(x.a,x.b)===sk(a,c)))return;out.push({...b,a,b:c})}
+else if(t==="circ"){const c=tr(o[1]),p=tr(o[2]);if(out.some(x=>x.t==="circ"&&x.c===c&&x.p===p))return;out.push({...b,c,p})}
+else if(t==="pt")out.push({...b,n:tr(o[1]),c1:tn(o[2][0]),c2:tn(o[2][1]),pick:pk||o[3]});
+else if(t==="ptr")out.push({...b,n:tr(o[1]),c:tn(o[2]),r:tn(o[3])});
+else if(t==="pt2")out.push({...b,n1:tr(o[1]),n2:tr(o[2]),c:tn(o[3]),l1:tr(o[4]),l2:tr(o[5])});
+else if(t==="ptl")out.push({...b,n:tr(o[1]),o:tr(o[2]),tt:tr(o[3]),a:tr(o[4]),b:tr(o[5])});
+else if(t==="ext")out.push({...b,o:tr(o[1]),tt:tr(o[2])});
+else if(t==="tri"){const a=tr(o[1]),c=tr(o[2]),d=tr(o[3]),q=out.find(x=>x.t==="pt"&&x.n===d);out.push({...b,a,b:c,c:d,c1:q&&q.c1,c2:q&&q.c2})}
+else if(t==="place"){const s=o[2];out.push({...b,n:tr(o[1]),on:s.on?s.on.split("").map(tr).join(""):null,pt:s.t,free:s.free,away:s.away?tr(s.away):null,line:s.line?s.line.split("").map(tr).join(""):null,rec:s.rec})}})}
+function buildOps(){HN=0;OPS=[];flat(P.ops,x=>x,OPS);OPS.forEach((o,i)=>o.i=i)}
+/* ---- state ---- */
+function fresh(){W={pts:JSON.parse(JSON.stringify(P.pts||{})),segs:new Set(P.segs0||[]),rays:[],circs:[],done:new Set(),won:false,busy:false,stop:false,vb:W?W.vb:[0,0,640,420],hl:null,cap:"",chosen:null,bold:new Set(),flash:null,anim:null,cursor:null,drag:null,pan:null};W.vb=[0,0,640,420];svg.setAttribute("viewBox",W.vb.join(" "))}
+function load(id){cur=ALL.findIndex(p=>p.id===id);P=ALL[cur];W=null;fresh();
 $("ttl").textContent=`Book I, Proposition ${P.id}: ${P.t}`;$("stmt").textContent=P.stmt;$("gives").textContent=P.gives;
 const by=ALL.filter(p=>p.uses.includes(P.id));$("usedby").innerHTML=by.length?`Used later by: ${by.map(p=>"I."+p.id).join(", ")}.`:"Nothing later uses this yet.";
 $("relies").innerHTML=P.uses.length?`<b>This proof relies on:</b> <div class="hl">${P.uses.map(chip).join("")}</div><div class="sub">Tap one to go back and see it.</div>`:`<b>This proof relies on nothing earlier.</b>`;
-$("prev").disabled=cur===0;$("next").disabled=cur>=ALL.length-1;$("after").innerHTML="";
-const play=P.kind==="play";$("stage").style.display=play?"":"none";$("tools").style.display=play?"":"none";$("hint").style.display=play?"":"none";
-if(play){toolbar();say(P.steps[0][2]);draw()}else readInit()}
-function readInit(){W.k=0;say("");renderRead()}
+$("prev").disabled=cur===0;$("next").disabled=cur>=ALL.length-1;$("after").innerHTML="";$("done").innerHTML="";
+const play=P.kind==="play";$("stage").style.display=play?"":"none";$("ctl").style.display=play?"":"none";$("uses").style.display=play?"":"none";$("prg").style.display=play?"":"none";$("stepcard").style.display=play?"none":"";$("logicd").style.display=play?"":"none";
+if(play){buildOps();$("logic").innerHTML=P.proof.map(s=>`<li>${s}</li>`).join("");usesBar();update()}else{W.k=0;renderRead()}}
 function renderRead(){const n=W.k;$("steps").innerHTML=P.proof.map((s,i)=>`<li class="st ${i<n?"on":""}" style="${i<n?"":"display:none"}">${s}</li>`).join("");
-let a=P.link?`<p class="sub">${P.note}<br><a href="${P.link[1]}" target="_blank" rel="noopener">${P.link[0]}</a></p>`:"";
+const a=P.link?`<p class="sub">${P.note}<br><a href="${P.link[1]}" target="_blank" rel="noopener">${P.link[0]}</a></p>`:"";
 $("after").innerHTML=a+(n<P.proof.length?`<div class="row"><button class="p" id="rn">Show next step</button><button id="ra">Show all</button></div>`:`<p><b>Proved.</b></p>`);$("msg").textContent="Interactive figure for this proposition is coming. For now, read the proof one step at a time.";
 if(n>=P.proof.length&&!prog.includes(P.id))markDone()}
-function markDone(){prog.push(P.id);try{localStorage.setItem("euclid3",JSON.stringify(prog))}catch(e){}}
-function toolbar(){const names={line:"Line",compass:"Compass",extend:"Extend"};$("tools").innerHTML=P.tools.map(t=>`<button data-t="${t}" class="${W.tool===t?"on":""}">${names[t]}</button>`).join("")+(P.macro?`<button class="p" id="use">${P.macro.label}</button>`:"")}
+function markDone(){if(!prog.includes(P.id))prog.push(P.id);try{localStorage.setItem("euclid4",JSON.stringify(prog))}catch(e){}}
+function usesBar(){const ids=[...new Set(P.ops.filter(o=>o[0]==="use").map(o=>o[1]))];$("uses").innerHTML=P.ops.map((o,i)=>o[0]==="use"?`<button class="${prog.includes(o[1])?"p":""}" data-use="${i}" ${prog.includes(o[1])?"":"disabled"}>Use Proposition ${o[1]}</button>`+(prog.includes(o[1])?"":`<button class="chip" data-go="${o[1]}">Do Proposition ${o[1]} first</button>`):"").join("")+(ids.length?'<span class="sub">You can also do these steps by hand.</span>':"")}
 function say(t){$("msg").textContent=t}
-const grey=n=>(P.excl||[]).some(g=>g.includes(n)&&g.filter(m=>m!==n).some(m=>[...W.segs].some(k=>k.includes(m))));
-const names=()=>Object.keys(W.pts);
-function circObj(c,p){let o=W.circs.find(x=>x.c===c&&x.p===p);if(!o){o={c,p,r:dist(W.pts[c],W.pts[p]),cov:new Uint8Array(360),done:false};W.circs.push(o)}return o}
-function resolve(){for(const r of P.reveal||[]){if(W.pts[r.n])continue;const[o1,o2]=r.of;let pt=null;
-if(o2.startsWith("ray:")){const[c,p]=o1.split(">"),cc=W.circs.find(x=>x.c===c&&x.p===p&&x.done),[ro,rt]=o2.slice(4).split(">");if(cc&&W.rays.some(x=>x[0]===ro&&x[1]===rt))pt=icr(W.pts[c],cc.r,W.pts[ro],W.pts[rt])}
-else{const cs=r.of.map(k=>{const[c,p]=k.split(">");return W.circs.find(x=>x.c===c&&x.p===p&&x.done)});if(cs[0]&&cs[1]){const q=icc(W.pts[cs[0].c],cs[0].r,W.pts[cs[1].c],cs[1].r).sort((a,b)=>a[1]-b[1]);pt=r.pick==="up"?q[0]:q[1]}}
-if(pt)W.pts[r.n]=pt}}
+/* ---- geometry state ---- */
+const ptsOk=(...n)=>n.every(x=>W.pts[x]);
+const circ=k=>{const[c,p]=k.split(">");return W.circs.find(x=>x.c===c&&x.p===p)};
+const circDone=k=>{const c=circ(k);return!!(c&&c.done)};
+const hasRay=(o,t)=>W.rays.some(r=>r[0]===o&&r[1]===t)||W.segs.has(sk(o,t));
+function ready(op){if(op.g&&W.chosen&&W.chosen!==op.g)return false;switch(op.t){
+case"line":return ptsOk(op.a,op.b)&&(!op.pv||W.circs.some(c=>c.c===op.a&&c.done)||W.circs.some(c=>c.c===op.b&&c.done));
+case"circ":return ptsOk(op.c,op.p)&&!OPS.some(x=>x.t==="line"&&sk(x.a,x.b)===sk(op.c,op.p)&&!W.done.has(x.i));
+case"pt":return circDone(op.c1)&&circDone(op.c2);
+case"ptr":{const[o,t]=op.r.split(">"),ne=OPS.some(x=>x.t==="ext"&&x.o===o&&x.tt===t);return circDone(op.c)&&(ne?hasRay(o,t):ptsOk(o,t))}
+case"pt2":return circDone(op.c)&&W.segs.has(sk(op.l1,op.l2));
+case"ptl":return ptsOk(op.o,op.tt,op.a,op.b)&&W.segs.has(sk(op.o,op.tt));
+case"ext":return W.segs.has(sk(op.o,op.tt));
+case"tri":return ptsOk(op.a,op.b,op.c)&&circDone(op.c1)&&circDone(op.c2);
+case"place":return !op.on||ptsOk(op.on[0],op.on[1])}return false}
+const auto=op=>["pt","ptr","pt2","ptl"].includes(op.t);
+function resolve(){let ch=true;while(ch){ch=false;for(const op of OPS){if(W.done.has(op.i)||!auto(op)||!ready(op))continue;let r=null;
+if(op.t==="pt"){const a=circ(op.c1),b=circ(op.c2),q=icc(W.pts[a.c],a.r,W.pts[b.c],b.r);if(q&&!isNaN(q[0][0])){q.sort((x,y)=>x[1]-y[1]);const pk=op.pick||"up";r=pk==="up"?q[0]:pk==="down"?q[1]:(pk.startsWith("away:")?(dist(q[0],W.pts[pk.slice(5)])>dist(q[1],W.pts[pk.slice(5)])?q[0]:q[1]):q[0])}if(r){W.pts[op.n]=r;hideCirc(op.c1,op.c2)}}
+else if(op.t==="ptr"){const c=circ(op.c),[o,t]=op.r.split(">");r=icr(W.pts[c.c],c.r,W.pts[o],W.pts[t]);if(r){W.pts[op.n]=r;hideCirc(op.c)}}
+else if(op.t==="pt2"){const c=circ(op.c),q=icl(W.pts[c.c],c.r,W.pts[op.l1],W.pts[op.l2]);if(q){q.sort((x,y)=>x[0]-y[0]);W.pts[op.n1]=q[0];W.pts[op.n2]=q[1];r=q}}
+else if(op.t==="ptl"){r=irs(W.pts[op.o],W.pts[op.tt],W.pts[op.a],W.pts[op.b]);if(r)W.pts[op.n]=r}
+if(r){W.done.add(op.i);ch=true;W.flash=op.n||op.n1}}}}
+function hideCirc(...ks){for(const k of ks){if(OPS.some(x=>x.t==="circ"&&x.vanish&&x.c+">"+x.p===k)){const c=circ(k);if(c)c.hide=true}}}
+function finish(op){W.done.add(op.i);if(op.t==="line"){W.segs.add(sk(op.a,op.b));if(op.g)W.chosen=op.g}
+if(op.t==="ext")W.rays.push([op.o,op.tt]);
+if(op.t==="tri"){W.segs.add(sk(op.a,op.c));W.segs.add(sk(op.b,op.c));for(const k of[op.c1,op.c2]){const c=circ(k);if(c)c.hide=true}}
+resolve()}
+function complete(){if(!OPS.filter(o=>!o.g).every(o=>W.done.has(o.i)))return false;const gs=[...new Set(OPS.filter(o=>o.g).map(o=>o.g))];return!gs.length||gs.some(g=>OPS.filter(o=>o.g===g).every(o=>W.done.has(o.i)))}
+const greyPts=()=>{const s=new Set();if(W.chosen)OPS.filter(o=>o.t==="pt"&&o.g&&o.g!==W.chosen).forEach(o=>s.add(o.n));return s};
+function nextOp(){return OPS.find(o=>!W.done.has(o.i)&&!auto(o)&&o.t!=="use"&&ready(o)&&!(o.t==="line"&&o.pv&&false))}
+/* ---- drawing ---- */
+const vbs=()=>W.vb;
 function arcD(c){const o=W.pts[c.c];let d="",pr=false;for(let k=0;k<360;k++){if(c.cov[k]){const a=k*Math.PI/180;d+=(pr?"L":"M")+(o[0]+c.r*Math.cos(a)).toFixed(1)+" "+(o[1]+c.r*Math.sin(a)).toFixed(1);pr=true}else pr=false}return d}
-const pos=id=>W.drag&&W.drag.mode==="comp"&&W.drag.p===id?W.drag.cur:W.pts[id];
 const hc=(t,k)=>W.hl&&W.hl[t]&&W.hl[t].includes(k)?W.hl.cls:"";
-function draw(){let h="";const hide=(W.hl&&W.hl.hide)||[];
-for(const c of W.circs)h+=`<path class="arc ${hc("c",c.c+">"+c.p)}" d="${arcD(c)}"/>`;
-for(const[o,t]of W.rays){if((P.hiddenRays||[]).some(r=>r[0]===o&&r[1]===t))continue;const a=W.pts[o],b=W.pts[t],L=dist(a,b),u=[(b[0]-a[0])/L,(b[1]-a[1])/L];h+=`<line class="seg ray ${hc("r",o+">"+t)}" x1="${b[0]}" y1="${b[1]}" x2="${b[0]+u[0]*900}" y2="${b[1]+u[1]*900}"/>`}
-if(P.tri&&W.pts.D&&!W.triSolid)for(const k of["AD","BD"]){const a=W.pts[k[0]],b=W.pts[k[1]];h+=`<line class="seg dot" x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}"/>`}
-for(const k of W.segs){if(hide.includes(k))continue;const a=pos(k[0]),b=pos(k[1]);h+=`<line class="seg ${hc("s",k)} ${W.bold.has(k)?"bold":""}" x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}"/>`;if(P.segLabel&&P.segLabel[k])h+=`<text class="lab" x="${(a[0]+b[0])/2}" y="${(a[1]+b[1])/2-12}" text-anchor="middle">${P.segLabel[k]}</text>`}
-const d=W.drag;if(d){const a=d.mode==="comp"?W.pts[d.c]:W.pts[d.p];h+=`<line class="seg ${d.mode==="comp"?"h1":"dot"}" x1="${a[0]}" y1="${a[1]}" x2="${d.cur[0]}" y2="${d.cur[1]}"/>`}
-for(const id of names()){const p=pos(id),g=grey(id),nl=(P.noLab||[]).includes(id);h+=`<circle class="pt ${g?"grey":""} ${nl?"sm":""} ${P.reveal&&P.reveal.some(r=>r.n===id)?"new":""}" cx="${p[0]}" cy="${p[1]}" r="9"/>`+(nl?"":`<text class="lab ${g?"grey":""}" x="${p[0]+12}" y="${p[1]-12}">${id}</text>`)}
-if(W.cap)h+=`<text class="tag" x="320" y="410" text-anchor="middle">${W.cap}</text>`;
-svg.innerHTML=h;steps()}
-function steps(){$("steps").innerHTML=P.steps.map(s=>`<li class="st ${s[1](W)?"on":""}">${s[0]}</li>`).join("")}
-function addSeg(a,b,how){const k=sk(a,b);if(has(W,k))return say("That line is already drawn.");
-if(how==="line"&&!P.lineOK.includes(k))return say(P.allowSeg.includes(k)?"Make that line by sliding the first line along the circles, not by drawing it.":"That line isn’t part of this construction, so it disappears.");
-if(!P.allowSeg.includes(k))return say("That line isn’t part of this construction, so it disappears.");
-W.segs.add(k);say(how==="pivot"?"Good: the line slid along the circle and stayed.":"Line added.");resolve()}
-function centres(p){const r=[];for(const k of W.segs)if(k.includes(p))r.push(k.replace(p,""));for(const[o,t]of W.rays){const a=W.pts[o],b=W.pts[t],q=W.pts[p],u=[b[0]-a[0],b[1]-a[1]],v=[q[0]-a[0],q[1]-a[1]];if(Math.abs(u[0]*v[1]-u[1]*v[0])/Math.hypot(...u)<2&&u[0]*v[0]+u[1]*v[1]>0)r.push(o)}return r.filter(c=>P.circ.some(x=>x[0]===c&&x[1]===p))}
-function finishCirc(o){const n=o.cov.reduce((a,b)=>a+b,0);if(n>=340&&!o.done){o.cov.fill(1);o.done=true;resolve()}}
-function check(){if(W.won||!P.goal(W))return;W.won=true;if(P.id===3){W.segs.add("AE");W.bold.add("AE")}run()}
-async function run(){const ph=P.play(W);for(const p of ph){W.hl={c:p.c||[],s:p.s||[],r:p.r||[],hide:p.hide||[],cls:p.cls};say(p.txt);draw();await sleep(2500)}W.hl=null;W.cap=P.prove(W);draw();if(!prog.includes(P.id))markDone();fx("Proved!");say(P.winTxt);$("after").innerHTML=`<p><b>${P.winTxt}</b></p>`}
-async function useMacro(){if(W.busy)return;if(P.macro.id===1)return useProp1();return useProp2()}
-async function useProp1(){if(W.pts.D&&W.triSolid)return;if(!has(W,"AB"))return say("First draw the line AB so I know where to build the triangle.");W.busy=true;say("Proposition 1 unfolding on AB…");
-for(const[x,y]of[["A","B"],["B","A"]]){const c=circObj(x,y);for(let k=0;k<360;k+=FAST?360:12){for(let j=k;j<Math.min(k+12,360);j++)c.cov[j]=1;draw();await sleep(14)}c.cov.fill(1);c.done=true;draw();await sleep(250)}
-resolve();draw();await sleep(500);collapse();W.busy=false}
-function collapse(){if(!W.pts.D||W.triSolid)return;W.circs=W.circs.filter(c=>!(c.c+">"+c.p==="A>B"||c.c+">"+c.p==="B>A"));W.segs.add("AD");W.segs.add("BD");W.triSolid=true;fx("Prop 1");say("The triangle is solid now. Next, extend DB beyond B and DA beyond A.");draw()}
-async function useProp2(){if(W.pts.D)return;W.busy=true;say("Proposition 2 moving line C to A…");const l=dist(W.pts.P,W.pts.Q),a=-40*Math.PI/180;fx("Prop 2");await sleep(900);W.pts.D=[W.pts.A[0]+l*Math.cos(a),W.pts.A[1]+l*Math.sin(a)];W.segs.add("AD");W.busy=false;say("AD is now equal to C. Hold D and sweep it round A.");draw()}
-const inTri=(p,a,b,c)=>{const s=(p1,p2,p3)=>(p1[0]-p3[0])*(p2[1]-p3[1])-(p2[0]-p3[0])*(p1[1]-p3[1]),d1=s(p,a,b),d2=s(p,b,c),d3=s(p,c,a);return!((d1<0||d2<0||d3<0)&&(d1>0||d2>0||d3>0))};
-/* ---- pointer layer ---- */
-function xy(e){const r=svg.getBoundingClientRect();return[(e.clientX-r.left)*640/r.width,(e.clientY-r.top)*420/r.height]}
-function near(p,skip){let b=null,bd=26;for(const id of names()){if(id===skip||grey(id))continue;const d=dist(W.pts[id],p);if(d<bd){bd=d;b=id}}return b}
-svg.addEventListener("pointerdown",e=>{if(W.won||W.busy||W.hl)return;const p=xy(e),id=near(p);
-if(!id){if(P.tri&&W.pts.D&&!W.triSolid&&inTri(p,W.pts.A,W.pts.B,W.pts.D)){collapse()}return}
-svg.setPointerCapture(e.pointerId);if(P.auto)W.tool=has(W,"AB")?"compass":"line";
-if(W.tool==="compass"){const c=centres(id)[0];if(!c){say("The compass needs a centre. Draw or extend a line from the centre to this point first.");return}const a=Math.atan2(W.pts[id][1]-W.pts[c][1],W.pts[id][0]-W.pts[c][0]);W.drag={mode:"comp",p:id,c,prev:a,cur:W.pts[id],o:circObj(c,id)};say("Sweep the point all the way round. The line moves along the circle.")}
-else W.drag={mode:W.tool,p:id,cur:p};draw()});
-svg.addEventListener("pointermove",e=>{const d=W.drag;if(!d)return;const p=xy(e);if(d.mode!=="comp")d.cur=p;else{const o=W.pts[d.c],a=Math.atan2(p[1]-o[1],p[0]-o[0]);let dl=a-d.prev;while(dl>Math.PI)dl-=2*Math.PI;while(dl<-Math.PI)dl+=2*Math.PI;const n=Math.ceil(Math.abs(dl)*180/Math.PI);for(let i=0;i<=n;i++){const t=d.prev+dl*(n?i/n:0);d.o.cov[Math.floor(((t*180/Math.PI)%360+360)%360)]=1}d.prev=a;d.cur=[o[0]+d.o.r*Math.cos(a),o[1]+d.o.r*Math.sin(a)]}draw()});
-svg.addEventListener("pointerup",e=>{const d=W.drag;if(!d)return;W.drag=null;const p=xy(e);
-if(d.mode==="comp"){finishCirc(d.o);const q=near(p,d.p);if(q&&q!==d.c&&d.o.done&&Math.abs(dist(W.pts[d.c],W.pts[q])-d.o.r)<8)addSeg(d.c,q,"pivot");else say(d.o.done?"Circle done.":"Keep going all the way round.")}
-else if(d.mode==="line"){const q=near(p,d.p);if(q)addSeg(d.p,q,"line");else say("Drag from one point to another.")}
-else{const o=P.rays.find(r=>r[1]===d.p&&has(W,sk(r[0],r[1])));if(o&&!W.rays.some(r=>r[0]===o[0]&&r[1]===o[1])){const a=W.pts[o[0]],b=W.pts[o[1]],u=[b[0]-a[0],b[1]-a[1]],v=[p[0]-b[0],p[1]-b[1]],dot=(u[0]*v[0]+u[1]*v[1])/(Math.hypot(...u)*Math.hypot(...v)||1);if(Math.hypot(...v)>40&&dot>.9){W.rays.push(o);say("Line extended.");resolve()}else say("Pull straight outward along the line.")}else say("Extend a line from the end of a drawn segment, away from the triangle’s top point.")}
-draw();check()});
+function pos(id){return W.pts[id]}
+function draw(){let h="";const hide=(W.hl&&W.hl.hide)||[],gp=greyPts(),sc=W.vb[2]/640;
+for(const c of W.circs){const k=c.c+">"+c.p;if(c.hide&&!hc("c",k))continue;h+=`<path class="arc ${hc("c",k)}" d="${arcD(c)}"/>`}
+for(const[o,t]of W.rays){const a=W.pts[o],b=W.pts[t],L=dist(a,b),u=[(b[0]-a[0])/L,(b[1]-a[1])/L];h+=`<line class="seg ray ${hc("r",o+">"+t)}" x1="${b[0]}" y1="${b[1]}" x2="${b[0]+u[0]*2000}" y2="${b[1]+u[1]*2000}"/>`}
+if(W.flash&&W.flashTri){const[a,b,c]=W.flashTri.map(n=>W.pts[n]);h+=`<polygon points="${a} ${b} ${c}" fill="var(--c2)" opacity=".25"/>`}
+for(const k of W.segs){if(hide.includes(k))continue;const a=pos(k[0]),b=pos(k[1]);if(!a||!b)continue;h+=`<line class="seg ${hc("s",k)} ${W.bold.has(k)?"bold":""}" x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}"/>`;if(P.segLabel&&P.segLabel[k])h+=`<text class="lab" x="${(a[0]+b[0])/2}" y="${(a[1]+b[1])/2-12}" text-anchor="middle">${P.segLabel[k]}</text>`}
+const A=W.anim||W.drag;if(A&&A.line){const[a,b]=A.line;const p=W.pts[a]||a,q=W.pts[b]||b;h+=`<line class="seg ${A.cls||"dot"}" x1="${p[0]}" y1="${p[1]}" x2="${q[0]}" y2="${q[1]}"/>`}
+if(W.hl&&W.hl.ang)for(const[v,p,q]of W.hl.ang){const V=W.pts[v],a1=Math.atan2(W.pts[p][1]-V[1],W.pts[p][0]-V[0]),a2=Math.atan2(W.pts[q][1]-V[1],W.pts[q][0]-V[0]),r=34,sw=((a2-a1+6.2832)%6.2832)<3.1416?1:0;h+=`<path class="angarc" d="M${V[0]+r*Math.cos(a1)} ${V[1]+r*Math.sin(a1)} A${r} ${r} 0 0 ${sw} ${V[0]+r*Math.cos(a2)} ${V[1]+r*Math.sin(a2)}"/>`}
+for(const id in W.pts){const p=W.pts[id],g=gp.has(id),nl=(P.noLab||[]).includes(id),big=id===W.flash;h+=`<circle class="pt ${g?"grey":""} ${nl?"sm":""} ${/[a-z]/.test(id)?"sm":""} ${P.ops.some(o=>o[1]===id&&["pt","ptr","pt2","ptl"].includes(o[0]))?"new":""}" cx="${p[0]}" cy="${p[1]}" r="${(big?13:9)*sc}"/>`+(nl?"":`<text class="lab ${g?"grey":""}" style="font-size:${18*sc}px" x="${p[0]+12*sc}" y="${p[1]-12*sc}">${id}</text>`)}
+if(!W.busy&&!W.won&&P.kind==="play"){const n=nextOp();if(n){const hs=n.t==="line"?[n.a,n.b]:n.t==="circ"?[n.p]:n.t==="ext"?[n.tt]:[];for(const id of hs)if(W.pts[id])h+=`<circle class="pulse" cx="${W.pts[id][0]}" cy="${W.pts[id][1]}" r="10"/>`;
+if(n.t==="place"){const q=placePos(n,null);if(q)h+=`<circle class="pulse" cx="${q[0]}" cy="${q[1]}" r="10"/>`}
+if(n.t==="tri"){const c=[(W.pts[n.a][0]+W.pts[n.b][0]+W.pts[n.c][0])/3,(W.pts[n.a][1]+W.pts[n.b][1]+W.pts[n.c][1])/3];h+=`<circle class="pulse" cx="${c[0]}" cy="${c[1]}" r="10"/>`}}}
+if(W.cursor)h+=`<text class="cursor" style="font-size:${30*sc}px" x="${W.cursor[0]-8*sc}" y="${W.cursor[1]+22*sc}">☝️</text>`;
+if(W.cap)h+=`<text class="tag" style="font-size:${20*sc}px" x="${W.vb[0]+W.vb[2]/2}" y="${W.vb[1]+W.vb[3]-10*sc}" text-anchor="middle">${W.cap}</text>`;
+svg.innerHTML=h;progress()}
+function progress(){const need=OPS.filter(o=>!o.g&&!auto(o)||o.g).length,d=OPS.filter(o=>W.done.has(o.i)&&!auto(o)).length;$("prg").textContent=W.won?"Done!":(nextOp()?"Next: "+describe(nextOp()):"Keep going…")}
+function describe(o){return o.t==="line"?(o.pv?`slide the line along its circle to ${o.b}`:`drag ${o.a} to ${o.b}`):o.t==="circ"?`sweep ${o.p} all the way round ${o.c}`:o.t==="ext"?`pull ${o.tt} away from ${o.o}`:o.t==="tri"?"tap the dotted triangle":o.t==="place"?`tap where you want ${o.n}`:""}
+function update(){resolve();draw();usesBar()}
+/* ---- view: zoom, pan, fit ---- */
+function setVB(v){W.vb=v;svg.setAttribute("viewBox",v.map(x=>+x.toFixed(2)).join(" "))}
+function tweenVB(to){if(FAST||!window.requestAnimationFrame)return setVB(to);const from=W.vb.slice();let i=0;(function s(){i++;const t=i/14,k=t*t*(3-2*t);setVB(from.map((x,j)=>x+(to[j]-x)*k));if(i<14)requestAnimationFrame(s)})()}
+function fit(){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;const add=(x,y)=>{x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y)};for(const k in W.pts)add(...W.pts[k]);for(const c of W.circs)if(!c.hide&&c.cov.some(v=>v)){const o=W.pts[c.c];add(o[0]-c.r,o[1]-c.r);add(o[0]+c.r,o[1]+c.r)}
+let w=x1-x0+90,h=y1-y0+90;const k=Math.max(w/640,h/420,.4);w=k*640;h=k*420;tweenVB([(x0+x1)/2-w/2,(y0+y1)/2-h/2,w,h])}
+function zoom(f,cx,cy){const v=W.vb,w=v[2]*f,h=v[3]*f;if(w<80||w>6000)return;const x=cx===undefined?v[0]+v[2]/2:cx,y=cy===undefined?v[1]+v[3]/2:cy;setVB([x-(x-v[0])*f,y-(y-v[1])*f,w,h]);draw()}
+/* ---- user gestures ---- */
+function xy(e){const r=svg.getBoundingClientRect(),v=W.vb;return[v[0]+(e.clientX-r.left)*v[2]/r.width,v[1]+(e.clientY-r.top)*v[3]/r.height]}
+function near(p,skip){let b=null,bd=26*W.vb[2]/640;const gp=greyPts();for(const id in W.pts){if(id===skip||gp.has(id))continue;const d=dist(W.pts[id],p);if(d<bd){bd=d;b=id}}return b}
+function placePos(op,tap){if(op.on){const A=W.pts[op.on[0]],B=W.pts[op.on[1]];if(!A||!B)return null;let s=op.pt===undefined?.5:op.pt;if(tap){const d=[B[0]-A[0],B[1]-A[1]];s=((tap[0]-A[0])*d[0]+(tap[1]-A[1])*d[1])/(d[0]*d[0]+d[1]*d[1]);s=Math.max(.12,Math.min(.88,s))}return[A[0]+s*(B[0]-A[0]),A[1]+s*(B[1]-A[1])]}return tap?tap.slice():op.rec}
+function placeOK(op,q){if(!op.free||!op.away)return true;const a=W.pts[op.line[0]],b=W.pts[op.line[1]],s=p=>(b[0]-a[0])*(p[1]-a[1])-(b[1]-a[1])*(p[0]-a[0]);return s(q)*s(W.pts[op.away])<0}
+function pending(f){return OPS.filter(o=>!W.done.has(o.i)&&!auto(o)&&ready(o)&&f(o))}
+svg.addEventListener("pointerdown",e=>{if(P.kind!=="play"||W.won||W.busy||W.hl)return;const p=xy(e),id=near(p);
+if(!id){const pl=pending(o=>o.t==="place")[0];if(pl){const q=placePos(pl,p);if(!placeOK(pl,q))return say("Tap on the other side of the line.");W.pts[pl.n]=q;finish(pl);say("");update();check();return}
+const tr=pending(o=>o.t==="tri")[0];if(tr){const s=(p1,p2,p3)=>(p1[0]-p3[0])*(p2[1]-p3[1])-(p2[0]-p3[0])*(p1[1]-p3[1]),A=W.pts[tr.a],B=W.pts[tr.b],C=W.pts[tr.c],d1=s(p,A,B),d2=s(p,B,C),d3=s(p,C,A);if(!((d1<0||d2<0||d3<0)&&(d1>0||d2>0||d3>0))){finish(tr);fx("Prop 1");say("");update();check();return}}
+W.pan={x:e.clientX,y:e.clientY,vb:W.vb.slice()};svg.setPointerCapture(e.pointerId);return}
+svg.setPointerCapture(e.pointerId);
+let c=pending(o=>o.t==="circ"&&o.p===id)[0];if(c){const a=Math.atan2(W.pts[id][1]-W.pts[c.c][1],W.pts[id][0]-W.pts[c.c][0]);let o=circ(c.c+">"+c.p);if(!o){o={c:c.c,p:c.p,r:dist(W.pts[c.c],W.pts[c.p]),cov:new Uint8Array(360),done:false};W.circs.push(o)}W.drag={mode:"comp",p:id,c:c.c,prev:a,cur:W.pts[id],o,op:c,line:[c.c,"cur"],cls:"h1"};say("");draw();return}
+const pv=pending(o=>o.t==="line"&&o.pv).find(o=>{const cc=o.a;return W.circs.some(x=>x.c===cc&&x.p===id&&x.done)||W.circs.some(x=>x.c===o.b&&x.p===id&&x.done)});if(pv){const ctr=W.circs.some(x=>x.c===pv.a&&x.p===id&&x.done)?pv.a:pv.b,a=Math.atan2(W.pts[id][1]-W.pts[ctr][1],W.pts[id][0]-W.pts[ctr][0]),o=circ(ctr+">"+id);W.drag={mode:"comp",p:id,c:ctr,prev:a,cur:W.pts[id],o,line:[ctr,"cur"],cls:"h1"};say("");draw();return}
+const ex=pending(o=>o.t==="ext"&&o.tt===id)[0];if(ex){W.drag={mode:"ext",p:id,op:ex,cur:p};draw();return}
+const ln=pending(o=>o.t==="line"&&!o.pv&&(o.a===id||o.b===id))[0];if(ln){W.drag={mode:"line",p:id,cur:p,line:[id,"cur"],cls:"dot",op:ln};draw();return}
+say("That isn’t needed right now. Look for the pulsing dot.");draw()});
+svg.addEventListener("pointermove",e=>{if(W.pan){const r=svg.getBoundingClientRect(),v=W.pan.vb;setVB([v[0]-(e.clientX-W.pan.x)*v[2]/r.width,v[1]-(e.clientY-W.pan.y)*v[3]/r.height,v[2],v[3]]);return}
+const d=W.drag;if(!d)return;const p=xy(e);if(d.mode==="line"||d.mode==="ext"){d.cur=p;if(d.line)W.pts.cur=p}
+else{const o=W.pts[d.c],a=Math.atan2(p[1]-o[1],p[0]-o[0]);let dl=a-d.prev;while(dl>Math.PI)dl-=2*Math.PI;while(dl<-Math.PI)dl+=2*Math.PI;const n=Math.ceil(Math.abs(dl)*180/Math.PI);for(let i=0;i<=n;i++){const t=d.prev+dl*(n?i/n:0);d.o.cov[Math.floor(((t*180/Math.PI)%360+360)%360)]=1}d.prev=a;d.cur=[o[0]+d.o.r*Math.cos(a),o[1]+d.o.r*Math.sin(a)];W.pts.cur=d.cur}
+draw()});
+svg.addEventListener("pointerup",e=>{if(W.pan){W.pan=null;return}const d=W.drag;if(!d)return;W.drag=null;delete W.pts.cur;const p=xy(e);
+if(d.mode==="comp"){const o=d.o,n=o.cov.reduce((a,b)=>a+b,0);if(d.op&&n>=340&&!o.done){o.cov.fill(1);o.done=true;finish(d.op);say("Circle done.")}
+else if(!d.op){const q=near(p,d.p),pv=q&&pending(x=>x.t==="line"&&x.pv&&sk(x.a,x.b)===sk(d.c,q))[0];if(pv&&Math.abs(dist(W.pts[d.c],W.pts[q])-o.r)<10*W.vb[2]/640){finish(pv);say("Good: the line slid along the circle and stayed.")}else say("Slide the line until it lands on one of the two crossing points.")}else say("Keep going all the way round.")}
+else if(d.mode==="line"){const q=near(p,d.p);if(q&&sk(q,d.p)===sk(d.op.a,d.op.b)){finish(d.op);say("")}else say("Drag all the way to the other dot.")}
+else{const op=d.op,a=W.pts[op.o],b=W.pts[op.tt],u=[b[0]-a[0],b[1]-a[1]],v=[p[0]-b[0],p[1]-b[1]],dot=(u[0]*v[0]+u[1]*v[1])/(Math.hypot(...u)*Math.hypot(...v)||1);if(Math.hypot(...v)>40*W.vb[2]/640&&dot>.9){finish(op);say("")}else say("Pull straight away along the line.")}
+update();check()});
+svg.addEventListener("wheel",e=>{if(P.kind!=="play")return;e.preventDefault();const p=xy(e);zoom(e.deltaY>0?1.15:1/1.15,p[0],p[1])},{passive:false});
+function check(){if(W.won||W.busy||!complete())return;W.won=true;win()}
+/* ---- win replay ---- */
+async function win(){if(P.finalSeg)for(const k of P.finalSeg)W.segs.add(k);for(const k of P.bold||[])W.bold.add(k);const ph=P.phases(W);
+for(const p of ph){if(W.stop)break;W.hl={c:p.c||[],s:p.s||[],r:p.r||[],hide:p.hide||[],ang:p.ang||[],cls:p.cls};say(p.txt);draw();await sleep(2600)}W.hl=null;draw();markDone();fx("Proved!");say("");$("done").innerHTML=`<div class="card"><b>${P.winTxt}</b><div class="row"><button id="again">Watch the proof again</button></div></div>`;usesBar()}
+/* ---- Solve it for me / Use buttons: animated by the same recipe ---- */
+function setCursor(p){W.cursor=p?p.slice():null}
+async function glide(to,steps=14){if(!W.cursor){setCursor(to);draw();return}const f=W.cursor.slice();for(let i=1;i<=steps&&!W.stop;i++){setCursor([f[0]+(to[0]-f[0])*i/steps,f[1]+(to[1]-f[1])*i/steps]);draw();await sleep(22)}}
+async function act(op){const sc=W.vb[2]/640;
+if(op.t==="place"){const q=placePos(op,null);await glide(q);W.pts[op.n]=q;finish(op);draw();await sleep(300)}
+else if(op.t==="line"){if(op.pv){const ctr=op.a,c0=W.circs.find(x=>x.c===ctr&&x.done)||W.circs.find(x=>x.c===op.b&&x.done),ctr2=c0.c,p0=W.pts[c0.p],a0=Math.atan2(p0[1]-W.pts[ctr2][1],p0[0]-W.pts[ctr2][0]),tgt=sk(op.a,op.b).replace(ctr2,""),tg=op.a===ctr2?op.b:op.a,a1=Math.atan2(W.pts[tg][1]-W.pts[ctr2][1],W.pts[tg][0]-W.pts[ctr2][0]);let dl=a1-a0;while(dl>Math.PI)dl-=2*Math.PI;while(dl<-Math.PI)dl+=2*Math.PI;await glide(p0,8);for(let i=0;i<=24&&!W.stop;i++){const t=a0+dl*i/24,q=[W.pts[ctr2][0]+c0.r*Math.cos(t),W.pts[ctr2][1]+c0.r*Math.sin(t)];W.pts.cur=q;W.anim={line:[ctr2,"cur"],cls:"h1"};setCursor(q);draw();await sleep(30)}delete W.pts.cur;W.anim=null}
+else{await glide(W.pts[op.a]);W.pts.cur=W.pts[op.a].slice();W.anim={line:[op.a,"cur"],cls:"dot"};const f=W.pts[op.a],t=W.pts[op.b];for(let i=1;i<=16&&!W.stop;i++){W.pts.cur=[f[0]+(t[0]-f[0])*i/16,f[1]+(t[1]-f[1])*i/16];setCursor(W.pts.cur);draw();await sleep(24)}delete W.pts.cur;W.anim=null}finish(op);draw();await sleep(300)}
+else if(op.t==="circ"){const c=W.pts[op.c],p0=W.pts[op.p],a0=Math.atan2(p0[1]-c[1],p0[0]-c[0]);let o=circ(op.c+">"+op.p);if(!o){o={c:op.c,p:op.p,r:dist(c,p0),cov:new Uint8Array(360),done:false};W.circs.push(o)}await glide(p0);const N=FAST?1:60;for(let i=0;i<=N&&!W.stop;i++){const t=a0+2*Math.PI*i/N,q=[c[0]+o.r*Math.cos(t),c[1]+o.r*Math.sin(t)];for(let d=0;d<=6;d++)o.cov[Math.floor((((t*180/Math.PI)-(FAST?0:6)+(FAST?0:d))%360+360)%360)]=1;W.pts.cur=q;W.anim={line:[op.c,"cur"],cls:"h1"};setCursor(q);draw();await sleep(22)}o.cov.fill(1);o.done=true;delete W.pts.cur;W.anim=null;finish(op);W.hl={c:[op.c+">"+op.p],cls:"h2"};draw();await sleep(450);W.hl=null;draw()}
+else if(op.t==="ext"){const a=W.pts[op.o],b=W.pts[op.tt],L=dist(a,b),u=[(b[0]-a[0])/L,(b[1]-a[1])/L];await glide(b);await glide([b[0]+u[0]*90*sc,b[1]+u[1]*90*sc]);finish(op);draw();await sleep(300)}
+else if(op.t==="tri"){W.flashTri=[op.a,op.b,op.c];W.flash=op.c;draw();await sleep(700);W.flashTri=null;finish(op);fx("Prop 1");draw();await sleep(400)}
+resolve();if(W.flash){draw();await sleep(350);W.flash=null}if(!FAST)fit();draw()}
+async function runOps(tag){if(W.busy)return;W.busy=true;W.stop=false;$("stop").style.display="";say("Watch what the hand does, then try it yourself.");
+for(const op of OPS){if(W.stop)break;if(W.done.has(op.i)||auto(op)||(tag!==undefined&&tag!==null&&op.u!==tag))continue;if(op.g&&op.g!=="C"&&!W.chosen)continue;if(op.g&&W.chosen&&op.g!==W.chosen)continue;await act(op)}
+setCursor(null);W.busy=false;$("stop").style.display="none";resolve();draw();usesBar();if(!W.stop&&complete()&&!W.won){W.won=true;await win()}}
+async function solveAll(){if(W.busy)return;const vb=[0,0,640,420];fresh();$("done").innerHTML="";draw();await runOps(null)}
 /* ---- UI ---- */
 document.addEventListener("click",e=>{const b=e.target.closest("button,[data-node]");if(!b)return;
 if(b.dataset.r)return go(b.dataset.r);if(b.dataset.go)return go(+b.dataset.go);if(b.dataset.node)return renderMap(+b.dataset.node);
-if(b.dataset.t&&route===P.id){W.tool=b.dataset.t;toolbar();say(b.textContent+" tool selected.");return}
-if(b.id==="use")return useMacro();if(b.id==="rn"){W.k++;return renderRead()}if(b.id==="ra"){W.k=P.proof.length;return renderRead()}
+if(b.dataset.use!==undefined)return runOps(+b.dataset.use);
+if(b.id==="solve")return solveAll();if(b.id==="stop"){W.stop=true;return}if(b.id==="again"){W.won=false;return check()}
+if(b.id==="zin")return zoom(1/1.25);if(b.id==="zout")return zoom(1.25);if(b.id==="zfit")return fit();
+if(b.id==="rn"){W.k++;return renderRead()}if(b.id==="ra"){W.k=P.proof.length;return renderRead()}
 if(b.id==="prev"&&cur>0)return go(ALL[cur-1].id);if(b.id==="next"&&cur<ALL.length-1)return go(ALL[cur+1].id);
-if(b.id==="reset")return load(P.id);if(b.id==="hint"){const s=P.steps.find(s=>!s[1](W));say(s?s[2]:"You’re done.")}});
-$("stage").addEventListener("click",()=>{});
+if(b.id==="reset"){W.stop=true;return load(P.id)}});
 if(typeof NOBOOT==="undefined")go("home");
+
 </script>
 </body>
 </html>
