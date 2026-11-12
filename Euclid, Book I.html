@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Euclid’s Elements, Book I</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f5f1e8;--card:#fffdf7;--ink:#24282b;--mute:#6d7176;--line:#d8d2c3;--c1:#0072B2;--c2:#D55E00;--g:#009E73;--ok:#2f6d4f}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#14171a;--card:#1e2226;--ink:#ece8df;--mute:#9a9ea1;--line:#363b40;--c1:#56B4E9;--c2:#E69F00;--g:#2ee6a8;--ok:#6fc29a}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#14171a;--card:#1e2226;--ink:#ece8df;--mute:#9a9ea1;--line:#363b40;--c1:#56B4E9;--c2:#E69F00;--g:#2ee6a8;--ok:#6fc29a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}*{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Georgia,"Times New Roman",serif}
+main{max-width:780px;margin:0 auto;padding:14px 12px 40px}h1{font-size:25px;margin:4px 0}.sub{color:var(--mute);margin:0 0 8px;font-size:15px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 14px;margin:10px 0}
+svg{width:100%;height:auto;display:block;touch-action:none;background:var(--card);border:1px solid var(--line);border-radius:14px;user-select:none;overflow:hidden}
+#msg{min-height:2.7em;margin:8px 0}.row{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+ul{list-style:none;padding:0;margin:0}li{padding:4px 0 4px 28px;position:relative;color:var(--mute);font-size:15px}li::before{content:"○";position:absolute;left:4px}li.on{color:var(--ink)}li.on::before{content:"✔";color:var(--ok)}
+button{font:600 15px system-ui,sans-serif;padding:9px 14px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}button.p,button.on{background:var(--ok);color:#fff;border-color:var(--ok)}button:disabled{opacity:.5}
+.arc{fill:none;stroke:var(--mute);stroke-width:2;opacity:.8}.arc.h1,.seg.h1{stroke:var(--c1);stroke-width:5;opacity:1}.arc.h2,.seg.h2{stroke:var(--c2);stroke-width:5;stroke-dasharray:12 7;opacity:1}.arc.g,.seg.g{stroke:var(--g);stroke-width:7;opacity:1}
+.seg{stroke:var(--ink);stroke-width:3;stroke-linecap:round}.ray{stroke-dasharray:3 6;stroke-width:2}
+.pt{fill:var(--ink);stroke:var(--card);stroke-width:2;cursor:grab}.pt.new{fill:var(--c2);animation:pl 1s infinite}@keyframes pl{50%{r:13}}
+.lab{font:700 18px Georgia,serif;fill:var(--ink);pointer-events:none}.tag{font:700 20px Georgia,serif}
+#modal{position:fixed;inset:0;background:#0008;display:none;place-items:center;z-index:5}#modal.on{display:grid}#modal>div{background:var(--card);padding:24px;border-radius:16px;max-width:340px;text-align:center}
+.key{display:inline-block;width:34px;border-top:5px solid var(--c1);vertical-align:middle;margin:0 4px}.key.b{border-top:5px dashed var(--c2)}.key.c{border-top:7px solid var(--g)}
+</style>
+</head>
+<body>
+<main>
+<h1 id="ttl"></h1>
+<p class="sub" id="stmt"></p>
+<div class="row" id="nav"></div>
+<svg id="s" viewBox="0 0 640 420" role="img" aria-label="Construction area"></svg>
+<div class="row" id="tools"></div>
+<div id="msg"></div>
+<div class="card"><b>Your proof so far</b><ul id="steps"></ul><div id="uses"></div></div>
+<div class="row"><button id="reset">Start over</button><button id="hint">Hint</button></div>
+<p class="sub">Replay colours: <span class="key"></span>solid blue, <span class="key b"></span>dashed orange, <span class="key c"></span>thick green. Each uses a different line pattern as well as colour. Source text: <a href="https://mathcs.clarku.edu/~djoyce/java/elements/elements.html" target="_blank" rel="noopener">David Joyce’s Elements</a>.</p>
+</main>
+<div id="modal"><div><h2>Congratulations!</h2><p id="win"></p><button class="p" id="replay">Watch it again</button> <button id="next">Next proposition</button></div></div>
+<script>
+const $=id=>document.getElementById(id),svg=$("s"),FAST=typeof FASTMODE!=="undefined";
+const dist=(p,q)=>Math.hypot(p[0]-q[0],p[1]-q[1]),sleep=ms=>FAST?Promise.resolve():new Promise(r=>setTimeout(r,ms));
+/* ---- checks library ---- */
+const equalLen=(p,q,r,s,t=2)=>Math.abs(dist(p,q)-dist(r,s))<t;
+const angleAt=(a,b,c)=>{const u=[a[0]-b[0],a[1]-b[1]],v=[c[0]-b[0],c[1]-b[1]];return Math.acos((u[0]*v[0]+u[1]*v[1])/(Math.hypot(...u)*Math.hypot(...v)))*180/Math.PI};
+const parallel=(a,b,c,d,t=1.5)=>{const u=[b[0]-a[0],b[1]-a[1]],v=[d[0]-c[0],d[1]-c[1]];return Math.abs((u[0]*v[1]-u[1]*v[0])/(Math.hypot(...u)*Math.hypot(...v)))<Math.sin(t*Math.PI/180)};
+/* ---- building blocks: intersections ---- */
+function icc(p,r1,q,r2){const d=dist(p,q),a=(r1*r1-r2*r2+d*d)/(2*d),h=Math.sqrt(Math.max(r1*r1-a*a,0)),mx=p[0]+a*(q[0]-p[0])/d,my=p[1]+a*(q[1]-p[1])/d,ox=-h*(q[1]-p[1])/d,oy=h*(q[0]-p[0])/d;return[[mx+ox,my+oy],[mx-ox,my-oy]]}
+function icr(c,r,o,t){const L=dist(o,t),u=[(t[0]-o[0])/L,(t[1]-o[1])/L],w=[o[0]-c[0],o[1]-c[1]],b=u[0]*w[0]+u[1]*w[1],k=w[0]*w[0]+w[1]*w[1]-r*r,disc=b*b-k;if(disc<0)return null;const ts=[-b-Math.sqrt(disc),-b+Math.sqrt(disc)].filter(x=>x>=0);if(!ts.length)return null;const tt=Math.max(...ts);return[o[0]+u[0]*tt,o[1]+u[1]*tt]}
+/* ---- propositions as data ---- */
+const has=(W,k)=>W.segs.has(k),done=(W,k)=>W.circs.some(c=>c.c+">"+c.p===k&&c.done);
+const PROPS=[
+{id:1,t:"Construct an equilateral triangle",stmt:"On a given finite straight line to construct an equilateral triangle.",uses:[],tools:["line","compass"],
+ pts:{A:[230,230],B:[410,230]},segs0:[],lineOK:["AB"],allowSeg:["AB","AC","BC","AD","BD"],circ:[["A","B"],["B","A"]],rays:[],
+ reveal:[{n:"C",of:["A>B","B>A"],pick:"up"},{n:"D",of:["A>B","B>A"],pick:"down"}],excl:[["C","D"]],
+ goal:W=>["C","D"].some(n=>has(W,"AB")&&has(W,"A"+n)&&has(W,"B"+n)),
+ steps:[["Draw the line AB with the Line tool (Postulate 1).",W=>has(W,"AB"),"Use the Line tool: drag from A to B."],["Circle with centre A through B (Postulate 3). Use the Compass tool: lift the end B and sweep it all the way round A.",W=>done(W,"A>B"),"Compass tool: drag B around A."],["Circle with centre B through A. Lift the end A and sweep it round B.",W=>done(W,"B>A"),"Compass tool: drag A around B."],["The circles meet at C and D.",W=>!!W.pts.C,"Finish both circles."],["Move AB along the circles to a meeting point. Compass tool: drag B around A and let go on C (or D), then drag A around B and let go on the same point.",W=>W.won,"Pivot the line to the same meeting point twice."]],
+ play:W=>{const T=has(W,"AC")?"C":"D";return[{c:["A>B"],s:["AB","A"+T],cls:"h1",txt:"Circle A (solid blue): AB and A"+T+" are both radii, so they are equal."},{c:["B>A"],s:["AB","B"+T],cls:"h2",txt:"Circle B (dashed orange): BA and B"+T+" are both radii, so they are equal."},{s:["AB","A"+T,"B"+T],cls:"g",txt:"All three sides equal AB, so they equal each other (Common Notion 1): an equilateral triangle."}]},
+ prove:W=>{const T=has(W,"AC")?"C":"D",P=W.pts;return`Angles: ${angleAt(P.B,P.A,P[T]).toFixed(0)}°, ${angleAt(P.A,P.B,P[T]).toFixed(0)}°, ${angleAt(P.A,P[T],P.B).toFixed(0)}°. `},
+ winTxt:"Now we can make a triangle!"},
+{id:2,t:"Place a line equal to a given line at a point",stmt:"To place at a given point (as an extremity) a straight line equal to a given straight line.",uses:[1],tools:["line","compass","extend"],
+ pts:{A:[210,300],B:[310,300],C:[362,330]},segs0:["BC"],lineOK:["AB","AL"],allowSeg:["AB","BC","AD","BD","AL"],circ:[["B","C"],["D","G"]],rays:[["D","A"],["D","B"]],
+ reveal:[{n:"G",of:["B>C","ray:D>B"],pick:"far"},{n:"L",of:["D>G","ray:D>A"],pick:"far"}],excl:[],
+ goal:W=>!!W.pts.L&&has(W,"AL")&&equalLen(W.pts.A,W.pts.L,W.pts.B,W.pts.C),
+ steps:[["Join A to B (Line tool).",W=>has(W,"AB"),"Line tool: drag from A to B."],["Build an equilateral triangle ABD on AB. This uses Proposition 1: tap the button below.",W=>!!W.pts.D,"Tap “Use Proposition 1 on AB”."],["Extend DA beyond A and DB beyond B (Postulate 2). Use the Extend tool: drag from A away from D, then from B away from D.",W=>W.rays.length>=2,"Extend tool: pull A and B outward along the lines."],["Circle with centre B through C (Compass tool: sweep C around B). It cuts the extended line at G.",W=>done(W,"B>C"),"Compass tool: drag C around B."],["Circle with centre D through G (sweep G around D). It cuts the other extended line at L.",W=>done(W,"D>G"),"Compass tool: drag G around D."],["Join A to L. Then AL = BC.",W=>W.won,"Line tool: drag from A to L."]],
+ play:W=>[{c:["B>C"],s:["BC"],cls:"h1",txt:"Circle B (solid blue): BG and BC are radii, so BG = BC."},{c:["D>G"],r:["D>A","D>B"],cls:"h2",txt:"Circle D (dashed orange): DL and DG are radii, so DL = DG. Also DA = DB (equilateral triangle)."},{s:["AL","BC"],cls:"g",txt:"Take DA from DL and DB from DG. What is left is equal: AL = BG = BC."}],
+ prove:W=>`AL = ${dist(W.pts.A,W.pts.L).toFixed(0)}, BC = ${dist(W.pts.B,W.pts.C).toFixed(0)}. `,
+ winTxt:"Now we can copy a line to any point!"}];
+/* ---- state ---- */
+let P,W,prog=[],cur=0;try{prog=JSON.parse(localStorage.getItem("euclid2")||"[]")}catch(e){}
+const unlocked=p=>p.uses.every(u=>prog.includes(u)),sk=(a,b)=>[a,b].sort().join("");
+function load(i){cur=i;P=PROPS[i];W={pts:JSON.parse(JSON.stringify(P.pts)),segs:new Set(P.segs0),rays:[],circs:[],drag:null,hl:null,won:false,busy:false,tool:"line"};$("modal").classList.remove("on");
+$("ttl").textContent=`Book I, Proposition ${P.id}: ${P.t}`;$("stmt").textContent=P.stmt;nav();toolbar();say(P.steps[0][2]);draw()}
+function nav(){$("nav").innerHTML=PROPS.map((p,i)=>`<button data-i="${i}" class="${i===cur?"on":""}" ${unlocked(p)?"":"disabled"}>I.${p.id} ${prog.includes(p.id)?"✔":unlocked(p)?"":"🔒"}</button>`).join("")+`<button disabled>I.3 coming</button>`}
+function toolbar(){const names={line:"Line",compass:"Compass",extend:"Extend"};$("tools").innerHTML=P.tools.map(t=>`<button data-t="${t}" class="${W.tool===t?"on":""}">${names[t]}</button>`).join("")+(P.uses.includes(1)?'<button class="p" id="use">Use Proposition 1 on AB</button>':"")}
+function say(t){$("msg").textContent=t}
+function vis(n){return(P.excl||[]).every(g=>!g.includes(n)||g.filter(m=>m!==n).every(m=>![...W.segs].some(k=>k.includes(m))))}
+const names=()=>Object.keys(W.pts).filter(vis);
+function circObj(c,p){let o=W.circs.find(x=>x.c===c&&x.p===p);if(!o){o={c,p,r:dist(W.pts[c],W.pts[p]),cov:new Uint8Array(360),done:false};W.circs.push(o)}return o}
+function resolve(){for(const r of P.reveal||[]){if(W.pts[r.n])continue;const[o1,o2]=r.of;let pt=null;
+if(o2.startsWith("ray:")){const[c,p]=o1.split(">"),cc=W.circs.find(x=>x.c===c&&x.p===p&&x.done),[ro,rt]=o2.slice(4).split(">");if(cc&&W.rays.some(x=>x[0]===ro&&x[1]===rt))pt=icr(W.pts[c],cc.r,W.pts[ro],W.pts[rt])}
+else{const cs=r.of.map(k=>{const[c,p]=k.split(">");return W.circs.find(x=>x.c===c&&x.p===p&&x.done)});if(cs[0]&&cs[1]){const q=icc(W.pts[cs[0].c],cs[0].r,W.pts[cs[1].c],cs[1].r).sort((a,b)=>a[1]-b[1]);pt=r.pick==="up"?q[0]:q[1]}}
+if(pt)W.pts[r.n]=pt}}
+function arcD(c){const o=W.pts[c.c];let d="",pr=false;for(let k=0;k<360;k++){if(c.cov[k]){const a=k*Math.PI/180;d+=(pr?"L":"M")+(o[0]+c.r*Math.cos(a)).toFixed(1)+" "+(o[1]+c.r*Math.sin(a)).toFixed(1);pr=true}else pr=false}return d}
+const pos=id=>W.drag&&W.drag.mode==="comp"&&W.drag.p===id?W.drag.cur:W.pts[id];
+const hc=(t,k)=>W.hl&&W.hl[t]&&W.hl[t].includes(k)?W.hl.cls:"";
+function draw(){let h="";
+for(const c of W.circs)h+=`<path class="arc ${hc("c",c.c+">"+c.p)}" d="${arcD(c)}"/>`;
+for(const[o,t]of W.rays){const a=W.pts[o],b=W.pts[t],L=dist(a,b),u=[(b[0]-a[0])/L,(b[1]-a[1])/L];h+=`<line class="seg ray ${hc("r",o+">"+t)}" x1="${b[0]}" y1="${b[1]}" x2="${b[0]+u[0]*900}" y2="${b[1]+u[1]*900}"/>`}
+for(const k of W.segs){const a=pos(k[0]),b=pos(k[1]);h+=`<line class="seg ${hc("s",k)}" x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}"/>`}
+const d=W.drag;if(d){const a=d.mode==="comp"?W.pts[d.c]:W.pts[d.p];h+=`<line class="seg" stroke-dasharray="6 6" x1="${a[0]}" y1="${a[1]}" x2="${d.cur[0]}" y2="${d.cur[1]}"/>`}
+for(const id of names()){const p=pos(id);h+=`<circle class="pt ${P.reveal&&P.reveal.some(r=>r.n===id)?"new":""}" cx="${p[0]}" cy="${p[1]}" r="9"/><text class="lab" x="${p[0]+12}" y="${p[1]-12}">${id}</text>`}
+if(W.cap)h+=`<text class="tag" x="320" y="408" text-anchor="middle" fill="currentColor">${W.cap}</text>`;
+svg.innerHTML=h;steps()}
+function steps(){$("steps").innerHTML=P.steps.map(s=>`<li class="${s[1](W)?"on":""}">${s[0]}</li>`).join("");$("uses").innerHTML=P.uses.length?`<p class="sub">This proof uses: ${P.uses.map(u=>"Proposition "+u).join(", ")}. Tap “Use Proposition 1 on AB” to watch it unfold inside this figure.</p>`:""}
+/* ---- actions (rule checker) ---- */
+function addSeg(a,b,how){const k=sk(a,b);if(has(W,k))return say("That line is already drawn.");
+if(how==="line"&&!P.lineOK.includes(k))return say(P.allowSeg.includes(k)?"Make that line by moving the first line along the circles (Compass tool), not by drawing it.":"That line isn’t part of this construction, so it disappears.");
+if(!P.allowSeg.includes(k))return say("That line isn’t part of this construction, so it disappears. Only lines that belong to the proof stay.");
+W.segs.add(k);say(how==="pivot"?"Good: the line moved along the circle and stayed.":"Line added.");resolve()}
+function centres(p){const r=[];for(const k of W.segs)if(k.includes(p))r.push(k.replace(p,""));for(const[o,t]of W.rays){const a=W.pts[o],b=W.pts[t],q=W.pts[p],u=[b[0]-a[0],b[1]-a[1]],v=[q[0]-a[0],q[1]-a[1]];if(Math.abs(u[0]*v[1]-u[1]*v[0])/Math.hypot(...u)<2&&u[0]*v[0]+u[1]*v[1]>0)r.push(o)}return r.filter(c=>P.circ.some(x=>x[0]===c&&x[1]===p))}
+function finishCirc(o){const n=o.cov.reduce((a,b)=>a+b,0);if(n>=340&&!o.done){o.cov.fill(1);o.done=true;resolve()}}
+function check(){if(W.won||!P.goal(W))return;W.won=true;run()}
+async function run(){const ph=P.play(W);for(let i=0;i<ph.length;i++){const p=ph[i];W.hl={c:p.c||[],s:p.s||[],r:p.r||[],cls:p.cls};say(p.txt);draw();await sleep(2600)}W.hl=null;W.cap=P.prove(W);say("Proved. "+P.prove(W));draw();if(!prog.includes(P.id)){prog.push(P.id);try{localStorage.setItem("euclid2",JSON.stringify(prog))}catch(e){}}nav();$("win").textContent=P.winTxt;$("next").disabled=cur>=PROPS.length-1;$("modal").classList.add("on")}
+async function useProp1(){if(W.busy||W.pts.D)return;if(!has(W,"AB"))return say("First draw the line AB so I know where to build the triangle.");W.busy=true;say("Proposition 1 unfolding on AB…");
+for(const[x,y]of[["A","B"],["B","A"]]){const c=circObj(x,y);for(let k=0;k<360;k+=FAST?360:12){for(let j=k;j<Math.min(k+12,360);j++)c.cov[j]=1;draw();await sleep(14)}c.cov.fill(1);c.done=true;draw();await sleep(300)}
+const r=dist(W.pts.A,W.pts.B);W.pts.D=icc(W.pts.A,r,W.pts.B,r).sort((a,b)=>a[1]-b[1])[0];W.segs.add("AD");W.segs.add("BD");W.busy=false;say("D is the apex of an equilateral triangle on AB (Proposition 1). Now extend DA and DB.");resolve();draw()}
+/* ---- pointer layer ---- */
+function xy(e){const r=svg.getBoundingClientRect();return[(e.clientX-r.left)*640/r.width,(e.clientY-r.top)*420/r.height]}
+function near(p,skip){let b=null,bd=26;for(const id of names()){if(id===skip)continue;const d=dist(W.pts[id],p);if(d<bd){bd=d;b=id}}return b}
+svg.addEventListener("pointerdown",e=>{if(W.won||W.busy||W.hl)return;const p=xy(e),id=near(p);if(!id)return;svg.setPointerCapture(e.pointerId);
+if(W.tool==="compass"){const c=centres(id)[0];if(!c){say("The compass needs a centre. Draw a line (or extend one) from the centre to this point first.");return}const a=Math.atan2(W.pts[id][1]-W.pts[c][1],W.pts[id][0]-W.pts[c][0]);W.drag={mode:"comp",p:id,c,prev:a,cur:W.pts[id],o:circObj(c,id)};say("Sweep the point all the way round the centre.")}
+else W.drag={mode:W.tool,p:id,cur:p};draw()});
+svg.addEventListener("pointermove",e=>{const d=W.drag;if(!d)return;const p=xy(e);if(d.mode!=="comp")d.cur=p;else{const o=W.pts[d.c],a=Math.atan2(p[1]-o[1],p[0]-o[0]);let dl=a-d.prev;while(dl>Math.PI)dl-=2*Math.PI;while(dl<-Math.PI)dl+=2*Math.PI;const n=Math.ceil(Math.abs(dl)*180/Math.PI);for(let i=0;i<=n;i++){const t=d.prev+dl*(n?i/n:0);d.o.cov[Math.floor(((t*180/Math.PI)%360+360)%360)]=1}d.prev=a;d.cur=[o[0]+d.o.r*Math.cos(a),o[1]+d.o.r*Math.sin(a)]}draw()});
+svg.addEventListener("pointerup",e=>{const d=W.drag;if(!d)return;W.drag=null;const p=xy(e);
+if(d.mode==="comp"){finishCirc(d.o);const q=near(p,d.p);if(q&&q!==d.c&&d.o.done&&Math.abs(dist(W.pts[d.c],W.pts[q])-d.o.r)<8)addSeg(d.c,q,"pivot");else say(d.o.done?"Circle done.":"Keep going all the way round.")}
+else if(d.mode==="line"){const q=near(p,d.p);if(q)addSeg(d.p,q,"line");else say("Drag from one point to another.")}
+else{const o=P.rays.map(r=>r).find(r=>r[1]===d.p&&has(W,sk(r[0],r[1])));if(o&&!W.rays.some(r=>r[0]===o[0]&&r[1]===o[1])){const a=W.pts[o[0]],b=W.pts[o[1]],u=[b[0]-a[0],b[1]-a[1]],v=[p[0]-b[0],p[1]-b[1]],dot=(u[0]*v[0]+u[1]*v[1])/(Math.hypot(...u)*Math.hypot(...v)||1);if(Math.hypot(...v)>40&&dot>.9){W.rays.push(o);say("Line extended.");resolve()}else say("Pull straight outward along the line.")}else say("Extend a line from the end of a drawn segment, away from the triangle’s top point.")}
+draw();check()});
+/* ---- UI ---- */
+$("nav").onclick=e=>{const b=e.target.closest("[data-i]");if(b)load(+b.dataset.i)};
+$("tools").onclick=e=>{const b=e.target.closest("[data-t]");if(b){W.tool=b.dataset.t;toolbar();say(b.textContent+" tool selected.")}if(e.target.id==="use")useProp1()};
+$("reset").onclick=()=>load(cur);$("replay").onclick=()=>{$("modal").classList.remove("on");run()};$("next").onclick=()=>{const n=PROPS[cur+1];if(n&&unlocked(n))load(cur+1);else $("modal").classList.remove("on")};
+$("hint").onclick=()=>{const s=P.steps.find(s=>!s[1](W));say(s?s[2]:"You’re done.")};
+if(typeof NOBOOT==="undefined")load(0);
+</script>
+</body>
+</html>
