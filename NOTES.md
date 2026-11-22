@@ -17,11 +17,18 @@ This file is the single source of truth for how the project is built. Anyone pic
 
 | Mode | What the learner does | Propositions |
 |---|---|---|
-| `play` | Builds the construction | 1, 2, 3, 5, 9, 10, 11, 12, 22, 23 |
+| `play` | Builds the construction, then watches the proof play out | 1, 2, 3, 5, 6, 7, 9–17, 22, 23 |
 | `slide` | Drags one triangle onto another | 4, 8 |
-| `read` | Checklist proof only, no figure yet | 6, 7, 13–21, 24–48 (36 total) |
+| `read` | Checklist proof only, no figure yet | 18–21, 24–48 (29 total) |
 
 Features already in place: Solve it for me, One small step, zoom, double-click to colour a line, dependency map, citations.
+
+### Engine tools for figures (in `index.html`)
+- **`wrong` op** (the "pretend" move for proofs by contradiction): the learner drags a point along a set path, marked by a pulse and an arrow. Used in 6, 7 and 14.
+- **Wedges**: shaded angle sectors used to compare and add angles. A wedge can slide (`off`) or turn (`rot`). Used in 7 and 13–17.
+- **Phase keys** (the proof animation after the construction): `keep` shows only the listed points and hides construction clutter; `anim` moves things frame by frame (for example, a point snapping back, or a triangle spinning); `wedges` and `eqReset` control the angle shading and colours.
+- A line that is already drawn counts as done, so the learner is never asked to draw it twice.
+- "Watch the proof again" restarts from the figure as it was before the proof animation began.
 
 ## Design rules
 
@@ -58,4 +65,5 @@ Features already in place: Solve it for me, One small step, zoom, double-click t
 
 ## Next
 
-- Batch 1: give figures to Props 6, 7, 13, 14, 15, 16, 17.
+- Batch 1 (done): Props 6, 7, 13, 14, 15, 16, 17.
+- Batch 2: Props 18, 19, 20, 21 (18–20 use the contradiction pattern).
