@@ -17,15 +17,16 @@ This file is the single source of truth for how the project is built. Anyone pic
 
 | Mode | What the learner does | Propositions |
 |---|---|---|
-| `play` | Builds the construction, then watches the proof play out | 1, 2, 3, 5, 6, 7, 9–23 |
+| `play` | Builds the construction, then watches the proof play out | 1, 2, 3, 5, 6, 7, 9–26 |
 | `slide` | Drags one triangle onto another | 4, 8 |
-| `read` | Checklist proof only, no figure yet | 24–48 (25 total) |
+| `read` | Checklist proof only, no figure yet | 27–48 (22 total) |
 
 Features already in place: Solve it for me, One small step, zoom, double-click to colour a line, dependency map, citations.
 
 ### Engine tools for figures (in `index.html`)
 - **`wrong` op** (the "pretend" move for proofs by contradiction): the learner drags a point along a set path, marked by a pulse and an arrow. Used in 6, 7 and 14.
 - **Wedges**: shaded angle sectors used to compare and add angles. A wedge can slide (`off`) or turn (`rot`). Used in 7 and 13–21.
+- **`lay` op**: the learner drags a triangle so one corner lands on a point; it then turns to lie along a given line, and the far corner becomes a new point. This stands in for copying an angle (Prop 23) plus cutting a length (Prop 3), which would otherwise need about 20 extra letters. Used in 24 and 26.
 - **Paths** (phase key `paths`): thick coloured routes such as B→A→C, used to compare lengths added together. Used in 20 and 21.
 - A `wrong` drag can also show what changes as the figure moves. In 19 the shaded angles change live as A is dragged.
 - **Phase keys** (the proof animation after the construction): `keep` shows only the listed points and hides construction clutter; `anim` moves things frame by frame (for example, a point snapping back, or a triangle spinning); `wedges` and `eqReset` control the angle shading and colours.
@@ -69,4 +70,5 @@ Features already in place: Solve it for me, One small step, zoom, double-click t
 
 - Batch 1 (done): Props 6, 7, 13, 14, 15, 16, 17.
 - Batch 2 (done): Props 18, 19, 20, 21.
-- Batch 3: Props 24, 25, 26 (25 and 26 use the contradiction pattern).
+- Batch 3 (done): Props 24, 25, 26. Prop 26 is built for its first case (equal side between the angles); the second case is described in the last step.
+- Batch 4: Props 27–30, the first parallel-line tests (27 uses the "lines meet" contradiction).
