@@ -17,9 +17,9 @@ This file is the single source of truth for how the project is built. Anyone pic
 
 | Mode | What the learner does | Propositions |
 |---|---|---|
-| `play` | Builds the construction, then watches the proof play out | 1, 2, 3, 5, 6, 7, 9–26 |
+| `play` | Builds the construction, then watches the proof play out | 1, 2, 3, 5, 6, 7, 9–34 |
 | `slide` | Drags one triangle onto another | 4, 8 |
-| `read` | Checklist proof only, no figure yet | 27–48 (22 total) |
+| `read` | Checklist proof only, no figure yet | 35–48 (14 total) |
 
 Features already in place: Solve it for me, One small step, zoom, double-click to colour a line, dependency map, citations.
 
@@ -29,8 +29,13 @@ Features already in place: Solve it for me, One small step, zoom, double-click t
 - **`lay` op**: the learner drags a triangle so one corner lands on a point; it then turns to lie along a given line, and the far corner becomes a new point. This stands in for copying an angle (Prop 23) plus cutting a length (Prop 3), which would otherwise need about 20 extra letters. Used in 24 and 26.
 - **Paths** (phase key `paths`): thick coloured routes such as B→A→C, used to compare lengths added together. Used in 20 and 21.
 - A `wrong` drag can also show what changes as the figure moves. In 19 the shaded angles change live as A is dragged.
+- A `wrong` op can move extra points with it through an `also` map (`{C:(W,s)=>...}`), so a whole line can tilt about a point on it. Used in 27 (CD tilts about F) and 29 (AB tilts about G).
+- **`ptx` op** (`["ptx","G","A","B","C","D"]`): an automatic point where line AB, pulled on past B, meets line CD, pulled on past D. It appears only if they meet beyond both ends. Used in 27 and 29 for the "lines meet" contradiction.
 - **Phase keys** (the proof animation after the construction): `keep` shows only the listed points and hides construction clutter; `anim` moves things frame by frame (for example, a point snapping back, or a triangle spinning); `wedges` and `eqReset` control the angle shading and colours.
 - A line that is already drawn counts as done, so the learner is never asked to draw it twice.
+- **Point names past Z**: the engine names hidden construction points A…Z, then AA, AB, AC… (after AZ comes BA; after ZZ comes AAA). Inside the engine, unnamed points are `_0`, `_1`… until `relabel()` gives them letters.
+- **Segment keys**: a line between two one-letter points is keyed `"AB"` (letters sorted), as before. If either name is longer, the key uses a bar: `"AA|B"`. Always build keys with `sk(a,b)` and read them back with `ends(k)`, and never use `k[0]`/`k[1]`. Option strings such as `on:"AB"` and `pk:["AG"]` follow the same rule.
+- A `use` op's "away:X" hint is translated only at the level where it is written, so it passes correctly through nested uses (for example 32 → 31 → 23).
 - "Watch the proof again" restarts from the figure as it was before the proof animation began.
 
 ## Design rules
@@ -64,11 +69,14 @@ Features already in place: Solve it for me, One small step, zoom, double-click t
 
 ## Known issues
 
-- Figures run out of letters (only 26 single letters), which blocks Props 31, 42, 44–46 and 47.
+- Fixed in Batch 5: figures no longer run out of letters.
+- A double-letter point such as AB can be confused with the line AB. So far this only happens with hidden construction points, which the proof animation hides. Keep the named points in a figure to single letters where possible.
 
 ## Next
 
 - Batch 1 (done): Props 6, 7, 13, 14, 15, 16, 17.
 - Batch 2 (done): Props 18, 19, 20, 21.
 - Batch 3 (done): Props 24, 25, 26. Prop 26 is built for its first case (equal side between the angles); the second case is described in the last step.
-- Batch 4: Props 27–30, the first parallel-line tests (27 uses the "lines meet" contradiction).
+- Batch 4 (done): Props 27, 28, 29, 30. 27 and 29 use the "lines meet" contradiction: tilt a line, pull both lines on until they meet, then swing it back. 28 and 30 compare angles by spinning or sliding a wedge.
+- Batch 5 (done): letter limit lifted (AA, AB, …), then Props 31, 32, 33, 34. 31 carries out Prop 23 inside the figure. 32 carries out 31, and slides the angles at A and B over to C. 33 and 34 spin triangle ABC half a turn onto DCB.
+- Batch 6: Props 35–38, the first area propositions (follow the Area pattern above).
