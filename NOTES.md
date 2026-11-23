@@ -99,6 +99,14 @@ Features already in place: a control panel inside the figure (Solve, Step, Slowe
 ## Next
 
 - Polish (done, 22 Nov 2026): new points shrink back after a moment; Euclid's proof card on every page (proofs written for 1–5, 8, 22, 23); home page text; duplicate styles and unused helpers removed; Joyce markers; no extra move in 46 and 48; controls in a panel inside the figure (fits one row on a phone; Home removed from it); new colour rule; dark-mode colours. Final checks: all 48 solve in Chrome; every Slower path in 44–48 gives the same figure; touch tested on a phone-size screen (lines, circles, taps, parallelogram drag, triangle slide, panel buttons); light and dark contact sheets of all 48 reviewed against Euclid's layouts.
+- Props 1–6 rework (22 Nov 2026):
+  - Every proof animation: tap the figure to jump to the next frame (or finish a moving frame); a finished figure starts over at the next tap.
+  - 1: ends "We made an equilateral triangle!"
+  - 2: one hold swings AE round D onto BF and carries on round B onto BC (swings chain while the finger stays down); then "AE = BC".
+  - 3: the short Prop 2 shows CD travelling to A and landing as AG, and colours CD and AG alike; every swing step shows a pulse on the free end and a curved arrow to where it goes; a swing can be grabbed anywhere on the line except at the pivot.
+  - 4: BC and EF start hidden and AC ≠ AB. The learner drags AC onto DF (orange), DE onto AB (blue) and the angle at A onto the angle at D (pink); then BC and EF appear and the triangles slide together; BC = EF comes out pink (the angle opposite them is pink). `pre:true`, `angCol`.
+  - 5: pending lines pulse at both ends in their own colour (first orange, then green, then sky). New moves: `flip` (drag F onto G to turn triangle AFC over onto AGB) and `amatch` (drag a shaded angle onto its partner; FBC onto GCB, then ABC onto ACB).
+  - 6: after joining DC, D and C flash; the `push` move swings CD round C towards CA, which slides D up to A while A settles back, so AB = AC.
 - Batch 1 (done): Props 6, 7, 13, 14, 15, 16, 17.
 - Batch 2 (done): Props 18, 19, 20, 21.
 - Batch 3 (done): Props 24, 25, 26. Prop 26 is built for its first case (equal side between the angles); the second case is described in the last step.
