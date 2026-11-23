@@ -9,7 +9,6 @@ This file is the single source of truth for how the project is built. Anyone pic
 ## Files
 
 - `index.html`: the whole game, in one self-contained file.
-- `Euclid, Book I.html`: an older draft with 2 propositions. Kept for reference only.
 - `Elements_Text_Fitzpatrick.pdf`: Richard Fitzpatrick's translation of the *Elements*, the reference for every figure.
 - `NOTES.md`: this file.
 
@@ -17,9 +16,9 @@ This file is the single source of truth for how the project is built. Anyone pic
 
 | Mode | What the learner does | Propositions |
 |---|---|---|
-| `play` | Builds the construction, then watches the proof play out | 1, 2, 3, 5, 6, 7, 9–38 |
+| `play` | Builds the construction, then watches the proof play out | 1, 2, 3, 5, 6, 7, 9–41 |
 | `slide` | Drags one triangle onto another | 4, 8 |
-| `read` | Checklist proof only, no figure yet | 39–48 (10 total) |
+| `read` | Checklist proof only, no figure yet | 42–48 (7 total) |
 
 Features already in place: Solve it for me, One small step, zoom, double-click to colour a line, dependency map, citations.
 
@@ -38,7 +37,8 @@ Features already in place: Solve it for me, One small step, zoom, double-click t
 - **Label placement**: each label goes in the clearest direction around its point (away from lines, arcs and shaded angles), slightly preferring above, and dodges other labels and points (`labLayout`).
 - **Segment keys**: a line between two one-letter points is keyed `"AB"` (letters sorted), as before. If either name is longer, the key uses a bar: `"A′|B"`. Always build keys with `sk(a,b)` and read them back with `ends(k)`, and never use `k[0]`/`k[1]`. Option strings such as `on:"AB"` and `pk:["AG"]` follow the same rule.
 - **`pti` op** (`["pti","E","B","P","A","D"]`): an automatic point where whole lines BP and AD cross, once both are drawn. Used in 37 and 38 to find where a new parallel meets the top line.
-- **Area tools**: phase key `polys: [[["A","B","C","D"],6], …]` shades polygons (colour index into PAL; 6 is purple; -1 is a "cut out" piece, blank with a dashed edge). An `anim` that moves temporary points `s1`, `s2`… inside a polygon shows a shear (a parallelogram sliding along its parallels); used in 36–38. `dsegs0` gives dotted lines at the start. `lay` accepts `nosegs:1` and sets `W.laid`.
+- **Area tools**: phase key `polys: [[["A","B","C","D"],6], …]` shades polygons (colour index into PAL; 6 is purple; -1 is a "cut out" piece, blank with a dashed edge). An `anim` that moves temporary points `s1`, `s2`… inside a polygon shows a shear (a parallelogram sliding along its parallels); used in 36–38. `dsegs0` gives dotted lines at the start. `lay` accepts `nosegs:1` and sets `W.laid`. `polys0` shades areas from the start (e.g. the triangles we are told are equal in 39 and 40).
+- An op with `needMoved:1` waits until the pretend (`wrong`) move is done. Used in 39 and 40, so E or F is found on the tilted line even if the learner draws the parallel first.
 - A `use` op's "away:X" hint is translated only at the level where it is written, so it passes correctly through nested uses (for example 32 → 31 → 23).
 - "Watch the proof again" restarts from the figure as it was before the proof animation began.
 
@@ -85,4 +85,10 @@ Features already in place: Solve it for me, One small step, zoom, double-click t
 - Batch 5 (done): letter limit lifted (AA, AB, …), then Props 31, 32, 33, 34. 31 carries out Prop 23 inside the figure. 32 carries out 31, and slides the angles at A and B over to C. 33 and 34 spin triangle ABC half a turn onto DCB.
 - Labelling (done): helper points unlabelled, I and J skipped, primes after Z, labels placed in the clearest spot. Prop 23's last point was renamed J → K to match.
 - Batch 6 (done): Props 35, 36, 37, 38. 35 follows the Area pattern: lay triangle ABE on DCF, cut out DGE, shade both parallelograms purple. 36–38 slide one shape along the parallels into the other. 37 and 38 carry out Prop 31 twice each.
-- Batch 7: Props 39–41 (39 and 40 are proofs by contradiction about area; 41 doubles a triangle into a parallelogram).
+- Batch 7 (done): Props 39, 40, 41. In 39 and 40 the learner lifts D off the parallel, draws the real parallel through A (Prop 31), and sees a smaller triangle forced to equal a bigger one, so D drops back. In 41, triangle EBC slides to ABC and a half-turned copy fills the parallelogram.
+- Old draft `Euclid, Book I.html` removed (Nov 2026).
+- Batch 8: Prop 26 second case (equal side opposite one of the equal angles; contradiction: cut BH equal to DE, then angle BHC = EFD = BCA, against Prop 16), then Props 42–44 (constructions: a parallelogram equal to a triangle, complements, applying a parallelogram to a line).
+- Batch 9: Prop 45 (parallelogram equal to any rectilinear figure; repeated use of 44).
+- Batch 10: Prop 46 (square on a given line).
+- Batch 11: Props 47–48 (Pythagoras and its converse). 47 uses shears and purple shading; 48 can use `slide` mode like 4 and 8.
+- Finish Book I: check all 48 figures against Fitzpatrick, test touch on mobile, check the dependency map.
