@@ -342,7 +342,7 @@ for(const yy of[.1,.9]){g.fillStyle="#2d2a27";g.fillRect(0,H*yy-14,W,28);g.fillS
 const vg=g.createRadialGradient(W/2,H/2,Math.min(W,H)*.3,W/2,H/2,Math.max(W,H)*.75);vg.addColorStop(0,"rgba(0,0,0,0)");vg.addColorStop(1,"rgba(0,0,0,.75)");g.fillStyle=vg;g.fillRect(0,0,W,H);woodC={c,w:W,h:H,d:DPR};return c}
 const lockGeo=()=>{const R=Math.min(W,H)*.42;return{R,cx:W/2,cy:H/2}};
 function drawLock(t){ctx.drawImage(woodCanvas(),0,0,W,H);const{R,cx,cy}=lockGeo(),T=now(),dt=Math.min(.05,(T-lastT)/1000);
-glow(cx,cy,R*1.6,.18,[255,170,60]);drawPlate(cx,cy,R);if(lockId===4)drawL4(cx,cy,R,LK4,true);else{stepAuto(dt);drawL1(cx,cy,R,LK,true)}}
+glow(cx,cy,R*1.6,.18,[255,170,60]);drawPlate(cx,cy,R);if(lockId===4)drawL4(cx,cy,R,LK4,true);else if(FIGS[lockId])drawFig(cx,cy,R,LKF,true);else{stepAuto(dt);drawL1(cx,cy,R,LK,true)}}
 function toLocal(x,y){const{R,cx,cy}=lockGeo();return[(x-cx)/R,(y-cy)/R]}
 const angDeg=(c,p)=>Math.atan2(p[1]-c[1],p[0]-c[0])*180/Math.PI;
 function markArc(cov,from,d){const T=now(),n=Math.ceil(Math.abs(d));for(let j=0;j<=n;j++){const g=from+d*j/Math.max(1,n),i=((Math.floor(g)%360)+360)%360;if(!cov[i])cov[i]=T}}
@@ -424,7 +424,95 @@ if(dist(m,mt)<.16)snap({p:T[0],q:T[1]},280,()=>{lk[d.k]=now();lk.ghost=null;sfxC
 const T=wedgeOf(d.tgt);if(dist(g.V,T.V)<.16)snap(T,320,()=>{lk.ang=now();lk.ghost=null;sfxChime(false);setTimeout(()=>{lk.BC=now();sfxChime(true)},450)});else lk.ghost=null}
 function win4(){const T=now();LK4.won=T;LK4.ghost=null;setTimeout(()=>sfxChime(true),200);
 if(!solved(4)){S.solved.push(4);save()}setTimeout(()=>{sfxUnlock();doorOpenT[4]=null;fadeTo("doors",900,()=>{doorOpenT[4]=now()+700})},1900)}
-function openLock(id){lockId=id;if(id===4)LK4=mkLock4();else LK=mkLock();fadeTo("lock",700)}
+function openLock(id){lockId=id;lockFrom=scene;if(id===4)LK4=mkLock4();else if(FIGS[id])LKF=mkFig(id);else LK=mkLock();fadeTo("lock",700)}
+/* ---------- a general lock: a figure cut step by step ----------
+   A lock is a list of points (plate units, centre 0,0, radius 1), the given figure, and steps:
+   line   drag one point to another                      {t:"line",a,b}
+   tri    tap the faint triangle: an earlier lock (Prop 1) {t:"tri",p:[a,b,new]}
+   ext    pull a line on past its end                     {t:"ext",o,e,to}
+   circ   sweep a point round a centre; once the arc passes what it needs, the light finishes the circle {t:"circ",c,p,show:[...]}
+   copy   carry a line onto a point: an earlier lock (Prop 2) {t:"copy",src:[a,b],to:[a,b]}
+   swing  swing a line round a pivot onto another line; "then" carries on round a second pivot {t:"swing",seg,piv,to,then}
+   Any step can add cut ticks with mark:[[a,b,n]]: lines with the same number of ticks are equal. */
+const FIGS={};
+FIGS[2]=(()=>{const A=[-.15,.06],B=[.15,.06],D=[0,.06-.3*Math.sqrt(3)/2],r=.22,C=[B[0]+r*.866,B[1]+r*.5],u=(p,q)=>{const L=dist(p,q);return[(q[0]-p[0])/L,(q[1]-p[1])/L]},X=(p,d,k)=>[p[0]+d[0]*k,p[1]+d[1]*k],dB=u(D,B),dA=u(D,A),F=X(B,dB,r),E=X(D,dA,dist(D,F));
+return{pts:{A,B,C,D,E,F,Bx:X(F,dB,.07),Ax:X(E,dA,.07)},given:{pts:["A","B","C"],lines:[["B","C"]]},
+steps:[{t:"line",a:"A",b:"B"},{t:"tri",p:["A","B","D"]},{t:"ext",o:"D",e:"B",to:"Bx"},{t:"ext",o:"D",e:"A",to:"Ax"},{t:"circ",c:"B",p:"C",show:["F"]},{t:"circ",c:"D",p:"F",show:["E"]},
+{t:"swing",seg:["A","E"],piv:"D",to:["B","F"],then:{piv:"B",to:["B","C"]},mark:[["A","E",1],["B","C",1]]}],glow:[["A","E"],["B","C"]]}})();
+FIGS[3]=(()=>{const A=[-.4,.2],B=[.65,.2],C=[-.1,-.3],D=[.2,-.3],L=.3,G=[A[0]+L*Math.cos(-Math.PI/3),A[1]+L*Math.sin(-Math.PI/3)],H=[A[0]+L,A[1]];
+return{pts:{A,B,C,D,G,H},given:{pts:["A","B","C","D"],lines:[["A","B"],["C","D"]]},
+steps:[{t:"copy",src:["C","D"],to:["A","G"],mark:[["C","D",1],["A","G",1]]},{t:"circ",c:"A",p:"G",show:["H"],mark:[["A","H",1]]}],glow:[["A","H"]]}})();
+const lkey=(a,b)=>[a,b].sort().join("|");
+function mkFig(id){const def=FIGS[id],lk={id,def,step:0,lines:{},circs:[],vis:new Set(def.given.pts),marks:[],won:0,drag:null,ghost:null,anim:null,auto:null,trail:[],tip:null,sw:null,ext:null};for(const[a,b]of def.given.lines)lk.lines[lkey(a,b)]=1;return lk}
+function figCirc(lk,c,p){let o=lk.circs.find(x=>x.c===c&&x.p===p);if(!o){o={c,p,r:dist(lk.def.pts[c],lk.def.pts[p]),cov:new Float64Array(360)};lk.circs.push(o)}return o}
+function applyStep(lk,st,T){const L=(a,b)=>lk.lines[lkey(a,b)]=T;
+if(st.t==="line")L(st.a,st.b);else if(st.t==="tri"){L(st.p[0],st.p[2]);L(st.p[1],st.p[2]);lk.vis.add(st.p[2])}else if(st.t==="ext")L(st.e,st.to);
+else if(st.t==="circ"){const o=figCirc(lk,st.c,st.p);for(let i=0;i<360;i++)if(!o.cov[i])o.cov[i]=T;st.show.forEach(n=>lk.vis.add(n))}else if(st.t==="copy"){L(...st.to);lk.vis.add(st.to[1])}
+for(const[a,b,n]of st.mark||[])lk.marks.push({a,b,n,t:T})}
+const FIGB={},FIGF={};for(const id in FIGS){FIGB[id]=mkFig(id);const f=mkFig(id);FIGS[id].steps.forEach(st=>applyStep(f,st,1));f.step=FIGS[id].steps.length;f.won=1;FIGF[id]=f}
+let LKF=null;
+const needDeg=(c,q)=>((Math.floor(angDeg(c,q))%360)+360)%360;
+function figDone(lk){const st=lk.def.steps[lk.step];applyStep(lk,st,now());lk.step++;sfxChime(false);if(lk.step>=lk.def.steps.length)figWin(lk)}
+function figWin(lk){const id=lk.id;lk.won=now();setTimeout(()=>sfxChime(true),250);if(!solved(id)){S.solved.push(id);save()}setTimeout(()=>{sfxUnlock();fadeTo(lockFrom,900)},1900)}
+function drawFig(cx,cy,R,lk,live){const T=now(),def=lk.def,pt=def.pts,P=q=>[cx+q[0]*R,cy+q[1]*R],Q=n=>P(pt[n]),gw=Math.max(1.4,R*.02),LIFE=1500,D2R=Math.PI/180,st=def.steps[lk.step];
+if(live){figAnim(lk)}
+for(const k in lk.lines){const[a,b]=k.split("|");groove(()=>{ctx.beginPath();ctx.moveTo(...Q(a));ctx.lineTo(...Q(b))},gw)}
+for(const o of lk.circs){const c=Q(o.c);for(const[s0,n]of covRuns(o.cov))groove(()=>{ctx.beginPath();ctx.arc(c[0],c[1],o.r*R,s0*D2R,(s0+n)*D2R)},gw)}
+const tk=m=>()=>{const p=Q(m.a),q=Q(m.b),c=[(p[0]+q[0])/2,(p[1]+q[1])/2],L=dist(p,q),u=[(q[0]-p[0])/L,(q[1]-p[1])/L],h=R*.04,sp=R*.032;ctx.beginPath();for(let i=0;i<m.n;i++){const o=(i-(m.n-1)/2)*sp,z=[c[0]+u[0]*o,c[1]+u[1]*o];ctx.moveTo(z[0]+u[1]*h,z[1]-u[0]*h);ctx.lineTo(z[0]-u[1]*h,z[1]+u[0]*h)}};
+for(const m of lk.marks)groove(tk(m),gw*.8);
+for(const n of lk.vis){const p=Q(n);ctx.fillStyle="rgba(40,20,4,.85)";circ(p[0]-gw*.2,p[1]-gw*.2,gw*1.3);ctx.fill()}
+ctx.save();ctx.globalCompositeOperation="lighter";ctx.lineCap="round";
+const sh=(t0,f,w)=>{const age=T-t0;if(t0>1&&age<LIFE){const a=1-age/LIFE;ctx.strokeStyle=`rgba(255,200,95,${a*.9})`;ctx.lineWidth=w*(1+a*2.4);f();ctx.stroke()}};
+for(const k in lk.lines){const[a,b]=k.split("|");sh(lk.lines[k],()=>{ctx.beginPath();ctx.moveTo(...Q(a));ctx.lineTo(...Q(b))},gw)}
+for(const o of lk.circs){const c=Q(o.c);for(let i=0;i<360;i++){const age=T-o.cov[i];if(o.cov[i]>1&&age<LIFE){const a=1-age/LIFE;ctx.strokeStyle=`rgba(255,200,95,${a*.9})`;ctx.lineWidth=gw*(1+a*2.2);ctx.beginPath();ctx.arc(c[0],c[1],o.r*R,i*D2R,(i+1.2)*D2R);ctx.stroke()}}}
+for(const m of lk.marks)sh(m.t,tk(m),gw*.8);
+for(const n of lk.vis){const sp=lk.spark&&lk.spark[n];if(sp&&T-sp<1200){const a=1-(T-sp)/1200,p=Q(n);glow(p[0],p[1],R*.2*(1.4-a),a,[255,230,150])}}
+if(lk.won>1){const age=(T-lk.won)/1000;if(age<2.4){const a=Math.sin(Math.PI*clamp(age/2.4));ctx.strokeStyle=`rgba(255,205,100,${a*.8})`;ctx.lineWidth=gw*4;for(const[a1,b1]of def.glow){ctx.beginPath();ctx.moveTo(...Q(a1));ctx.lineTo(...Q(b1));ctx.stroke()}}}
+if(live){const g=lk.ghost;if(g){ctx.strokeStyle="rgba(255,205,110,.55)";ctx.lineWidth=gw*1.8;ctx.beginPath();ctx.moveTo(...P(g.p));ctx.lineTo(...P(g.q));ctx.stroke()}
+if(lk.ext){const e=Q(lk.ext.e);ctx.strokeStyle="rgba(255,205,110,.6)";ctx.lineWidth=gw*1.6;ctx.beginPath();ctx.moveTo(...e);ctx.lineTo(...P(lk.ext.q));ctx.stroke()}
+lk.trail=lk.trail.filter(q=>T-q.t<750);const tr=lk.trail;for(let i=1;i<tr.length;i++){if(tr[i].brk)continue;const a=1-(T-tr[i].t)/750,p0=P(tr[i-1].p),p1=P(tr[i].p);ctx.strokeStyle=`rgba(255,205,110,${a*.95})`;ctx.lineWidth=1+a*gw*2.4;ctx.beginPath();ctx.moveTo(...p0);ctx.lineTo(...p1);ctx.stroke()}
+if((lk.drag||lk.auto)&&lk.tip){const h=P(lk.tip);glow(h[0],h[1],R*.17,.85);glow(h[0],h[1],R*.05,1,[255,250,225])}}
+ctx.restore();
+/* what to touch next */
+if(live&&st&&!lk.won&&!lk.drag&&!lk.anim&&!lk.auto){const t=T/1000,pb=R*.035,mid=(a,b)=>{const p=P(a),q=P(b);return[(p[0]+q[0])/2,(p[1]+q[1])/2]};
+if(st.t==="line"){pulse(...Q(st.a),pb,t);pulse(...Q(st.b),pb,t+.5)}
+else if(st.t==="tri"){ctx.save();ctx.setLineDash([gw*2,gw*3]);ctx.strokeStyle=`rgba(255,215,140,${.45+.25*Math.sin(t*3)})`;ctx.lineWidth=gw;poly(st.p.map(Q));ctx.stroke();ctx.restore();const c=st.p.map(n=>pt[n]);pulse(...P([(c[0][0]+c[1][0]+c[2][0])/3,(c[0][1]+c[1][1]+c[2][1])/3]),pb,t)}
+else if(st.t==="ext")pulse(...Q(st.e),pb,t);
+else if(st.t==="circ")pulse(...Q(st.p),pb,t);
+else if(st.t==="copy"){pulse(...mid(pt[st.src[0]],pt[st.src[1]]),pb,t);pulse(...Q(st.to[0]),pb,t+.5)}
+else if(st.t==="swing"){const b=lk.sw?lk.sw.base:st.seg.map(n=>pt[n]),pv=lk.sw?pt[lk.sw.piv]:pt[st.piv];if(lk.sw){ctx.strokeStyle="rgba(255,205,110,.5)";ctx.lineWidth=gw*1.8;ctx.beginPath();ctx.moveTo(...P(b[0]));ctx.lineTo(...P(b[1]));ctx.stroke()}pulse(...mid(b[0],b[1]),pb,t);pulse(...P(pv),pb*.8,t+.5)}}}
+function figAnim(lk){const T=now(),dt=Math.min(.05,(T-lastT)/1000);
+if(lk.anim){const a=lk.anim,u=ease(clamp((T-a.t0)/a.dur)),g=lk.ghost;g.p=[lerp(a.f.p[0],a.to.p[0],u),lerp(a.f.p[1],a.to.p[1],u)];g.q=[lerp(a.f.q[0],a.to.q[0],u),lerp(a.f.q[1],a.to.q[1],u)];if(u>=1){lk.anim=null;a.done()}}
+const a=lk.auto;if(a){const step=560*dt*a.dir,o=a.o,c=lk.def.pts[o.c];markArc(o.cov,a.ang,step);a.ang+=step;const r=a.ang*Math.PI/180;lk.tip=[c[0]+Math.cos(r)*o.r,c[1]+Math.sin(r)*o.r];lk.trail.push({p:lk.tip.slice(),t:T});
+if(o.cov.every(v=>v>0)){lk.auto=null;const st=lk.def.steps[lk.step];lk.spark=lk.spark||{};st.show.forEach(n=>lk.spark[n]=T);figDone(lk)}}}
+function figDown(x,y){const lk=LKF;if(!lk||lk.won||lk.anim||lk.auto)return;const st=lk.def.steps[lk.step];if(!st)return;const pt=lk.def.pts,p=toLocal(x,y),{R}=lockGeo(),hit=Math.max(.08,24/R);let d=null;
+if(st.t==="line"){for(const n of[st.a,st.b])if(dist(p,pt[n])<hit*1.3){d={k:"line",from:n,to:n===st.a?st.b:st.a};lk.tip=pt[n].slice();break}}
+else if(st.t==="tri"){if(inPoly(p,st.p.map(n=>pt[n]))){lk.spark=lk.spark||{};lk.spark[st.p[2]]=now();figDone(lk);return}}
+else if(st.t==="ext"){if(dist(p,pt[st.e])<hit*1.4||(segD(p,pt[st.o],pt[st.e])<hit&&dist(p,pt[st.e])<.2)){d={k:"ext"};lk.tip=pt[st.e].slice();lk.ext={e:st.e,q:pt[st.e].slice(),f:0}}}
+else if(st.t==="circ"){if(dist(p,pt[st.p])<hit*1.4){const o=figCirc(lk,st.c,st.p);d={k:"circ",o,prev:angDeg(pt[st.c],p),dir:0};const r=d.prev*Math.PI/180;lk.tip=[pt[st.c][0]+Math.cos(r)*o.r,pt[st.c][1]+Math.sin(r)*o.r]}}
+else if(st.t==="copy"){const[a,b]=st.src;if(segD(p,pt[a],pt[b])<hit){d={k:"copy",start:p,base:[pt[a].slice(),pt[b].slice()]};lk.ghost={p:pt[a].slice(),q:pt[b].slice()};lk.tip=p.slice()}}
+else if(st.t==="swing"){if(!lk.sw)lk.sw={stage:0,piv:st.piv,to:st.to,base:st.seg.map(n=>pt[n].slice())};const sw=lk.sw,pv=pt[sw.piv];if(segD(p,sw.base[0],sw.base[1])<hit*1.2&&dist(p,pv)>.05){d={k:"swing",a0:ang2(pv,p)};lk.ghost={p:sw.base[0].slice(),q:sw.base[1].slice()};lk.tip=p.slice()}}
+if(!d)return;lk.drag=d;lk.trail.push({p:lk.tip.slice(),t:now(),brk:true})}
+function figMove(x,y){const lk=LKF;if(!lk)return;const d=lk.drag;if(!d)return;const st=lk.def.steps[lk.step],pt=lk.def.pts,p=toLocal(x,y);
+if(d.k==="line")lk.tip=p;
+else if(d.k==="ext"){const o=pt[st.o],e=pt[st.e],to=pt[st.to],L=dist(e,to),u=[(to[0]-e[0])/L,(to[1]-e[1])/L],k=clamp((p[0]-e[0])*u[0]+(p[1]-e[1])*u[1],0,L);lk.ext.q=[e[0]+u[0]*k,e[1]+u[1]*k];lk.ext.f=k/L;lk.tip=lk.ext.q.slice()}
+else if(d.k==="circ"){const c=pt[st.c],a=angDeg(c,p);let dl=a-d.prev;while(dl>180)dl-=360;while(dl<-180)dl+=360;if(Math.abs(dl)>60)return;markArc(d.o.cov,d.prev,dl);d.prev=a;if(dl)d.dir=Math.sign(dl);const r=a*Math.PI/180;lk.tip=[c[0]+Math.cos(r)*d.o.r,c[1]+Math.sin(r)*d.o.r];if(Math.random()<.25)sfxTick()}
+else if(d.k==="copy"){const o=[p[0]-d.start[0],p[1]-d.start[1]];lk.ghost.p=[d.base[0][0]+o[0],d.base[0][1]+o[1]];lk.ghost.q=[d.base[1][0]+o[0],d.base[1][1]+o[1]];lk.tip=p}
+else if(d.k==="swing"){const sw=lk.sw,pv=pt[sw.piv],th=wrapA(ang2(pv,p)-d.a0),tT=wrapA(ang2(pv,pt[sw.to[1]])-ang2(pv,sw.base[1]));lk.ghost={p:rot2(sw.base[0],pv,th),q:rot2(sw.base[1],pv,th)};lk.tip=p;if(Math.random()<.12)sfxTick();
+if(Math.abs(wrapA(th-tT))<.07){sw.base=sw.to.map(n=>pt[n].slice());if(st.then&&sw.stage===0){sw.stage=1;sw.piv=st.then.piv;sw.to=st.then.to;d.a0=ang2(pt[sw.piv],p);lk.ghost={p:sw.base[0].slice(),q:sw.base[1].slice()};sfxChime(false)}else{lk.drag=null;lk.ghost=null;lk.sw=null;figDone(lk);return}}}
+lk.trail.push({p:lk.tip.slice(),t:now()})}
+function figUp(x,y){const lk=LKF;if(!lk)return;const d=lk.drag;if(!d)return;lk.drag=null;const st=lk.def.steps[lk.step],pt=lk.def.pts,p=toLocal(x,y),{R}=lockGeo(),hit=Math.max(.08,24/R);
+if(d.k==="line"){if(dist(p,pt[d.to])<hit*1.3)figDone(lk)}
+else if(d.k==="ext"){const f=lk.ext.f;lk.ext=null;if(f>.3)figDone(lk)}
+else if(d.k==="circ"){if(st.show.every(n=>covered(d.o.cov,needDeg(pt[st.c],pt[n]))))lk.auto={o:d.o,ang:d.prev,dir:d.dir||1}}
+else if(d.k==="copy"){const g=lk.ghost;if(dist(g.p,pt[st.to[0]])<.15){lk.anim={f:{p:g.p.slice(),q:g.q.slice()},to:{p:pt[st.to[0]],q:pt[st.to[1]]},t0:now(),dur:300,done:()=>{lk.ghost=null;lk.spark=lk.spark||{};lk.spark[st.to[1]]=now();figDone(lk)}}}else lk.ghost=null}
+else if(d.k==="swing")lk.ghost=null}
+/* the figure on any lock plate, solved or not */
+function lockFace(id,cx,cy,r){const ok=solved(id);if(id===1)drawL1(cx,cy,r,ok?FULL:BLANK,false);else if(id===4)drawL4(cx,cy,r,ok?FULL4:BLANK4,false);else if(FIGS[id])drawFig(cx,cy,r,ok?FIGF[id]:FIGB[id],false)}
+const hasLock=id=>id===1||id===4||!!FIGS[id];
+let lockFrom="doors",hallStack=[];
+function enterHall(id){hallStack.push(id);hallId=id;fadeTo("hall",800)}
+
 
 /* ---------- halls ---------- */
 let hallHits=[],hallId=1;
@@ -461,7 +549,7 @@ for(let k=0;k<=12;k++){const a=Math.PI*k/12;pts.push(pr(s*HW,top-Math.sin(a)*ar*
 if(st==="amber"){ctx.save();ctx.globalCompositeOperation="lighter";const c=pr(s*HW,.1,zc);glow(c[0],c[1],1.3*f/zc,.28+.12*Math.sin(t*3),[255,160,50]);const fl=pr(s*1.05,FY,zc);ctx.fillStyle=`rgba(255,160,60,${.12+.05*Math.sin(t*3)})`;ctx.beginPath();ctx.ellipse(fl[0],fl[1],.55*f/zc,.12*f/zc,0,0,7);ctx.fill();ctx.restore()}
 ctx.fillStyle=st==="open"?"#0d0908":col([104,68,40],zc);poly(pts);ctx.fill();
 if(st!=="open"){ctx.strokeStyle=col([60,38,22],zc);ctx.lineWidth=1;for(const zz of[.24,.48,.72]){ctx.beginPath();ctx.moveTo(...pr(s*HW,FY,z0+zz*2*ar));ctx.lineTo(...pr(s*HW,top-.3,z0+zz*2*ar));ctx.stroke()}
-const c=pr(s*HW,.18,zc),r=.13*f/zc;ctx.save();ctx.translate(c[0],c[1]);ctx.scale(.55,1);drawPlate(0,0,r);if(st==="covered")coverPlate(r);ctx.restore()}
+const c=pr(s*HW,.18,zc),r=.13*f/zc;ctx.save();ctx.translate(c[0],c[1]);ctx.scale(.55,1);drawPlate(0,0,r);if(r>9)lockFace(id,0,0,r);if(st==="covered")coverPlate(r);ctx.restore()}
 ctx.strokeStyle=col([150,136,116],zc);ctx.lineWidth=Math.max(2,.07*f/zc);poly(pts);ctx.stroke();hallHits.push({poly:pts,kind:"door",id,st})}
 /* a covered lock: the lock is still visible behind an iron cover */
 function coverPlate(r){ctx.fillStyle="rgba(40,40,44,.92)";ctx.save();ctx.rotate(.6);ctx.fillRect(-r*1.15,-r*.22,r*2.3,r*.44);ctx.rotate(-1.2);ctx.fillRect(-r*1.15,-r*.22,r*2.3,r*.44);ctx.restore();ctx.fillStyle="#55555c";circ(0,0,r*.32);ctx.fill();ctx.fillStyle="#9a9aa2";circ(-r*.06,-r*.06,r*.1);ctx.fill()}
@@ -485,14 +573,14 @@ function begin(){audioInit();go("intro")}
 cv.addEventListener("pointerdown",e=>{const x=e.clientX,y=e.clientY;audioInit();if(fade)return;
 if(scene==="title")return begin();if(scene==="intro")return endIntro();
 if(scene==="doors"){const D=doorLayout();if(y<D.y0||y>D.y0+D.dh||x<D.x0||x>D.x0+D.tw)return;const id=x<D.x0+D.lw?1:4;
-if(!solved(id))return openLock(id);if(doorOpenAmt(id)>=1){hallId=id;fadeTo("hall",800)}return}
-if(scene==="lock"){cv.setPointerCapture(e.pointerId);return lockId===4?l4Down(x,y):lkDown(x,y)}
-if(scene==="hall"){for(let i=hallHits.length-1;i>=0;i--){const h=hallHits[i];if(!inPoly([x,y],h.poly))continue;if(h.kind==="end")toast("The greenhouse is still being planted.");else if(h.st==="amber"){sfxChime(false);toast("This hall is still being built.")}else if(h.st==="covered"){sfxRattle();toast("Its lock is covered.")}return}}});
-cv.addEventListener("pointermove",e=>{if(scene==="lock")(lockId===4?l4Move:lkMove)(e.clientX,e.clientY)});
-cv.addEventListener("pointerup",e=>{if(scene==="lock")(lockId===4?l4Up:lkUp)(e.clientX,e.clientY)});
-cv.addEventListener("pointercancel",()=>{if(scene==="lock"){LK.drag=null;LK4.drag=null;if(LK4.ghost&&LK4.ghost.t!=="t")LK4.ghost=null}});
+if(!solved(id))return openLock(id);if(doorOpenAmt(id)>=1){hallStack=[];enterHall(id)}return}
+if(scene==="lock"){cv.setPointerCapture(e.pointerId);return lockId===4?l4Down(x,y):FIGS[lockId]?figDown(x,y):lkDown(x,y)}
+if(scene==="hall"){for(let i=hallHits.length-1;i>=0;i--){const h=hallHits[i];if(!inPoly([x,y],h.poly))continue;if(h.kind==="end")toast("The greenhouse is still being planted.");else if(h.st==="amber"){if(hasLock(h.id))openLock(h.id);else{sfxChime(false);toast("This lock is still being made.")}}else if(h.st==="open")enterHall(h.id);else if(h.st==="covered"){sfxRattle();toast("Its lock is covered.")}return}}});
+cv.addEventListener("pointermove",e=>{if(scene==="lock")(lockId===4?l4Move:FIGS[lockId]?figMove:lkMove)(e.clientX,e.clientY)});
+cv.addEventListener("pointerup",e=>{if(scene==="lock")(lockId===4?l4Up:FIGS[lockId]?figUp:lkUp)(e.clientX,e.clientY)});
+cv.addEventListener("pointercancel",()=>{if(scene==="lock"){LK.drag=null;LK4.drag=null;if(LKF){LKF.drag=null;LKF.ghost=null;LKF.ext=null}if(LK4.ghost&&LK4.ghost.t!=="t")LK4.ghost=null}});
 addEventListener("keydown",e=>{if(e.target&&(e.target.tagName==="INPUT"||e.target.tagName==="SELECT"))return;audioInit();if(scene==="title")begin();else if(scene==="intro")endIntro()});
-document.getElementById("back").addEventListener("click",()=>{if(scene==="lock"||scene==="hall")fadeTo("doors",600)});
+document.getElementById("back").addEventListener("click",()=>{if(scene==="lock")fadeTo(lockFrom,600);else if(scene==="hall"){hallStack.pop();if(hallStack.length){hallId=hallStack[hallStack.length-1];fadeTo("hall",600)}else fadeTo("doors",600)}});
 document.getElementById("replay").addEventListener("click",()=>{audioInit();fade=null;go("intro")});
 requestAnimationFrame(frame);
 </script>

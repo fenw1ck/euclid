@@ -35,6 +35,10 @@ Skippable at any moment with any key, click or tap.
 - When the figure is complete, the shape glows gold. Then come the sounds of tumbling locks, the bolt, creaking hinges and the door settling.
 - **Built:** Prop 1. Sweep B round A and A round B; once the arcs pass the crossing point, the light finishes each circle by itself. The crossing point sparkles. Then join A and B to it.
 - **Built:** Prop 4 (right front door). The plate shows two angles: AB and AC on one side, DE and DF on the other. Drag AC onto DF: each gets one cut tick. Drag DE onto AB: two ticks each. Drag the angle at A onto the angle at D: a cut arc at each. BC and EF are then cut in. Drag one triangle onto the other until a corner clicks onto its partner, then swing it round until it fits. The triangles glow gold and the door opens into Hall 4, which has 11 doors (5, 6, 10, 16, 24, 25, 26, 33, 34, 35, 47), all covered for now.
+- **Built:** Props 2 and 3, on a general lock engine (`FIGS` in the code). A lock is a list of points, the given figure, and steps of six kinds: join a line, tap a faint triangle (an earlier lock's short version, Prop 1), pull a line on, sweep a circle (the light finishes it once the arc passes what it needs), carry a line onto a point (Prop 2's short version), and swing a line round a pivot (it can carry on round a second pivot while you hold). New locks are mostly data.
+  - Prop 2: join AB; tap the triangle ABD; pull DB and DA on; sweep C round B to get F; sweep F round D to get E; swing AE round D onto BF, and keep going round B onto BC. AE and BC get one tick each.
+  - Prop 3: carry CD to A (it lands as AG); sweep G round A onto AB at H. CD, AG and AH get one tick each.
+- Hall doors now work. An amber door opens its lock, a solved door leads into its hall, and Back steps back through the halls you walked through. Each door's plate shows its lock's figure, cut or uncut. Amber doors without a lock yet say so.
 - Equal parts on lock plates are marked the classic way, with cut ticks and arcs, since the plates are bronze and gold only.
 - **Next:** port the site's proposition engine (the `OPS` steps and short versions) so that any proposition's figure can sit on a lock plate. The engine stays the same; only the drawing and the effects change.
 
@@ -105,7 +109,7 @@ Proposed rules (open to change):
    - the ten songs and the volume control;
    - the item data and the coin roll;
    - the progress save.
-2. **Locks for all 48:** move the site's engine into the lock plates (the Prop 4 lock is done). Moving between halls.
+2. **Locks for all 48:** Props 1–4 are done, and walking between halls works. Next: 5–8, which finish the path to 9, 10 and 11 in Hall 1.
 3. **Greenhouses:** junctions, fountains with water sound, the blue statue shop, chests and coins, and an inventory and character screen with clothes.
 4. **Scrolls** (guided mode), more art variety for halls (different statues, paintings showing each hall's own figure), and phone testing across all 48.
 
