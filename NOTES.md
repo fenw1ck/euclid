@@ -20,7 +20,7 @@ This file is the single source of truth for how the project is built. Anyone pic
 | `slide` | Drags one triangle onto another | 4, 8 |
 | `read` | Checklist proof only, no figure yet | none: every proposition has a figure |
 
-Features already in place: Solve it for me, One small step, zoom, double-click to colour a line, dependency map, citations.
+Features already in place: a control panel inside the figure (Solve, Step, Slower, zoom in/out, Fit, Start over, previous/next), double-click to colour a line, Euclid’s own proof folded away under each figure, dependency map with Joyce markers, citations, dark mode, touch.
 
 ### Engine tools for figures (in `index.html`)
 - **`wrong` op** (the "pretend" move for proofs by contradiction): the learner drags a point along a set path, marked by a pulse and an arrow. Used in 6, 7 and 14.
@@ -45,6 +45,9 @@ Features already in place: Solve it for me, One small step, zoom, double-click t
 - **Tidy-up after a `use`** (visual only): once every step of a "Use Proposition N" is done, its unlabelled helper points, the lines and rays touching them, and its circles are no longer drawn, and Fit ignores them. Logic is unchanged. `hideSegs:[...]` hides named segments left over from a use (e.g. `DE` in 42).
 - **Short versions (`BYID_Q`)**: every `use` runs the used proposition's short version by default. Short versions: 2 → `cpy` (the copied length, drawn 60° below the line from the given end), 3 → `cut` (equal piece cut off, shown pink with the given line), 9 → `bis`, 10 → `midp`, 11 → `perp` (pick up/down), 23 → `ang` (pick up/down/right/away:X), 31 → `par` (runs from the point towards the end mapped to 31's `B`), 42 → `pgram` (FECG on the half base, with the given angle). A short version must produce every output name its callers map. Prop 44's short version is `apl` (lay a parallelogram equal to a triangle along a line, angle given, side chosen with `away:X`). Step counts after the change: 37 and 38 → 4, 39 and 40 → 5, 42 → 10, 43 → 9, 44 → 15.
 - **Moving a whole shape**: `lay` also takes a polygon. `["lay","G",{tri:["N","T2","W","O"],to:["B"],dir:["A","B"],ns:["E","F","G"],take:["N","O","W"]}]` drags the shape so its first corner lands on B, turns it so its first side runs in the direction A→B, names the other corners' new spots E, F, G, draws the new outline, and stops drawing the `take` points (the copy that was moved). Stands in for Proposition 2. Used in 44 and 45. `dirv:[1,0]` gives a fixed direction instead of a line; `all:1` names every corner's new spot (the first corner too), so the drop spot can be an unlabelled marker that is then removed with `take`. The point lists are translated when the move runs inside another proposition (needed for Slower on 44 inside 45).
+- **Relies-on card**: `uses` is Joyce's list. On each page an asterisk marks a proposition Joyce lists that our figure doesn't use (worked out from the figure's `use` steps and the propositions its own words cite), and propositions our figure uses beyond Joyce's list are shown separately. Currently: 9, 11 (3*), 22 (20*), 23 (22*; adds 2, 3), 36 (34*), 43 (adds 31), 44 and 45 (add 2).
+- **Silent extension (`aext`)**: an automatic point that carries a line on past its end, drawn only when a full construction (opened with Slower) needs it. Used in 46 and 48 so the learner has no extra move.
+- **Euclid's proof card**: every figure has `proof:[...]` (Euclid's argument in plain words, figure letters), shown folded away under the figure.
 - **Plain-English bursts** (`SHORT`, `fxP(id)`): when a short version is used, the burst shows a plain-English line for the proposition (from the sentence before "Let…" in Fitzpatrick, simplified), e.g. 11 → "Make a perpendicular line on a line", with "Proposition 11" small underneath. All 48 have a line. The progress line uses the same wording. Long bursts wrap to fit a phone.
 - **Slower**: `FULLSET` holds the paths (e.g. `"0/2"`) of uses opened in full; each short op carries `prop` and `path`. Pressing Slower adds the next step's path, rebuilds the ops and keeps finished steps done by matching them by content. Reset on load.
 - **Cases** (`cases:[{lab},{lab,...overrides}]`): one proposition with several figures. Chips above the figure switch case; a case overrides goal, pts, segs0, eq0, wedges0, polys0, dsegs0, ops, steps, phases, winTxt. Used in 26.
@@ -64,9 +67,14 @@ Features already in place: Solve it for me, One small step, zoom, double-click t
 - The figure flashes whatever the learner should touch next, with an arrow showing which way to drag.
 - A proposition used inside another runs its **short version** (rule set 22 Nov 2026): the learner taps a flashing preview and a "Prop N" burst confirms it, so the step is still done in the figure, not just cited. Prop 1's short version is its two circles plus tapping the triangle. The learner can press **Slower** (top right of the figure) to do that step in full instead; it is only clickable when the next step is a short version, and it also works on short steps inside a full one (e.g. 44 → 42 → 10). A designer can force the full version with `{full:1}` in a `use` op's options.
 
-### Colour
-- Equal parts share a colour, and each set of equal parts gets its own colour.
-- The learner can mark equal parts by double-clicking to cycle a line's colour.
+### Colour (rule set 22 Nov 2026)
+- Colour only ever marks equal things. One order of colours (`PAL`, colour-blind safe): blue, vermilion, green, reddish purple, sky blue, orange, purple, brown, red, teal.
+- In each picture `colorPlan()` hands out colours in that order: equal lines first, then a moved line, then equal angles, equal shaded angles, equal areas, equal routes, matched triangles.
+- An equal pair of angles takes a softer, paler shade (`softC`) of the colour of the side opposite it, if that side is coloured; otherwise the next colour, softened.
+- Anything shaded but not equal to something else in the picture is grey (`GREYS`). New points are black. Orange pulses and arrows are hints for what to touch, not geometry.
+- In a phase, give equal parts the same `col` value (wedges, polys, paths); different `col` values mean "compared, not equal" and come out grey.
+- Dark mode lightens every colour in the order by 30% (`setPal`).
+- The learner can still double-click a line to colour it.
 
 ### Patterns for kinds of proof
 - **Proof by contradiction** (6, 7, 14, 18–20, 27, …): the learner slides a point to a "wrong" spot, and the logic forces it back.
@@ -90,6 +98,7 @@ Features already in place: Solve it for me, One small step, zoom, double-click t
 
 ## Next
 
+- Polish (done, 22 Nov 2026): new points shrink back after a moment; Euclid's proof card on every page (proofs written for 1–5, 8, 22, 23); home page text; duplicate styles and unused helpers removed; Joyce markers; no extra move in 46 and 48; controls in a panel inside the figure (fits one row on a phone; Home removed from it); new colour rule; dark-mode colours. Final checks: all 48 solve in Chrome; every Slower path in 44–48 gives the same figure; touch tested on a phone-size screen (lines, circles, taps, parallelogram drag, triangle slide, panel buttons); light and dark contact sheets of all 48 reviewed against Euclid's layouts.
 - Batch 1 (done): Props 6, 7, 13, 14, 15, 16, 17.
 - Batch 2 (done): Props 18, 19, 20, 21.
 - Batch 3 (done): Props 24, 25, 26. Prop 26 is built for its first case (equal side between the angles); the second case is described in the last step.
