@@ -274,22 +274,22 @@ for(let i=0;i<500;i++){const side=i%2,x=side?W-r()*W*.14:r()*W*.14,y=r()*H*.8*Ma
 const vg=g.createRadialGradient(W/2,H*.45,Math.min(W,H)*.2,W/2,H*.45,Math.max(W,H)*.75);vg.addColorStop(0,"rgba(0,0,0,0)");vg.addColorStop(1,"rgba(0,0,0,.72)");g.fillStyle=vg;g.fillRect(0,0,W,H);
 wallC={c,w:W,h:H,d:DPR};return c}
 function doorLayout(){const dh=H*.78,tw=Math.min(W*.9,dh*.92),lw=tw/2,x0=(W-tw)/2,y0=H*.15;return{dh,tw,lw,x0,y0,r:lw*.3}}
-let doorOpenT=null;
-function doorOpenAmt(){if(!solved(1))return 0;if(doorOpenT===null)return 1;return clamp((now()-doorOpenT)/2500)}
+let doorOpenT={1:null,4:null};
+function doorOpenAmt(id=1){if(!solved(id))return 0;if(doorOpenT[id]===null)return 1;return clamp((now()-doorOpenT[id])/2500)}
 function drawDoors(t){ctx.drawImage(wallCanvas(),0,0,W,H);const D=doorLayout(),{x0,y0,lw,dh,tw}=D,fw=lw*.14;
 /* stone frame and lintel */
 ctx.fillStyle="#6e6151";ctx.fillRect(x0-fw,y0-fw*1.6,tw+2*fw,dh+fw*1.6);ctx.fillStyle="#857563";ctx.fillRect(x0-fw,y0-fw*1.6,tw+2*fw,fw*1.2);
 groove(()=>{ctx.beginPath();const n=14,yy=y0-fw*1.0,h=fw*.6;for(let i=0;i<=n;i++){const x=x0-fw*.6+(tw+fw*1.2)*i/n;ctx.lineTo(x,yy+(i%2?h:0))}},Math.max(2,fw*.1));
 ctx.fillStyle="#0b0908";ctx.fillRect(x0,y0,tw,dh);
-const op=doorOpenAmt();if(op>0)drawInterior(x0,y0,lw,dh,t);
-drawLeaf(x0,y0,lw,dh,"L",op,t);drawLeaf(x0+lw,y0,lw,dh,"R",0,t);
+const op=doorOpenAmt(1),opR=doorOpenAmt(4);if(op>0)drawInterior(x0,y0,lw,dh,t);if(opR>0)drawInterior(x0+lw,y0,lw,dh,t);
+drawLeaf(x0,y0,lw,dh,"L",op,t);drawLeaf(x0+lw,y0,lw,dh,"R",opR,t);
 ctx.fillStyle="#4a4036";ctx.fillRect(x0-fw*2,y0+dh,tw+fw*4,H-y0-dh);ctx.fillStyle="rgba(255,230,190,.12)";ctx.fillRect(x0-fw*2,y0+dh,tw+fw*4,2);
-if(op>0&&op<1){/* dust as the door swings */for(let i=0;i<14;i++){const a=(t*.7+i*.37)%1;ctx.fillStyle=`rgba(230,210,170,${.25*(1-a)})`;ctx.fillRect(x0+lw*(.1+.8*((i*.618)%1)),y0+dh*(1-a*.5),2,2)}}
-if(op>=1)pulse(x0+lw*.5,y0+dh*.55,lw*.12,t);}
+for(const[o,xs]of[[op,x0],[opR,x0+lw]]){if(o>0&&o<1){/* dust as the door swings */for(let i=0;i<14;i++){const a=(t*.7+i*.37)%1;ctx.fillStyle=`rgba(230,210,170,${.25*(1-a)})`;ctx.fillRect(xs+lw*(.1+.8*((i*.618)%1)),y0+dh*(1-a*.5),2,2)}}
+if(o>=1)pulse(xs+lw*.5,y0+dh*.55,lw*.12,t)}}
 function drawInterior(x,y,w,h,t){const g=ctx.createLinearGradient(x,y,x,y+h);g.addColorStop(0,"#120d0a");g.addColorStop(1,"#2a1e14");ctx.fillStyle=g;ctx.fillRect(x,y,w,h);
 const vx=x+w*.5,vy=y+h*.48;ctx.strokeStyle="rgba(150,120,80,.25)";ctx.lineWidth=1;for(const[a,b]of[[x,y],[x+w,y],[x,y+h],[x+w,y+h]]){ctx.beginPath();ctx.moveTo(a,b);ctx.lineTo(vx+(a-vx)*.15,vy+(b-vy)*.15);ctx.stroke()}
 ctx.strokeRect(vx-w*.075,vy-h*.075,w*.15,h*.15);glow(vx,vy,w*.5,.45+.08*Math.sin(t*3),[255,170,70]);for(const s of[-1,1])glow(vx+s*w*.28,vy-h*.05,w*.09,.6+.2*Math.sin(t*9+s),[255,160,60])}
-function drawLeaf(x,y,w,h,side,open,t){ctx.save();ctx.translate(x,y);const th=ease(open)*1.35;if(open>0){ctx.scale(Math.cos(th),1)}
+function drawLeaf(x,y,w,h,side,open,t){ctx.save();ctx.translate(x,y);const th=ease(open)*1.35;if(open>0){if(side==="R"){ctx.translate(w,0);ctx.scale(Math.cos(th),1);ctx.translate(-w,0)}else ctx.scale(Math.cos(th),1)}
 const g=ctx.createLinearGradient(0,0,w,0);g.addColorStop(0,"#4a2f1b");g.addColorStop(.5,"#6a4428");g.addColorStop(1,"#40281a");ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
 ctx.strokeStyle="rgba(0,0,0,.35)";ctx.lineWidth=2;for(let k=1;k<5;k++){ctx.beginPath();ctx.moveTo(w*k/5,0);ctx.lineTo(w*k/5,h);ctx.stroke()}
 ctx.strokeStyle="rgba(30,15,5,.18)";ctx.lineWidth=1;for(let k=0;k<26;k++){const xx=w*((k*.383)%1);ctx.beginPath();ctx.moveTo(xx,0);ctx.bezierCurveTo(xx+6,h*.3,xx-6,h*.6,xx+3,h);ctx.stroke()}
@@ -297,12 +297,9 @@ ctx.strokeStyle="#a77a3a";ctx.lineWidth=Math.max(3,w*.03);ctx.strokeRect(w*.05,h
 for(const yy of[.12,.84]){ctx.fillStyle="#2d2a27";ctx.fillRect(0,h*yy,w,h*.035);ctx.fillStyle="#8a8278";for(let k=0;k<6;k++){circ(w*(k+.5)/6,h*(yy+.0175),Math.max(2,w*.013));ctx.fill()}}
 const cx=w/2,cy=h/2,r=w*.3;
 if(side==="L"){if(!solved(1))glow(cx,cy,r*1.7,.3+.15*Math.sin(t*3),[255,165,50]);drawPlate(cx,cy,r);drawL1(cx,cy,r,solved(1)?FULL:BLANK,false)}
-else{drawPlate(cx,cy,r);drawL1(cx,cy,r,BLANK,false);boardsUp(w,h)}
+else{if(!solved(4))glow(cx,cy,r*1.7,.3+.15*Math.sin(t*3+1.6),[255,165,50]);drawPlate(cx,cy,r);drawL4(cx,cy,r,solved(4)?FULL4:BLANK4,false)}
 ctx.fillStyle="rgba(0,0,0,.35)";ctx.fillRect(side==="L"?w-3:0,0,3,h);
 if(open>0){ctx.fillStyle=`rgba(0,0,0,${.55*Math.sin(th)})`;ctx.fillRect(0,0,w,h)}ctx.restore()}
-/* the right door is new territory: boarded up for now */
-function boardsUp(w,h){const r=rng(3);for(const[y,a]of[[.3,-.12],[.5,.08],[.66,-.05]]){ctx.save();ctx.translate(w/2,h*y);ctx.rotate(a);const g=ctx.createLinearGradient(0,-h*.03,0,h*.03);g.addColorStop(0,"#9c8160");g.addColorStop(1,"#6b5539");ctx.fillStyle=g;ctx.fillRect(-w*.6,-h*.028,w*1.2,h*.056);
-ctx.fillStyle="#3b3631";for(const s of[-.45,.45]){circ(w*s,0,Math.max(2,w*.014));ctx.fill()}ctx.strokeStyle="rgba(40,25,10,.4)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-w*.6,h*.008);ctx.lineTo(w*.6,h*.004*r());ctx.stroke();ctx.restore()}}
 
 /* ---------- lock plates ---------- */
 function drawPlate(cx,cy,R){let g=ctx.createRadialGradient(cx-R*.3,cy-R*.35,R*.1,cx,cy,R*1.1);g.addColorStop(0,"#e8c47c");g.addColorStop(.55,"#a8742f");g.addColorStop(1,"#4a2e12");ctx.fillStyle=g;circ(cx,cy,R*1.1);ctx.fill();
@@ -345,7 +342,7 @@ for(const yy of[.1,.9]){g.fillStyle="#2d2a27";g.fillRect(0,H*yy-14,W,28);g.fillS
 const vg=g.createRadialGradient(W/2,H/2,Math.min(W,H)*.3,W/2,H/2,Math.max(W,H)*.75);vg.addColorStop(0,"rgba(0,0,0,0)");vg.addColorStop(1,"rgba(0,0,0,.75)");g.fillStyle=vg;g.fillRect(0,0,W,H);woodC={c,w:W,h:H,d:DPR};return c}
 const lockGeo=()=>{const R=Math.min(W,H)*.42;return{R,cx:W/2,cy:H/2}};
 function drawLock(t){ctx.drawImage(woodCanvas(),0,0,W,H);const{R,cx,cy}=lockGeo(),T=now(),dt=Math.min(.05,(T-lastT)/1000);
-glow(cx,cy,R*1.6,.18,[255,170,60]);drawPlate(cx,cy,R);stepAuto(dt);drawL1(cx,cy,R,LK,true)}
+glow(cx,cy,R*1.6,.18,[255,170,60]);drawPlate(cx,cy,R);if(lockId===4)drawL4(cx,cy,R,LK4,true);else{stepAuto(dt);drawL1(cx,cy,R,LK,true)}}
 function toLocal(x,y){const{R,cx,cy}=lockGeo();return[(x-cx)/R,(y-cy)/R]}
 const angDeg=(c,p)=>Math.atan2(p[1]-c[1],p[0]-c[0])*180/Math.PI;
 function markArc(cov,from,d){const T=now(),n=Math.ceil(Math.abs(d));for(let j=0;j<=n;j++){const g=from+d*j/Math.max(1,n),i=((Math.floor(g)%360)+360)%360;if(!cov[i])cov[i]=T}}
@@ -364,10 +361,75 @@ if((key==="AC"||key==="BC")&&!LK[key]){LK[key]=now();sfxChime(false);if(LK.AC&&L
 function stepAuto(dt){const a=LK.auto;if(!a)return;const step=560*dt*a.dir;markArc(a.cov,a.ang,step);a.ang+=step;const r=a.ang*Math.PI/180;LK.tip=[a.ctr[0]+Math.cos(r)*L1.r,a.ctr[1]+Math.sin(r)*L1.r];LK.trail.push({p:LK.tip.slice(),t:now()});
 if(a.cov.every(v=>v>0)){LK.auto=null;LK[a.k==="A"?"dA":"dB"]=true;sfxChime(false);if(LK.dA&&LK.dB&&!LK.C){LK.C=now();setTimeout(()=>sfxChime(true),150)}}}
 function win1(){const T=now();LK.won=T;LK.AB=T;LK.AC=T;LK.BC=T;setTimeout(()=>sfxChime(true),250);
-if(!solved(1)){S.solved.push(1);save()}setTimeout(()=>{sfxUnlock();doorOpenT=null;fadeTo("doors",900,()=>{doorOpenT=now()+700})},1900)}
+if(!solved(1)){S.solved.push(1);save()}setTimeout(()=>{sfxUnlock();doorOpenT[1]=null;fadeTo("doors",900,()=>{doorOpenT[1]=now()+700})},1900)}
 
-/* ---------- the first hall ---------- */
-let hallHits=[];
+/* Proposition 4 lock. Two triangles: two sides and the angle between them are equal.
+   Lay each equal side on its partner, then the angle, then slide one triangle onto the other.
+   Equal sides are marked the old way, with cut ticks (one tick, two ticks); equal angles with a cut arc. */
+const L4=(()=>{const A=[-.7,.22],B=[-.25,.22],C=[-.448,-.228],D=[.2,.3],th=-.663,rt=q=>{const x=q[0]-A[0],y=q[1]-A[1];return[D[0]+x*Math.cos(th)-y*Math.sin(th),D[1]+x*Math.sin(th)+y*Math.cos(th)]};return{A,B,C,D,E:rt(B),F:rt(C)}})();
+const PART={A:"D",B:"E",C:"F",D:"A",E:"B",F:"C"},ARMS={A:["B","C"],D:["E","F"]},L4SIDE={AC:[["A","C"],["D","F"]],AB:[["A","B"],["D","E"]]};
+const mkLock4=()=>({AC:0,AB:0,ang:0,BC:0,won:0,drag:null,ghost:null,anim:null,trail:[],tip:null});
+const BLANK4=mkLock4(),FULL4=Object.assign(mkLock4(),{AC:1,AB:1,ang:1,BC:1,won:1});
+let LK4=mkLock4(),lockId=1;
+const l4Next=lk=>!lk.AC?"AC":!lk.AB?"AB":!lk.ang?"A":lk.won?null:lk.BC?"slide":null;
+const ang2=(c,p)=>Math.atan2(p[1]-c[1],p[0]-c[0]),wrapA=a=>{while(a>Math.PI)a-=2*Math.PI;while(a<-Math.PI)a+=2*Math.PI;return a};
+const rot2=(p,c,a)=>{const x=p[0]-c[0],y=p[1]-c[1];return[c[0]+x*Math.cos(a)-y*Math.sin(a),c[1]+x*Math.sin(a)+y*Math.cos(a)]};
+const segD=(p,a,b)=>{const d=[b[0]-a[0],b[1]-a[1]],t=clamp(((p[0]-a[0])*d[0]+(p[1]-a[1])*d[1])/(d[0]*d[0]+d[1]*d[1]));return dist(p,[a[0]+t*d[0],a[1]+t*d[1]])};
+const wedgeOf=v=>({t:"a",V:L4[v].slice(),a1:ang2(L4[v],L4[ARMS[v][0]]),a2:ang2(L4[v],L4[ARMS[v][1]])});
+function drawL4(cx,cy,R,lk,live){const T=now(),P=q=>[cx+q[0]*R,cy+q[1]*R],Q=n=>P(L4[n]),gw=Math.max(1.6,R*.02),LIFE=1500;
+if(live&&lk.anim){const a=lk.anim,u=ease(clamp((T-a.t0)/a.dur)),g=lk.ghost;if(g.t==="s"){g.p=[lerp(a.f.p[0],a.to.p[0],u),lerp(a.f.p[1],a.to.p[1],u)];g.q=[lerp(a.f.q[0],a.to.q[0],u),lerp(a.f.q[1],a.to.q[1],u)]}
+else{g.V=[lerp(a.f.V[0],a.to.V[0],u),lerp(a.f.V[1],a.to.V[1],u)];g.a1=a.f.a1+wrapA(a.to.a1-a.f.a1)*u;g.a2=a.f.a2+wrapA(a.to.a2-a.f.a2)*u}if(u>=1){lk.anim=null;a.done()}}
+const lines=[["AB","A","B"],["AC","A","C"],["DE","D","E"],["DF","D","F"]];if(lk.BC)lines.push(["BC","B","C"],["EF","E","F"]);
+for(const[,a,b]of lines)groove(()=>{ctx.beginPath();ctx.moveTo(...Q(a));ctx.lineTo(...Q(b))},gw);
+const ticks=(a,b,n)=>()=>{const p=Q(a),q=Q(b),m=[(p[0]+q[0])/2,(p[1]+q[1])/2],L=dist(p,q),u=[(q[0]-p[0])/L,(q[1]-p[1])/L],h=R*.04,sp=R*.032;ctx.beginPath();for(let i=0;i<n;i++){const o=(i-(n-1)/2)*sp,c=[m[0]+u[0]*o,m[1]+u[1]*o];ctx.moveTo(c[0]+u[1]*h,c[1]-u[0]*h);ctx.lineTo(c[0]-u[1]*h,c[1]+u[0]*h)}};
+const arcAt=v=>()=>{const V=Q(v),a1=ang2(L4[v],L4[ARMS[v][0]]),d=wrapA(ang2(L4[v],L4[ARMS[v][1]])-a1);ctx.beginPath();ctx.arc(V[0],V[1],R*.11,a1,a1+d,d<0)};
+const marks=[];if(lk.AC)marks.push(["AC",ticks("A","C",1)],["AC",ticks("D","F",1)]);if(lk.AB)marks.push(["AB",ticks("A","B",2)],["AB",ticks("D","E",2)]);if(lk.ang)marks.push(["ang",arcAt("A")],["ang",arcAt("D")]);
+for(const[,f]of marks)groove(f,gw*.8);
+for(const n of["A","B","C","D","E","F"]){const p=Q(n);ctx.fillStyle="rgba(40,20,4,.85)";circ(p[0]-gw*.2,p[1]-gw*.2,gw*1.3);ctx.fill()}
+/* the magic: what was just cut shines, then fades */
+ctx.save();ctx.globalCompositeOperation="lighter";ctx.lineCap="round";
+const shine=(k,f,w)=>{const age=T-lk[k];if(lk[k]>1&&age<LIFE){const a=1-age/LIFE;ctx.strokeStyle=`rgba(255,200,95,${a*.9})`;ctx.lineWidth=w*(1+a*2.4);f();ctx.stroke()}};
+for(const[k,f]of marks)shine(k,f,gw*.8);if(lk.BC)for(const[a,b]of[["B","C"],["E","F"]])shine("BC",()=>{ctx.beginPath();ctx.moveTo(...Q(a));ctx.lineTo(...Q(b))},gw);
+if(lk.won>1){const age=(T-lk.won)/1000;if(age<2.4){const a=Math.sin(Math.PI*clamp(age/2.4))*.5;ctx.fillStyle=`rgba(255,200,90,${a})`;for(const t of["ABC","DEF"]){poly(t.split("").map(Q));ctx.fill()}}}
+if(live){const g=lk.ghost;if(g&&g.t==="s"){ctx.strokeStyle="rgba(255,205,110,.5)";ctx.lineWidth=gw*1.8;ctx.beginPath();ctx.moveTo(...P(g.p));ctx.lineTo(...P(g.q));ctx.stroke()}
+else if(g&&g.t==="a"){const V=P(g.V),d=wrapA(g.a2-g.a1);ctx.fillStyle="rgba(255,200,90,.32)";ctx.beginPath();ctx.moveTo(...V);ctx.arc(V[0],V[1],R*.16,g.a1,g.a1+d,d<0);ctx.closePath();ctx.fill()}
+else if(g&&g.t==="t"){const q=Object.values(g.pts).map(P);ctx.fillStyle="rgba(255,200,90,.16)";poly(q);ctx.fill();ctx.strokeStyle="rgba(255,210,120,.55)";ctx.lineWidth=gw*1.2;poly(q);ctx.stroke()}
+lk.trail=lk.trail.filter(q=>T-q.t<750);const tr=lk.trail;for(let i=1;i<tr.length;i++){if(tr[i].brk)continue;const a=1-(T-tr[i].t)/750,p0=P(tr[i-1].p),p1=P(tr[i].p);ctx.strokeStyle=`rgba(255,205,110,${a*.95})`;ctx.lineWidth=1+a*gw*2.4;ctx.beginPath();ctx.moveTo(...p0);ctx.lineTo(...p1);ctx.stroke()}
+if(lk.drag&&lk.tip){const h=P(lk.tip);glow(h[0],h[1],R*.17,.85);glow(h[0],h[1],R*.05,1,[255,250,225])}}
+ctx.restore();
+/* what to touch next pulses */
+if(live&&!lk.drag&&!lk.anim){const t=T/1000,pb=R*.035,st=l4Next(lk),mid=(a,b)=>{const p=Q(a),q=Q(b);return[(p[0]+q[0])/2,(p[1]+q[1])/2]};
+if(st==="AC"||st==="AB")L4SIDE[st].forEach(([a,b],i)=>pulse(...mid(a,b),pb,t+i*.5));
+else if(st==="A"){pulse(...Q("A"),pb,t);pulse(...Q("D"),pb,t+.5)}
+else if(st==="slide"){const g=lk.ghost,ps=g?Object.values(g.pts):["A","B","C"].map(n=>L4[n]),c=[(ps[0][0]+ps[1][0]+ps[2][0])/3,(ps[0][1]+ps[1][1]+ps[2][1])/3];pulse(...P(c),pb,t);if(g&&g.pivot)pulse(...P(g.pts[g.pivot]),pb,t+.5)}}}
+function l4Down(x,y){const lk=LK4;if(lk.won||lk.anim)return;const p=toLocal(x,y),{R}=lockGeo(),hit=Math.max(.08,24/R),st=l4Next(lk);let d=null;
+if(st==="AC"||st==="AB"){for(const[i,j]of[[0,1],[1,0]]){const[a,b]=L4SIDE[st][i];if(segD(p,L4[a],L4[b])<hit){d={k:st,tgt:L4SIDE[st][j],start:p,base:[L4[a].slice(),L4[b].slice()]};lk.ghost={t:"s",p:L4[a].slice(),q:L4[b].slice()};break}}}
+else if(st==="A"){for(const[v,w]of[["A","D"],["D","A"]])if(dist(p,L4[v])<hit*1.6){lk.ghost=wedgeOf(v);d={k:"A",tgt:w,start:p,V0:L4[v].slice()};break}}
+else if(st==="slide"){const g=lk.ghost;if(g&&inPoly(p,Object.values(g.pts)))d={k:"slide",last:p};
+else for(const tri of["ABC","DEF"]){const ks=tri.split("");if(inPoly(p,ks.map(k=>L4[k]))){lk.ghost={t:"t",pts:Object.fromEntries(ks.map(k=>[k,L4[k].slice()])),pivot:null};d={k:"slide",last:p};break}}}
+if(!d)return;lk.drag=d;lk.tip=p.slice();lk.trail.push({p:p.slice(),t:now(),brk:true})}
+function l4Move(x,y){const lk=LK4,d=lk.drag;if(!d)return;const p=toLocal(x,y),g=lk.ghost;lk.tip=p.slice();lk.trail.push({p:p.slice(),t:now()});
+if(d.k==="AC"||d.k==="AB"){const o=[p[0]-d.start[0],p[1]-d.start[1]];g.p=[d.base[0][0]+o[0],d.base[0][1]+o[1]];g.q=[d.base[1][0]+o[0],d.base[1][1]+o[1]];return}
+if(d.k==="A"){g.V=[d.V0[0]+p[0]-d.start[0],d.V0[1]+p[1]-d.start[1]];return}
+const ks=Object.keys(g.pts);
+if(!g.pivot){const dl=[p[0]-d.last[0],p[1]-d.last[1]];for(const k of ks){g.pts[k][0]+=dl[0];g.pts[k][1]+=dl[1]}let best=null,bd=1e9;for(const k of ks){const dd=dist(g.pts[k],L4[PART[k]]);if(dd<bd){bd=dd;best=k}}
+if(bd<.07){const t=L4[PART[best]],sh=[t[0]-g.pts[best][0],t[1]-g.pts[best][1]];for(const k of ks){g.pts[k][0]+=sh[0];g.pts[k][1]+=sh[1]}g.pivot=best;sfxTick()}}
+else{const c=g.pts[g.pivot],da=wrapA(ang2(c,p)-ang2(c,d.last));if(dist(p,c)>.06)for(const k of ks)if(k!==g.pivot)g.pts[k]=rot2(g.pts[k],c,da);if(Math.random()<.15)sfxTick();
+for(const k of ks){if(k===g.pivot||dist(g.pts[k],L4[PART[k]])>.05)continue;const th=wrapA(ang2(c,L4[PART[k]])-ang2(c,g.pts[k]));for(const j of ks)if(j!==g.pivot)g.pts[j]=rot2(g.pts[j],c,th);lk.drag=null;win4();break}}
+d.last=p}
+function l4Up(x,y){const lk=LK4,d=lk.drag;if(!d)return;lk.drag=null;const g=lk.ghost;if(d.k==="slide")return;
+const snap=(to,dur,done)=>{lk.anim={f:JSON.parse(JSON.stringify(g)),to,t0:now(),dur,done}};
+if(d.k==="AC"||d.k==="AB"){const T=d.tgt.map(n=>L4[n]),m=[(g.p[0]+g.q[0])/2,(g.p[1]+g.q[1])/2],mt=[(T[0][0]+T[1][0])/2,(T[0][1]+T[1][1])/2];
+if(dist(m,mt)<.16)snap({p:T[0],q:T[1]},280,()=>{lk[d.k]=now();lk.ghost=null;sfxChime(false)});else lk.ghost=null;return}
+const T=wedgeOf(d.tgt);if(dist(g.V,T.V)<.16)snap(T,320,()=>{lk.ang=now();lk.ghost=null;sfxChime(false);setTimeout(()=>{lk.BC=now();sfxChime(true)},450)});else lk.ghost=null}
+function win4(){const T=now();LK4.won=T;LK4.ghost=null;setTimeout(()=>sfxChime(true),200);
+if(!solved(4)){S.solved.push(4);save()}setTimeout(()=>{sfxUnlock();doorOpenT[4]=null;fadeTo("doors",900,()=>{doorOpenT[4]=now()+700})},1900)}
+function openLock(id){lockId=id;if(id===4)LK4=mkLock4();else LK=mkLock();fadeTo("lock",700)}
+
+/* ---------- halls ---------- */
+let hallHits=[],hallId=1;
+/* one door for each proposition that relies on this one, nearest first, alternating walls and kept clear of the torch pillars */
+function hallSlots(n){if(n<=6)return[[-1,2.4],[1,3.3],[-1,6.4],[1,7.3],[-1,10.4],[1,10.9]].slice(0,n);const z=[2.4,3.6,4.8,6.5,7.8,9.4,10.7];return Array.from({length:n},(_,i)=>[i%2?1:-1,z[i>>1]])}
 function drawHall(t){const vx=W/2,vy=H*.47,f=Math.min(W,H)*.62,pr=(x,y,z)=>[vx+x*f/z,vy+y*f/z],HW=1.5,FY=1.1,CY=-1.75,ZN=.4,ZF=13;
 const fog=z=>Math.exp(-(z-1)*.15),col=(c,z,k=1)=>`rgb(${c.map(v=>Math.round(clamp(v*fog(z)*k,0,255))).join(",")})`,quad=(q,c)=>{ctx.fillStyle=c;poly(q);ctx.fill()};
 ctx.fillStyle="#07060a";ctx.fillRect(0,0,W,H);hallHits=[];
@@ -386,12 +448,12 @@ ctx.strokeStyle="rgba(0,0,0,.22)";ctx.lineWidth=1;for(let row=0,y=FY-.4;y>CY;y-=
 ctx.strokeStyle="rgba(0,0,0,.25)";for(let y=FY-.4;y>CY;y-=.4)for(const s of[-1,1]){ctx.beginPath();ctx.moveTo(...pr(s*HW,y,ZN));ctx.lineTo(...pr(s*HW,y,ZF));ctx.stroke()}
 for(let z=2;z<ZF;z++){ctx.strokeStyle=col([48,34,24],z);ctx.lineWidth=Math.max(1,.07*f/z);ctx.beginPath();ctx.moveTo(...pr(-HW,CY,z));ctx.lineTo(...pr(HW,CY,z));ctx.stroke()}
 /* things along the walls, drawn far to near */
-const obj=[];const kids=KIDS[1],slots=[[-1,2.4],[1,3.3],[-1,6.4],[1,7.3],[-1,10.4],[1,10.9]];
+const obj=[];const kids=KIDS[hallId],slots=hallSlots(kids.length),busy=(s,a,b)=>slots.some(([ss,z0])=>ss===s&&z0<b&&z0+.95>a);
 kids.forEach((id,i)=>{const[s,z0]=slots[i];obj.push({z:z0+.5,d:()=>hallDoor(pr,f,col,s,z0,id,t)})});
-for(const z of[2,6,9,12])for(const s of[-1,1])obj.push({z,d:()=>{quad([pr(s*HW,FY,z),pr(s*(HW-.14),FY,z),pr(s*(HW-.14),CY,z),pr(s*HW,CY,z)],col([140,126,108],z));quad([pr(s*(HW-.14),FY,z),pr(s*(HW-.14),FY,z+.2),pr(s*(HW-.14),CY,z+.2),pr(s*(HW-.14),CY,z)],col([118,106,90],z));
+for(const z of[2,6,9,12])for(const s of[-1,1])if(!busy(s,z-.05,z+.25))obj.push({z,d:()=>{quad([pr(s*HW,FY,z),pr(s*(HW-.14),FY,z),pr(s*(HW-.14),CY,z),pr(s*HW,CY,z)],col([140,126,108],z));quad([pr(s*(HW-.14),FY,z),pr(s*(HW-.14),FY,z+.2),pr(s*(HW-.14),CY,z+.2),pr(s*(HW-.14),CY,z)],col([118,106,90],z));
 const fl=pr(s*(HW-.2),-.55,z-.02),fz=f/z;ctx.fillStyle="#2b2622";ctx.fillRect(fl[0]-fz*.03,fl[1],fz*.06,fz*.18);glow(fl[0],fl[1],fz*.55*(.92+.08*Math.sin(t*11+z+s)),.5,[255,165,70]);ctx.fillStyle="#ffd27a";ctx.beginPath();ctx.ellipse(fl[0],fl[1]-fz*.04,fz*.025,fz*.06,0,0,7);ctx.fill()}});
-obj.push({z:4.6,d:()=>painting(pr,col,-1,4.0,5.2,0)});obj.push({z:5.2,d:()=>painting(pr,col,1,4.6,5.8,1)});
-obj.push({z:9.6,d:()=>statue(pr,f,col,-1,9.6)});obj.push({z:10.2,d:()=>statue(pr,f,col,1,10.2)});
+if(!busy(-1,4.0,5.2))obj.push({z:4.6,d:()=>painting(pr,col,-1,4.0,5.2,0)});if(!busy(1,4.6,5.8))obj.push({z:5.2,d:()=>painting(pr,col,1,4.6,5.8,1)});
+if(!busy(-1,9.0,10.2))obj.push({z:9.6,d:()=>statue(pr,f,col,-1,9.6)});if(!busy(1,9.6,10.8))obj.push({z:10.2,d:()=>statue(pr,f,col,1,10.2)});
 obj.sort((a,b)=>b.z-a.z).forEach(o=>o.d());
 const vg=ctx.createRadialGradient(W/2,H*.47,Math.min(W,H)*.25,W/2,H*.47,Math.max(W,H)*.8);vg.addColorStop(0,"rgba(0,0,0,0)");vg.addColorStop(1,"rgba(0,0,0,.65)");ctx.fillStyle=vg;ctx.fillRect(0,0,W,H)}
 function hallDoor(pr,f,col,s,z0,id,t){const HW=1.5,FY=1.1,top=-.5,ar=.475,zc=z0+ar,st=doorState(id),pts=[pr(s*HW,FY,z0)];
@@ -422,15 +484,13 @@ function inPoly(p,q){let c=false;for(let i=0,j=q.length-1;i<q.length;j=i++){if((
 function begin(){audioInit();go("intro")}
 cv.addEventListener("pointerdown",e=>{const x=e.clientX,y=e.clientY;audioInit();if(fade)return;
 if(scene==="title")return begin();if(scene==="intro")return endIntro();
-if(scene==="doors"){const D=doorLayout(),L=[D.x0+D.lw*.5,D.y0+D.dh*.5],R=[D.x0+D.lw*1.5,L[1]];
-if(!solved(1)){if(dist([x,y],L)<D.r*1.4){LK=mkLock();fadeTo("lock",700)}else if(x>D.x0+D.lw&&x<D.x0+D.tw&&y>D.y0&&y<D.y0+D.dh){sfxRattle();toast("New territory. This door opens in a later build.")}return}
-if(doorOpenAmt()>=1&&x>D.x0&&x<D.x0+D.lw&&y>D.y0&&y<D.y0+D.dh)return fadeTo("hall",800);
-if(x>D.x0+D.lw&&x<D.x0+D.tw&&y>D.y0&&y<D.y0+D.dh){sfxRattle();toast("New territory. This door opens in a later build.")}return}
-if(scene==="lock"){cv.setPointerCapture(e.pointerId);return lkDown(x,y)}
+if(scene==="doors"){const D=doorLayout();if(y<D.y0||y>D.y0+D.dh||x<D.x0||x>D.x0+D.tw)return;const id=x<D.x0+D.lw?1:4;
+if(!solved(id))return openLock(id);if(doorOpenAmt(id)>=1){hallId=id;fadeTo("hall",800)}return}
+if(scene==="lock"){cv.setPointerCapture(e.pointerId);return lockId===4?l4Down(x,y):lkDown(x,y)}
 if(scene==="hall"){for(let i=hallHits.length-1;i>=0;i--){const h=hallHits[i];if(!inPoly([x,y],h.poly))continue;if(h.kind==="end")toast("The greenhouse is still being planted.");else if(h.st==="amber"){sfxChime(false);toast("This hall is still being built.")}else if(h.st==="covered"){sfxRattle();toast("Its lock is covered.")}return}}});
-cv.addEventListener("pointermove",e=>{if(scene==="lock")lkMove(e.clientX,e.clientY)});
-cv.addEventListener("pointerup",e=>{if(scene==="lock")lkUp(e.clientX,e.clientY)});
-cv.addEventListener("pointercancel",()=>{if(scene==="lock")LK.drag=null});
+cv.addEventListener("pointermove",e=>{if(scene==="lock")(lockId===4?l4Move:lkMove)(e.clientX,e.clientY)});
+cv.addEventListener("pointerup",e=>{if(scene==="lock")(lockId===4?l4Up:lkUp)(e.clientX,e.clientY)});
+cv.addEventListener("pointercancel",()=>{if(scene==="lock"){LK.drag=null;LK4.drag=null;if(LK4.ghost&&LK4.ghost.t!=="t")LK4.ghost=null}});
 addEventListener("keydown",e=>{if(e.target&&(e.target.tagName==="INPUT"||e.target.tagName==="SELECT"))return;audioInit();if(scene==="title")begin();else if(scene==="intro")endIntro()});
 document.getElementById("back").addEventListener("click",()=>{if(scene==="lock"||scene==="hall")fadeTo("doors",600)});
 document.getElementById("replay").addEventListener("click",()=>{audioInit();fade=null;go("intro")});
