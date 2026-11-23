@@ -17,6 +17,7 @@ main{max-width:780px;margin:0 auto;padding:12px 12px 40px}h1{font-size:25px;marg
 #msg{min-height:2.7em;margin:8px 0}.row{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0;align-items:center}
 ul{list-style:none;padding:0;margin:0}li.st{padding:4px 0 4px 28px;position:relative;color:var(--mute);font-size:15px}li.st::before{content:"○";position:absolute;left:4px}li.st.on{color:var(--ink)}li.st.on::before{content:"✔";color:var(--ok)}
 button{font:600 15px system-ui,sans-serif;padding:9px 14px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}button.p,button.on{background:var(--ok);color:#fff;border-color:var(--ok)}button:disabled{opacity:.45}
+a.gamebtn{font:600 15px system-ui,sans-serif;padding:9px 14px;border-radius:10px;border:2px solid #b07d3b;background:#2a1e14;color:#f3e2b4;text-decoration:none;display:inline-block}
 button.chip{padding:4px 10px;font-size:14px;border-radius:20px}
 .arc{fill:none;stroke:var(--mute);stroke-width:2;opacity:.8}.arc.h1,.seg.h1{stroke:var(--c1);stroke-width:5;opacity:1}.arc.h2,.seg.h2{stroke:var(--c2);stroke-width:5;stroke-dasharray:12 7;opacity:1}.arc.g,.seg.g{stroke:var(--g);stroke-width:7;opacity:1}
 .seg{stroke:var(--ink);stroke-width:3;stroke-linecap:round}.seg.bold{stroke-width:9}.seg.dot{stroke-dasharray:3 7;opacity:.8}.ray{stroke-dasharray:3 6;stroke-width:2}
@@ -38,7 +39,7 @@ li.st::before{content:none!important}.cb{display:inline-block;width:1.6em;font-w
 </head>
 <body>
 <main>
-<div class="row" id="top"><button data-r="home">Home</button><button data-r="map">Relationship map</button></div>
+<div class="row" id="top"><button data-r="home">Home</button><button data-r="map">Relationship map</button><a class="gamebtn" href="game.html">Game</a></div>
 <div id="home"></div><div id="map" style="display:none"></div>
 <div id="prop" style="display:none">
 <h1 id="ttl"></h1><p class="sub" id="stmt"></p><div class="goal" id="goal"></div><div class="row" id="cases"></div>
