@@ -16,9 +16,9 @@ This file is the single source of truth for how the project is built. Anyone pic
 
 | Mode | What the learner does | Propositions |
 |---|---|---|
-| `play` | Builds the construction, then watches the proof play out | 1, 2, 3, 5, 6, 7, 9–41 |
+| `play` | Builds the construction, then watches the proof play out | 1, 2, 3, 5, 6, 7, 9–44 |
 | `slide` | Drags one triangle onto another | 4, 8 |
-| `read` | Checklist proof only, no figure yet | 42–48 (7 total) |
+| `read` | Checklist proof only, no figure yet | 45–48 (4 total) |
 
 Features already in place: Solve it for me, One small step, zoom, double-click to colour a line, dependency map, citations.
 
@@ -41,6 +41,11 @@ Features already in place: Solve it for me, One small step, zoom, double-click t
 - An op with `needMoved:1` waits until the pretend (`wrong`) move is done. Used in 39 and 40, so E or F is found on the tilted line even if the learner draws the parallel first.
 - A `use` op's "away:X" hint is translated only at the level where it is written, so it passes correctly through nested uses (for example 32 → 31 → 23).
 - "Watch the proof again" restarts from the figure as it was before the proof animation began.
+- **Tidy-up after a `use`** (visual only): once every step of a "Use Proposition N" is done, its unlabelled helper points, the lines and rays touching them, and its circles are no longer drawn, and Fit ignores them. Logic is unchanged. `hideSegs:[...]` hides named segments left over from a use (e.g. `DE` in 42).
+- **Cases** (`cases:[{lab},{lab,...overrides}]`): one proposition with several figures. Chips above the figure switch case; a case overrides goal, pts, segs0, eq0, wedges0, polys0, dsegs0, ops, steps, phases, winTxt. Used in 26.
+- **`tags`**: free text labels, e.g. `tags:[["C",[x,y]]]` names triangle C in 44.
+- Phase key `dropSegs` removes segments for the proof animation.
+- **Direction of a helper parallel**: inside Prop 31, the new line runs from the point towards the end mapped to 31's `B` of the given line, so map `B` to the end on the side where the new point will be (e.g. `{A:"A",B:"C",C:"B"}` to run right).
 
 ## Design rules
 
@@ -75,6 +80,10 @@ Features already in place: Solve it for me, One small step, zoom, double-click t
 
 - Fixed in Batch 5: figures no longer run out of letters.
 - Fixed: double-letter names (which looked like lines) were replaced by primes, and helper points are unlabelled.
+- The project copy of `index.html` was found out of date on 22 Nov 2026, and Batch 7 was lost to a usage limit and rebuilt. Always upload the latest `index.html` to the project (and the GitHub repo) after each batch.
+- Prop 44 starts with BEFG already built (given as the result of Prop 42) instead of carrying out 42 inside the figure, which would also have to move it onto AB.
+- Prop 42 carries out 10, 23 and 31 twice: about 175 small steps by hand. The Use buttons and Solve keep it manageable.
+- Prop 43's "relies on" list includes 31, because the learner draws the lines through K.
 
 ## Next
 
@@ -85,9 +94,9 @@ Features already in place: Solve it for me, One small step, zoom, double-click t
 - Batch 5 (done): letter limit lifted (AA, AB, …), then Props 31, 32, 33, 34. 31 carries out Prop 23 inside the figure. 32 carries out 31, and slides the angles at A and B over to C. 33 and 34 spin triangle ABC half a turn onto DCB.
 - Labelling (done): helper points unlabelled, I and J skipped, primes after Z, labels placed in the clearest spot. Prop 23's last point was renamed J → K to match.
 - Batch 6 (done): Props 35, 36, 37, 38. 35 follows the Area pattern: lay triangle ABE on DCF, cut out DGE, shade both parallelograms purple. 36–38 slide one shape along the parallels into the other. 37 and 38 carry out Prop 31 twice each.
-- Batch 7 (done): Props 39, 40, 41. In 39 and 40 the learner lifts D off the parallel, draws the real parallel through A (Prop 31), and sees a smaller triangle forced to equal a bigger one, so D drops back. In 41, triangle EBC slides to ABC and a half-turned copy fills the parallelogram.
+- Batch 7 (done, rebuilt 22 Nov 2026): Props 39, 40, 41. In 39 and 40 the learner lifts D off the parallel, draws the real parallel through A (Prop 31), and sees a smaller triangle forced to equal a bigger one, so D drops back. In 41, triangle EBC slides to ABC and a half-turned copy fills the parallelogram.
 - Old draft `Euclid, Book I.html` removed (Nov 2026).
-- Batch 8: Prop 26 second case (equal side opposite one of the equal angles; contradiction: cut BH equal to DE, then angle BHC = EFD = BCA, against Prop 16), then Props 42–44 (constructions: a parallelogram equal to a triangle, complements, applying a parallelogram to a line).
+- Batch 8 (done, 22 Nov 2026): Prop 26 second case (AB = DE faces the equal angles at C and F; pretend BC is longer than EF, cut BH = EF, then angle BHA = EFD = BCA, but BHA is an outside angle of triangle AHC, so Prop 16 says it is bigger; C slides back onto H), then Props 42–44. 42 bisects BC, copies angle D to E and draws two parallels; ABE = AEC (38), and FECG is double AEC (41). 43: tap K on the diagonal, draw the two parallels through K, then take equal halves from equal halves. 44: parallel through A, pull HB and FE on to meet at K, parallel through K; the complements are equal (43). All of 1–44 pass an automatic solve test in Chrome.
 - Batch 9: Prop 45 (parallelogram equal to any rectilinear figure; repeated use of 44).
 - Batch 10: Prop 46 (square on a given line).
 - Batch 11: Props 47–48 (Pythagoras and its converse). 47 uses shears and purple shading; 48 can use `slide` mode like 4 and 8.
