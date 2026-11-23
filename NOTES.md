@@ -16,9 +16,9 @@ This file is the single source of truth for how the project is built. Anyone pic
 
 | Mode | What the learner does | Propositions |
 |---|---|---|
-| `play` | Builds the construction, then watches the proof play out | 1, 2, 3, 5, 6, 7, 9–45 |
+| `play` | Builds the construction, then watches the proof play out | 1, 2, 3, 5, 6, 7, 9–48 |
 | `slide` | Drags one triangle onto another | 4, 8 |
-| `read` | Checklist proof only, no figure yet | 46–48 (3 total) |
+| `read` | Checklist proof only, no figure yet | none: every proposition has a figure |
 
 Features already in place: Solve it for me, One small step, zoom, double-click to colour a line, dependency map, citations.
 
@@ -34,7 +34,7 @@ Features already in place: Solve it for me, One small step, zoom, double-click t
 - A line that is already drawn counts as done, so the learner is never asked to draw it twice.
 - **Point names**: auto-named points use A–Z without I and J, as Fitzpatrick's figures do (…G, H, K, L…). After Z come primes: A′, B′… then A′′. Inside the engine, unnamed points are `_0`, `_1`… until `relabel()` gives them letters.
 - **Helper points are not labelled.** A point the engine makes while carrying out an earlier proposition, and that this proposition never names, is drawn as a small dot with no letter (the `HELP` set). To show one, name it in that `use` op's output map, e.g. `{K:"E"}`. The progress line never names a helper; it says "the glowing point" instead. `noLab:[...]` still hides labels on named points, e.g. P and Q in 37–38.
-- **Label placement**: each label goes in the clearest direction around its point (away from lines, arcs and shaded angles), slightly preferring above, and dodges other labels and points (`labLayout`).
+- **Label placement**: each label goes in the clearest direction around its point (away from lines, including lines that pass through the point, arcs and shaded angles), slightly preferring above, and dodges other labels and points (`labLayout`).
 - **Segment keys**: a line between two one-letter points is keyed `"AB"` (letters sorted), as before. If either name is longer, the key uses a bar: `"A′|B"`. Always build keys with `sk(a,b)` and read them back with `ends(k)`, and never use `k[0]`/`k[1]`. Option strings such as `on:"AB"` and `pk:["AG"]` follow the same rule.
 - **`pti` op** (`["pti","E","B","P","A","D"]`): an automatic point where whole lines BP and AD cross, once both are drawn. Used in 37 and 38 to find where a new parallel meets the top line.
 - **Area tools**: phase key `polys: [[["A","B","C","D"],6], …]` shades polygons (colour index into PAL; 6 is purple; -1 is a "cut out" piece, blank with a dashed edge). An `anim` that moves temporary points `s1`, `s2`… inside a polygon shows a shear (a parallelogram sliding along its parallels); used in 36–38. `dsegs0` gives dotted lines at the start. `lay` accepts `nosegs:1` and sets `W.laid`. `polys0` shades areas from the start (e.g. the triangles we are told are equal in 39 and 40).
@@ -100,6 +100,9 @@ Features already in place: Solve it for me, One small step, zoom, double-click t
 - Old draft `Euclid, Book I.html` removed (Nov 2026).
 - Batch 8 (done, 22 Nov 2026): Prop 26 second case (AB = DE faces the equal angles at C and F; pretend BC is longer than EF, cut BH = EF, then angle BHA = EFD = BCA, but BHA is an outside angle of triangle AHC, so Prop 16 says it is bigger; C slides back onto H), then Props 42–44. 42 bisects BC, copies angle D to E and draws two parallels; ABE = AEC (38), and FECG is double AEC (41). 43: tap K on the diagonal, draw the two parallels through K, then take equal halves from equal halves. 44: parallel through A, pull HB and FE on to meet at K, parallel through K; the complements are equal (43). All of 1–44 pass an automatic solve test in Chrome. Follow-up the same day: short versions of 2, 3, 9, 10, 11, 23, 31 and 42 now run wherever they are used; 44 starts from triangle C and angle D, taps out 42 and drags the result onto B (Proposition 2 added to its "relies on" list).
 - Batch 9 (done, 22 Nov 2026): Prop 45. Join DB; tap out Prop 42 for triangle ABD and drag it to the glowing spot (FKHG); tap out Prop 44 to lay triangle DBC along GH (GHML). The proof shows KH–HM and FG–GL are straight (29, 14), so KFLM is one parallelogram equal to ABCD. Slower on the Prop 44 step opens 44 in full and gives the same L and M.
-- Batch 10: Prop 46 (square on a given line).
-- Batch 11: Props 47–48 (Pythagoras and its converse). 47 uses shears and purple shading; 48 can use `slide` mode like 4 and 8.
+- Batch 10 (done, 22 Nov 2026): Prop 46. Stand AC at right angles at A (11; AB is carried on past A, dotted, so A sits on a line), cut AD = AB (3, fed the length as B→A so the full version works), parallels through D and B (31 twice) meet at E. Proof: equal sides (34), right angles (29, 34). Slower tested on every step: same square each time.
+- Batch 11 (done, 22 Nov 2026): Props 47 and 48.
+  - 47: three taps for the squares (46, each with `away:` so it sits outside the triangle), the parallel through A (31) gives M on BC and L on DE, then join AL, AD, FC. Proof: GA–AC and BA–AH straight (14); angle DBA = FBC; triangle FBC turns a quarter turn about B onto ABD (4); BDLM and square ABFG are each double one of them (41); the same for MLEC and ACKH; finish with BDLM and ABFG purple, MLEC and ACKH gold. M is an added letter (not in Fitzpatrick) so the rectangles can be named.
+  - 48: pull CA past A, stand AD at right angles to AC away from B (11), cut AD = AB (3), join DC. Proof: squares on DA, AC and DC (47), then on BA, AC and BC, so DC = BC; BAC flips over AC onto DAC (8); angle BAC = DAC, right. Temporary square corners are named q1… and are not drawn.
+  - Engine: short version of 46 (`sq`, side by up/down/away:X); 11 no longer fixes its right angle "up", so a caller's `away:X` decides the side (default still up); 46 now starts by pulling BA past A (it needs A on a line when 46 runs in full inside 47). Points named s1… or q1… are never drawn.
 - Finish Book I: check all 48 figures against Fitzpatrick, test touch on mobile, check the dependency map.
