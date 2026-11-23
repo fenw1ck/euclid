@@ -47,7 +47,7 @@ li.st::before{content:none!important}.cb{display:inline-block;width:1.6em;font-w
 <div id="home"></div><div id="map" style="display:none"></div>
 <div id="prop" style="display:none">
 <h1 id="ttl"></h1><p class="sub" id="stmt"></p><div class="goal" id="goal"></div><div class="row" id="cases"></div>
-<div id="stage"><svg id="s" viewBox="0 0 640 420" role="img" aria-label="Construction area"></svg><div id="fxbox"></div></div>
+<div id="stage"><svg id="s" viewBox="0 0 640 420" role="img" aria-label="Construction area"></svg><div id="fxbox"></div><button id="slower" class="chip" style="position:absolute;top:8px;right:8px" disabled>Slower</button></div>
 <div class="row" id="ctl"><button class="p" id="solve">Solve it for me</button><button id="step">One small step</button><button id="stop" style="display:none">Stop</button><button class="z" id="zin" aria-label="Zoom in">＋</button><button class="z" id="zout" aria-label="Zoom out">－</button><button class="z" id="zfit">Fit</button><button id="reset">Start over</button><button data-r="home">Home</button><button id="prev">Previous</button><button id="next" class="p">Next</button></div>
 <div class="row" id="uses"></div><div id="msg"></div><div class="sub" id="prg"></div>
 <div class="card" id="stepcard"><div class="item"><b>Your proof so far</b><button class="chip" id="hs">Hide steps</button></div><ul id="steps"></ul><div id="after"></div></div>
@@ -571,9 +571,10 @@ $("map").innerHTML=`<h1>Relationship map</h1><p class="sub">Each arrow points fr
 function fx(text){const d=document.createElement("div");d.className="fx";d.innerHTML=`<div class="fxt">${text}</div>`+Array.from({length:30},(_,i)=>{const a=i/30*6.283,r=90+Math.random()*110;return`<i style="--dx:${(Math.cos(a)*r).toFixed(0)}px;--dy:${(Math.sin(a)*r).toFixed(0)}px;--h:${i*12}"></i>`}).join("");$("fxbox").appendChild(d);setTimeout(()=>d.remove(),2600)}
 /* ---- recipes ---- */
 function newH(){return "_"+(HN++)}
-function flat(ops,tr,out,pk,tag0){ops.forEach((o,i)=>{const t=o[0],tag=tag0===undefined?i:tag0,lastO=o[o.length-1],opt=(t!=="place"&&t!=="use"&&lastO&&typeof lastO==="object"&&!Array.isArray(lastO))?lastO:{},tn=s=>s.split(">").map(tr).join(">");
+let FULLSET=new Set();
+function flat(ops,tr,out,pk,tag0,path0){ops.forEach((o,i)=>{const t=o[0],tag=tag0===undefined?i:tag0,pth=path0===undefined?String(i):path0+"/"+i,lastO=o[o.length-1],opt=(t!=="place"&&t!=="use"&&lastO&&typeof lastO==="object"&&!Array.isArray(lastO))?lastO:{},tn=s=>s.split(">").map(tr).join(">");
 if(t==="use"){const sub=BYID[o[1]],loc={},im=o[2],om=o[3]||{};let pkx=pk;if(typeof o[4]==="string"){pkx=o[4];if(pkx.startsWith("away:"))pkx="away:"+tr(pkx.slice(5))}
-const ctr=n=>im[n]!==undefined?tr(im[n]):om[n]!==undefined?tr(om[n]):(loc[n]=loc[n]||newH());const q=!(o[5]&&o[5].full)&&sub.quick,n0=out.length;flat(q?sub.quick:(sub.core||sub.ops),ctr,out,pkx,tag);if(q)for(let j=n0;j<out.length;j++)out[j].prop=o[1];return}
+const ctr=n=>im[n]!==undefined?tr(im[n]):om[n]!==undefined?tr(om[n]):(loc[n]=loc[n]||newH());const q=!(o[5]&&o[5].full)&&!FULLSET.has(pth)&&sub.quick,n0=out.length;flat(q?sub.quick:(sub.core||sub.ops),ctr,out,pkx,tag,pth);if(q)for(let j=n0;j<out.length;j++){out[j].prop=o[1];out[j].path=pth}return}
 const b={t,u:tag,...opt};
 if(t==="line"){const a=tr(o[1]),c=tr(o[2]);if(out.some(x=>x.t==="line"&&sk(x.a,x.b)===sk(a,c)))return;out.push({...b,a,b:c})}
 else if(t==="circ"){const c=tr(o[1]),p=tr(o[2]);if(out.some(x=>x.t==="circ"&&x.c===c&&x.p===p))return;out.push({...b,c,p})}
@@ -604,7 +605,7 @@ if(P.wedges0)W.wedges=P.wedges0.map(w=>({...w}));svg.setAttribute("viewBox",W.vb
 const CASE={},CKEYS=["goal","note","pts","segs0","eq0","wedges0","polys0","dsegs0","ops","steps","phases","winTxt"];
 function applyCase(){if(!P.cases){$("cases").innerHTML="";return}if(!P._base){P._base={};for(const k of CKEYS)P._base[k]=P[k]}const ci=CASE[P.id]||0,cs=P.cases[ci];for(const k of CKEYS)P[k]=cs[k]!==undefined?cs[k]:P._base[k];
 $("cases").innerHTML=P.cases.map((c,i)=>`<button class="chip ${i===ci?"on":""}" data-case="${i}">${c.lab}</button>`).join("")}
-function load(id){cur=ALL.findIndex(p=>p.id===id);P=ALL[cur];W=null;HELP=new Set();applyCase();fresh();
+function load(id){cur=ALL.findIndex(p=>p.id===id);P=ALL[cur];W=null;HELP=new Set();FULLSET=new Set();$("slower").style.display=P.kind==="play"?"":"none";applyCase();fresh();
 $("ttl").textContent=`Book I, Proposition ${P.id}: ${P.t}`;$("stmt").textContent=P.stmt;$("gives").textContent=P.gives;
 const by=ALL.filter(p=>p.uses.includes(P.id));$("usedby").innerHTML=by.length?`Used later by: ${by.map(p=>"I."+p.id).join(", ")}.`:"Nothing later uses this yet.";
 $("relies").innerHTML=P.uses.length?`<b>This proof relies on:</b> <div class="hl">${P.uses.map(chip).join("")}</div><div class="sub">Tap one to go back and see it.</div>`:`<b>This proof relies on nothing earlier.</b>`;
@@ -763,7 +764,10 @@ if(W.cap)h+=`<text class="tag" style="font-size:${20*sc}px" x="${W.vb[0]+W.vb[2]
 if(P.tags)for(const[t,q]of P.tags)h+=`<text class="lab" style="font-size:${22*sc}px" text-anchor="middle" x="${q[0]}" y="${q[1]}">${t}</text>`;
 svg.innerHTML=h;renderSteps();progress()}
 function eqStyle(k){if(W.uc[k]!==undefined){const i=W.uc[k];return`style="stroke:${PAL[i%10]};stroke-width:6;stroke-dasharray:${DASH[i%3]}"`}for(const[i,e]of W.eq.entries())if(e.s.includes(k))return`style="stroke:${PAL[i%10]};stroke-width:6;stroke-dasharray:${DASH[i%3]}"`;return""}
-function progress(){const n=nextOp();$("prg").textContent=W.won?"Done!":(n?"Next: "+describe(n):"Keep going…")}
+function slowerState(){const b=$("slower");if(!b||!P||P.kind!=="play"||!W)return;const n=nextOp(),ok=!!(n&&n.prop&&BYID[n.prop]&&BYID[n.prop].ops&&!W.busy&&!W.won);b.disabled=!ok;b.title=ok?`Do Proposition ${n.prop} step by step`:"Only for steps that use a short version of an earlier proposition"}
+const opSig=o=>JSON.stringify(o,(k,v)=>k==="i"?undefined:v);
+function slower(){if(W.busy||W.won)return;const n=nextOp();if(!n||!n.prop)return;const old=[...W.done].map(i=>opSig(OPS[i]));FULLSET.add(n.path);buildOps();const used=new Set();W.done=new Set();for(const s of old){const j=OPS.findIndex((o,k)=>!used.has(k)&&opSig(o)===s);if(j>=0){used.add(j);W.done.add(j)}}usesBar();update();say(`Step by step: Proposition ${n.prop}.`)}
+function progress(){slowerState();const n=nextOp();$("prg").textContent=W.won?"Done!":(n?"Next: "+describe(n):"Keep going…")}
 function describe(o){const DX={cpy:"tap the flashing line: the length copied (Prop 2)",cut:"tap the flashing piece: an equal length cut off (Prop 3)",bis:"tap the flashing line: the angle cut in half (Prop 9)",perp:"tap the flashing line: the right angle (Prop 11)",pgram:"tap the flashing parallelogram (Prop 42)"};if(DX[o.t])return DX[o.t];if(o.t==="midp")return"tap the line to cut it in half (Prop 10)";if(o.t==="par")return"tap the flashing line: the parallel (Prop 31)";if(o.t==="ang")return"tap the flashing arm: the copied angle (Prop 23)";if(o.t==="lay"&&o.ns)return`drag the parallelogram so ${o.tri[0]} lands on ${o.to[0]}`;if(["a","b","c","p","o","tt","d","e","n"].some(k=>typeof o[k]==="string"&&(HELP.has(o[k])||(P.noLab||[]).includes(o[k]))))return o.t==="line"?"join the two glowing points":o.t==="circ"?"sweep the glowing point round until the arc crosses what it needs to":o.t==="ext"?"pull the glowing line outward":o.t==="place"?"tap the glowing line where the new point goes":o.t==="rot"?"swing the glowing line round onto the other line":"follow the glowing parts";return o.t==="line"?(o.pv?`slide the line along its circle to ${o.b}`:`drag ${o.a} to ${o.b}`):o.t==="circ"?`sweep ${o.p} round ${o.c} until the arc crosses what it needs to`:o.t==="ext"?`pull the whole line ${o.o}${o.tt} outward`:o.t==="tri"?"tap the dotted triangle":o.t==="place"?`tap where you want ${o.n}`:o.t==="rot"?`swing ${o.a}${o.b} round ${o.c} onto ${o.d}${o.e}`:o.t==="wrong"?`pretend: drag ${o.n} along the arrow`:o.t==="lay"?`drag triangle ${o.tri.join("")} so ${o.tri[0]} lands on ${o.to[0]}`:""}
 function update(){if(P.kind==="play")resolve();draw();usesBar()}
 /* ---- view ---- */
@@ -862,7 +866,7 @@ else if(op.t==="lay"){const q=op.tri.map(k=>W.pts[k]);await glide([(q[0][0]+q[1]
 else if(op.t==="wrong"){wrongInit(op);const a=op.path(W,0),to=Math.min(1,op.need+.25);await glide(a);for(let i=1;i<=20&&!W.stop;i++){wrongAt(op,to*i/20);setCursor(W.pts[op.n]);draw();await sleep(30)}finish(op);draw();await sleep(300)}
 else if(op.t==="tri"){W.flashTri=[op.a,op.b,op.c];W.flash=op.c;draw();await sleep(700);W.flashTri=null;finish(op);fx("Prop 1");draw();await sleep(400)}
 resolve();if(W.flash){draw();await sleep(300);W.flash=null}if(!FAST)fit();draw()}
-async function runOps(tag,one){if(W.busy)return;W.busy=true;W.stop=false;$("stop").style.display="";say("Watch what the hand does, then try it yourself.");
+async function runOps(tag,one){if(W.busy)return;W.busy=true;slowerState();W.stop=false;$("stop").style.display="";say("Watch what the hand does, then try it yourself.");
 for(const op of OPS){if(W.stop)break;if(W.done.has(op.i)||auto(op)||(tag!==undefined&&tag!==null&&op.u!==tag))continue;if(op.g&&W.chosen&&op.g!==W.chosen)continue;if(op.g&&!W.chosen&&op.g!==(OPS.find(x=>x.g)||{}).g)continue;if(!ready(op))continue;await act(op);if(one)break}
 setCursor(null);W.busy=false;$("stop").style.display="none";resolve();draw();usesBar();if(!W.stop&&complete()&&!W.won){W.won=true;await win()}}
 async function slideSolve(){if(W.busy)return;W.busy=true;fresh();draw();const pa={A:"D",B:"E",C:"F"},mv=["A","B","C"];await glide([(W.pts.A[0]+W.pts.B[0]+W.pts.C[0])/3,(W.pts.A[1]+W.pts.B[1]+W.pts.C[1])/3]);const dx=W.pts.D[0]-W.pts.A[0],dy=W.pts.D[1]-W.pts.A[1];for(let i=1;i<=20;i++){for(const k of mv){W.pts[k]=[W.orig[k][0]+dx*i/20,W.orig[k][1]+dy*i/20]}setCursor([W.cursor[0]+dx/20,W.cursor[1]+dy/20]);draw();await sleep(30)}W.sl.pivot="A";W.sl.mover="ABC";say("Clicked into place. Now swing round the glowing corner.");draw();await sleep(500);
@@ -871,7 +875,7 @@ async function solveAll(){if(W.busy)return;if(P.kind==="slide")return slideSolve
 document.addEventListener("click",e=>{const b=e.target.closest("button,[data-node]");if(!b)return;
 if(b.dataset.r)return go(b.dataset.r);if(b.dataset.go)return go(+b.dataset.go);if(b.dataset.node)return renderMap(+b.dataset.node);
 if(b.dataset.use!==undefined)return runOps(+b.dataset.use);if(b.dataset.case!==undefined){if(W)W.stop=true;CASE[P.id]=+b.dataset.case;return load(P.id)}
-if(b.id==="solve")return solveAll();if(b.id==="step"&&P.kind==="play")return runOps(null,true);if(b.id==="stop"){W.stop=true;return}if(b.id==="again"){W.won=false;return P.kind==="play"?check():null}
+if(b.id==="slower")return slower();if(b.id==="solve")return solveAll();if(b.id==="step"&&P.kind==="play")return runOps(null,true);if(b.id==="stop"){W.stop=true;return}if(b.id==="again"){W.won=false;return P.kind==="play"?check():null}
 if(b.id==="zin")return zoom(1/1.25);if(b.id==="zout")return zoom(1.25);if(b.id==="zfit")return fit();
 if(b.id==="hs"){showSteps=!showSteps;return P.kind==="read"?renderRead():renderSteps()}if(b.id==="rn"){W.k++;return renderRead()}if(b.id==="ra"){W.k=P.proof.length;return renderRead()}
 if(b.id==="prev"&&cur>0)return go(ALL[cur-1].id);if(b.id==="next"&&cur<ALL.length-1)return go(ALL[cur+1].id);
