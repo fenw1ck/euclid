@@ -38,6 +38,11 @@ Skippable at any moment with any key, click or tap.
 - **Built:** Props 2 and 3, on a general lock engine (`FIGS` in the code). A lock is a list of points, the given figure, and steps of six kinds: join a line, tap a faint triangle (an earlier lock's short version, Prop 1), pull a line on, sweep a circle (the light finishes it once the arc passes what it needs), carry a line onto a point (Prop 2's short version), and swing a line round a pivot (it can carry on round a second pivot while you hold). New locks are mostly data.
   - Prop 2: join AB; tap the triangle ABD; pull DB and DA on; sweep C round B to get F; sweep F round D to get E; swing AE round D onto BF, and keep going round B onto BC. AE and BC get one tick each.
   - Prop 3: carry CD to A (it lands as AG); sweep G round A onto AB at H. CD, AG and AH get one tick each.
+- **Built:** Props 5–8. The engine gained the moves proofs need: tap a point onto a line, *pretend* (drag a point to a wrong spot to test an idea), flip a triangle over, drag one angle onto another, slide one triangle onto another, short arcs for circles too big for the plate, and the contradiction ending (the pretend point slides home and the made-up point merges into it). Equal angles get cut arcs: one arc, two arcs.
+  - Prop 5: pull AB and AC on; tap F on BD; sweep F round A to G; join FC and GB; drag F onto G (triangle AFC turns over onto AGB, so FC = GB); drag the angle under the base at B onto the one at C; then the base angle at B onto the base angle at C.
+  - Prop 6: the base angles are marked equal. Pretend AB is longer by dragging A along the arrow; carry AC onto B (it lands as BD); join DC; swing CD round C towards CA, and A slides home with D merged into it: AB = AC.
+  - Prop 7: pretend a second apex: drag D out of C, with AD and BD ticked equal to AC and BC; join CD; match angle ACD to ADC; then try to match DCB to CDB. It rattles, because it can't, and D falls back into C.
+  - Prop 8: three pairs of sides ticked 1, 2, 3; slide one triangle onto the other until it clicks and swings into place, and the angles at A and D get arcs.
 - Hall doors now work. An amber door opens its lock, a solved door leads into its hall, and Back steps back through the halls you walked through. Each door's plate shows its lock's figure, cut or uncut. Amber doors without a lock yet say so.
 - Equal parts on lock plates are marked the classic way, with cut ticks and arcs, since the plates are bronze and gold only.
 - **Next:** port the site's proposition engine (the `OPS` steps and short versions) so that any proposition's figure can sit on a lock plate. The engine stays the same; only the drawing and the effects change.
@@ -109,7 +114,7 @@ Proposed rules (open to change):
    - the ten songs and the volume control;
    - the item data and the coin roll;
    - the progress save.
-2. **Locks for all 48:** Props 1–4 are done, and walking between halls works. Next: 5–8, which finish the path to 9, 10 and 11 in Hall 1.
+2. **Locks for all 48:** Props 1–8 are done, and walking between halls works. With 1–8 solved, Hall 1's doors 9 and 11 turn amber. Next: 9–12.
 3. **Greenhouses:** junctions, fountains with water sound, the blue statue shop, chests and coins, and an inventory and character screen with clothes.
 4. **Scrolls** (guided mode), more art variety for halls (different statues, paintings showing each hall's own figure), and phone testing across all 48.
 
