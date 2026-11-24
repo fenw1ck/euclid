@@ -15,6 +15,7 @@ canvas{display:block;width:100vw;height:100vh;touch-action:none}
 #music select option{color:#111}
 #music input{width:90px;accent-color:#e3b04b}
 #toast{position:fixed;left:50%;bottom:72px;transform:translateX(-50%);background:rgba(15,12,8,.82);border:1px solid rgba(230,190,110,.5);padding:8px 14px;border-radius:10px;font:15px Georgia,serif;opacity:0;transition:opacity .4s;pointer-events:none;z-index:6;max-width:80vw;text-align:center}
+#plaque{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:7;width:min(420px,86vw);background:linear-gradient(#3a2a18,#22180e);border:2px solid #c9a55a;border-radius:12px;padding:16px 18px;box-shadow:0 10px 40px rgba(0,0,0,.7);display:none;text-align:center}#plaque h2{margin:0;font:600 22px Georgia,serif;color:#f3e2b4}#plaque .d{font:13px system-ui,sans-serif;color:#c9b48a;margin:2px 0 10px}#plaque q{display:block;font:italic 16px/1.4 Georgia,serif;color:#f3e6c4}#plaque .src{font:12px system-ui,sans-serif;color:#b9a47c;margin:4px 0 10px}#plaque .a{font:15px/1.4 Georgia,serif;color:#e8d9b4}#plaque .x{font:12px system-ui,sans-serif;color:#9d8a66;margin-top:10px}
 #menu{position:fixed;left:50%;top:56%;transform:translateX(-50%);z-index:6;gap:12px}.btn.big{font-size:17px;padding:11px 18px}
 @media (max-width:520px){#music select{max-width:92px}#music input{width:60px}}
 </style>
@@ -25,6 +26,7 @@ canvas{display:block;width:100vw;height:100vh;touch-action:none}
 <div id="menu" style="display:none"><button class="btn big" id="cont">Continue</button><button class="btn big" id="newg">Start over</button></div>
 <div id="music"><button class="btn" id="mute" title="Music on or off" aria-label="Music on or off">♪</button><select id="track" aria-label="Song"></select><button class="btn" id="nexttr" title="Next song" aria-label="Next song">⏭</button><input id="vol" type="range" min="0" max="1" step="0.01" aria-label="Music volume"></div>
 <div id="toast"></div>
+<div id="plaque"></div>
 <script>
 "use strict";
 /* ============================================================
@@ -59,6 +61,8 @@ const doorState=i=>solved(i)?"open":USES[i].every(solved)?"amber":"covered";
 const MAP=(()=>{const cols={};IDS.forEach(i=>(cols[depth(i)]=cols[depth(i)]||[]).push(i));const mx=Math.max(...Object.keys(cols).map(Number)),rows=Math.max(...Object.values(cols).map(c=>c.length)),Wd=Math.max(640,mx*60+70),Hd=Math.max(420,rows*36+70),pos={};
 for(const d in cols)cols[d].forEach((id,k)=>pos[id]=[38+(d-1)*60-Wd/2,30+(k+.5)*(Hd-60)/cols[d].length-Hd/2]);
 const edges=[];IDS.forEach(p=>USES[p].forEach(u=>edges.push([u,p,depth(p)])));edges.sort((a,b)=>a[2]-b[2]);return{pos,edges,Wd,Hd}})();
+/* greenhouses join rooms that sit next to each other in one column of the map, so you can cross between branches */
+const GH={};IDS.forEach(i=>GH[i]=[]);{const cols={};IDS.forEach(i=>{const x=MAP.pos[i][0];(cols[x]=cols[x]||[]).push(i)});for(const x in cols){const c=cols[x].sort((a,b)=>MAP.pos[a][1]-MAP.pos[b][1]);for(let j=0;j+1<c.length;j++){GH[c[j]].push(c[j+1]);GH[c[j+1]].push(c[j])}}}
 const SKY=(()=>{const r=rng(7),a=[];for(let k=0;k<900;k++)a.push([(r()-.5)*MAP.Wd*2.4,(r()-.5)*MAP.Hd*2.4,r()*1.3+.4,r()*6.28,.25+r()*.75]);return a})();
 
 /* ---------- treasure (used from phase 3 on; see the design doc) ---------- */
@@ -189,7 +193,7 @@ function pulse(x,y,base,t,c="255,176,60"){const f=(t*1.1)%1;ctx.strokeStyle=`rgb
 /* ---------- scenes ---------- */
 let scene="title",sceneT0=now(),fade=null,lastT=now();
 const hasProgress=()=>S.solved.length>0;
-function go(s){scene=s;sceneT0=now();const show=(id,on)=>document.getElementById(id).style.display=on?"":"none";
+function go(s){scene=s;sceneT0=now();if(typeof BP!=="undefined"){BP=null;hidePlaque()}const show=(id,on)=>document.getElementById(id).style.display=on?"":"none";
 show("back",s==="lock"||s==="hall");show("mapb",s==="doors"||s==="hall"||s==="map");show("relock",s==="hall");show("help",s==="lock");document.getElementById("menu").style.display=s==="title"&&hasProgress()?"flex":"none";
 document.getElementById("mapb").textContent=s==="map"?"✕ Map":"Map";HELP=null}
 function fadeTo(s,ms=700,cb){if(fade)return;fade={t0:now(),ms,s,cb,sw:false}}
@@ -445,7 +449,7 @@ for(const[,f]of marks)groove(f,gw*.8);
 for(const n of["A","B","C","D","E","F"]){const p=Q(n);ctx.fillStyle="rgba(40,20,4,.85)";circ(p[0]-gw*.2,p[1]-gw*.2,gw*1.3);ctx.fill()}
 /* the magic: what was just cut shines, then fades */
 ctx.save();ctx.globalCompositeOperation="lighter";ctx.lineCap="round";
-const shine=(k,f,w)=>{const age=T-lk[k];if(lk[k]>1&&age<LIFE){const a=1-age/LIFE;ctx.strokeStyle=`rgba(255,200,95,${a*.9})`;ctx.lineWidth=w*(1+a*2.4);f();ctx.stroke()}};
+const shine=(k,f,w)=>{const age=T-lk[k];if(lk[k]>1&&age<LIFE){const a=1-age/LIFE,c=k==="AC"?EQC[0]:k==="AB"?EQC[1]:k==="ang"?EQC[2]:"255,200,95";ctx.strokeStyle=`rgba(${c},${a*.9})`;ctx.lineWidth=w*(1+a*2.4);f();ctx.stroke()}};
 for(const[k,f]of marks)shine(k,f,gw*.8);if(lk.BC)for(const[a,b]of[["B","C"],["E","F"]])shine("BC",()=>{ctx.beginPath();ctx.moveTo(...Q(a));ctx.lineTo(...Q(b))},gw);
 if(lk.won>1){const age=(T-lk.won)/1000;if(age<2.4){const a=Math.sin(Math.PI*clamp(age/2.4))*.5;ctx.fillStyle=`rgba(255,200,90,${a})`;for(const t of["ABC","DEF"]){poly(t.split("").map(Q));ctx.fill()}}}
 if(live){const g=lk.ghost;if(g&&g.t==="s"){ctx.strokeStyle="rgba(255,205,110,.5)";ctx.lineWidth=gw*1.8;ctx.beginPath();ctx.moveTo(...P(g.p));ctx.lineTo(...P(g.q));ctx.stroke()}
@@ -531,6 +535,8 @@ function openLock(id){lockId=id;lockFrom=scene;if(id===4)LK4=mkLock4();else if(F
    contradiction: the pretend point slides home and the made-up point merges into it (keep: tick marks that stay). fail:true
    on an amatch means the angles cannot really match: the lock rattles, then collapses. */
 const FIGS={};
+/* equal marks shine in their own colours, not gold: one tick, two ticks, three... */
+const EQC=["120,215,255","255,140,195","150,240,160","205,170,255"];
 const U_=(p,q)=>{const L=dist(p,q);return[(q[0]-p[0])/L,(q[1]-p[1])/L]},X_=(p,d,k)=>[p[0]+d[0]*k,p[1]+d[1]*k];
 FIGS[2]=(()=>{const A=[-.15,.06],B=[.15,.06],D=[0,.06-.3*Math.sqrt(3)/2],r=.22,C=[B[0]+r*.866,B[1]+r*.5],dB=U_(D,B),dA=U_(D,A),F=X_(B,dB,r),E=X_(D,dA,dist(D,F));
 return{pts:{A,B,C,D,E,F,Bx:X_(F,dB,.07),Ax:X_(E,dA,.07)},given:{pts:["A","B","C"],lines:[["B","C"]]},
@@ -706,7 +712,7 @@ ctx.save();ctx.globalCompositeOperation="lighter";ctx.lineCap="round";
 const sh=(t0,f,w)=>{const age=T-t0;if(t0>1&&age<LIFE){const a=1-age/LIFE;ctx.strokeStyle=`rgba(255,200,95,${a*.9})`;ctx.lineWidth=w*(1+a*2.4);f();ctx.stroke()}};
 for(const k in lk.lines){const[a,b]=k.split("|");sh(lk.lines[k],()=>{ctx.beginPath();ctx.moveTo(...Q(a));ctx.lineTo(...Q(b))},gw)}
 for(const o of lk.circs){const c=Q(o.c);for(let i=0;i<360;i++){const age=T-o.cov[i];if(o.cov[i]>1&&age<LIFE){const a=1-age/LIFE;ctx.strokeStyle=`rgba(255,200,95,${a*.9})`;ctx.lineWidth=gw*(1+a*2.2);ctx.beginPath();ctx.arc(c[0],c[1],o.r*R,i*D2R,(i+1.2)*D2R);ctx.stroke()}}}
-for(const m of lk.marks)sh(m.t,mk(m),gw*.8);
+for(const m of lk.marks){const c=EQC[(m.n-1)%EQC.length],age=T-m.t;if(m.t>1&&age<LIFE){const a=1-age/LIFE;ctx.strokeStyle=`rgba(${c},${a*.95})`;ctx.lineWidth=gw*.8*(1+a*2.6);mk(m)();ctx.stroke()}}
 for(const n of lk.vis){const sp=lk.spark&&lk.spark[n];if(sp&&T-sp<1200){const a=1-(T-sp)/1200,p=Q(n);glow(p[0],p[1],R*.2*(1.4-a),a,[255,230,150])}}
 if(lk.won>1){const age=(T-lk.won)/1000;if(age<2.4){const a=Math.sin(Math.PI*clamp(age/2.4));for(const gl of def.glow){if(gl[0]==="w"){const V=Q(gl[1]),a1=ang2(pos(gl[1]),pos(gl[2])),dd=wrapA(ang2(pos(gl[1]),pos(gl[3]))-a1);ctx.fillStyle=`rgba(255,200,90,${a*.35})`;ctx.beginPath();ctx.moveTo(...V);ctx.arc(V[0],V[1],R*.3,a1,a1+dd,dd<0);ctx.closePath();ctx.fill()}else if(gl.length===3){ctx.fillStyle=`rgba(255,200,90,${a*.45})`;poly(gl.map(Q));ctx.fill()}else{ctx.strokeStyle=`rgba(255,205,100,${a*.8})`;ctx.lineWidth=gw*4;ctx.beginPath();ctx.moveTo(...Q(gl[0]));ctx.lineTo(...Q(gl[1]));ctx.stroke()}}}}
 if(live){const g=lk.ghost;
@@ -807,32 +813,33 @@ let hallHits=[],hallId=1;
 function hallSlots(n){if(n<=6)return[[-1,2.4],[1,3.3],[-1,6.4],[1,7.3],[-1,10.4],[1,10.9]].slice(0,n);const z=[2.4,3.6,4.8,6.5,7.8,9.4,10.7];return Array.from({length:n},(_,i)=>[i%2?1:-1,z[i>>1]])}
 function drawHall(t){const vx=W/2,vy=H*.47,f=Math.min(W,H)*.62,pr=(x,y,z)=>[vx+x*f/z,vy+y*f/z],HW=1.5,FY=1.1,CY=-1.75,ZN=.4,ZF=13;
 const fog=z=>Math.exp(-(z-1)*.15),col=(c,z,k=1)=>`rgb(${c.map(v=>Math.round(clamp(v*fog(z)*k,0,255))).join(",")})`,quad=(q,c)=>{ctx.fillStyle=c;poly(q);ctx.fill()};
-ctx.fillStyle="#07060a";ctx.fillRect(0,0,W,H);hallHits=[];
+ctx.fillStyle="#07060a";ctx.fillRect(0,0,W,H);hallHits=[];const HS=hallStyle(hallId);
 /* far wall: this hall's own finished figure hangs at the end */
-quad([pr(-HW,CY,ZF),pr(HW,CY,ZF),pr(HW,FY,ZF),pr(-HW,FY,ZF)],col([110,98,84],ZF));
-if(hasLock(hallId)){const a=pr(-.62,-1.25,ZF),b=pr(.62,.05,ZF),w=b[0]-a[0],h=b[1]-a[1];ctx.fillStyle=col([200,160,70],ZF);ctx.fillRect(a[0]-w*.06,a[1]-h*.06,w*1.12,h*1.12);ctx.globalAlpha=fog(ZF)*1.3;ctx.drawImage(artCanvas(hallId),a[0],a[1],w,h);ctx.globalAlpha=1;glow(...pr(0,-.6,ZF),f/ZF*1.4,.18,[255,200,120])}
+quad([pr(-HW,CY,ZF),pr(HW,CY,ZF),pr(HW,FY,ZF),pr(-HW,FY,ZF)],col(HS.far,ZF));
+if(hasLock(hallId)){const a=pr(-.62,-1.25,ZF),b=pr(.62,.05,ZF),w=b[0]-a[0],h=b[1]-a[1];ctx.fillStyle=col([200,160,70],ZF);ctx.fillRect(a[0]-w*.06,a[1]-h*.06,w*1.12,h*1.12);ctx.globalAlpha=fog(ZF)*1.3;ctx.drawImage(artCanvas(hallId),a[0],a[1],w,h);ctx.globalAlpha=1;hallHits.push({poly:[a,[b[0],a[1]],b,[a[0],b[1]]],kind:"art",id:hallId});glow(...pr(0,-.6,ZF),f/ZF*1.4,.18,[255,200,120])}
 /* floor, walls, ceiling, from far to near */
 const sl=[];for(let z=ZF-1;z>=1;z--)sl.push([z,z+1]);sl.push([ZN,1]);
-for(const[z0,z1]of sl){for(let i=0;i<4;i++){const xa=-HW+i*.75,xb=xa+.75;quad([pr(xa,FY,z0),pr(xb,FY,z0),pr(xb,FY,z1),pr(xa,FY,z1)],col((i+Math.floor(z0))%2?[96,82,64]:[120,104,82],z0))}
-quad([pr(-HW,CY,z0),pr(-HW,FY,z0),pr(-HW,FY,z1),pr(-HW,CY,z1)],col([112,100,86],z0));quad([pr(HW,CY,z0),pr(HW,FY,z0),pr(HW,FY,z1),pr(HW,CY,z1)],col([104,93,80],z0));
-quad([pr(-HW,CY,z0),pr(HW,CY,z0),pr(HW,CY,z1),pr(-HW,CY,z1)],col([62,54,46],z0));
+for(const[z0,z1]of sl){for(let i=0;i<4;i++){const xa=-HW+i*.75,xb=xa+.75;quad([pr(xa,FY,z0),pr(xb,FY,z0),pr(xb,FY,z1),pr(xa,FY,z1)],col((i+Math.floor(z0))%2?HS.fa:HS.fb,z0))}
+quad([pr(-HW,CY,z0),pr(-HW,FY,z0),pr(-HW,FY,z1),pr(-HW,CY,z1)],col(HS.wl,z0));quad([pr(HW,CY,z0),pr(HW,FY,z0),pr(HW,FY,z1),pr(HW,CY,z1)],col(HS.wr,z0));
+quad([pr(-HW,CY,z0),pr(HW,CY,z0),pr(HW,CY,z1),pr(-HW,CY,z1)],col(HS.ce,z0));
 ctx.strokeStyle="rgba(0,0,0,.22)";ctx.lineWidth=1;for(let row=0,y=FY-.4;y>CY;y-=.4,row++)for(const s of[-1,1]){const zz=z0+(row%2)*.5;if(zz<z1){ctx.beginPath();ctx.moveTo(...pr(s*HW,y,zz));ctx.lineTo(...pr(s*HW,y-.4,zz));ctx.stroke()}}}
 ctx.strokeStyle="rgba(0,0,0,.25)";for(let y=FY-.4;y>CY;y-=.4)for(const s of[-1,1]){ctx.beginPath();ctx.moveTo(...pr(s*HW,y,ZN));ctx.lineTo(...pr(s*HW,y,ZF));ctx.stroke()}
 for(let z=2;z<ZF;z++){ctx.strokeStyle=col([48,34,24],z);ctx.lineWidth=Math.max(1,.07*f/z);ctx.beginPath();ctx.moveTo(...pr(-HW,CY,z));ctx.lineTo(...pr(HW,CY,z));ctx.stroke()}
+if(HS.rug){const rw=.42,z0=1.3,z1=10.6;quad([pr(-rw,FY,z0),pr(rw,FY,z0),pr(rw,FY,z1),pr(-rw,FY,z1)],col(HS.rug,4));ctx.strokeStyle=col([214,180,96],4);ctx.lineWidth=Math.max(1,f*.012);poly([pr(-rw*.86,FY,z0+.15),pr(rw*.86,FY,z0+.15),pr(rw*.86,FY,z1-.15),pr(-rw*.86,FY,z1-.15)]);ctx.stroke();for(let z=z0+.8;z<z1-.4;z+=1.1){ctx.fillStyle=col(HS.rug.map(v=>v*1.5),z);poly([pr(0,FY,z-.28),pr(rw*.45,FY,z),pr(0,FY,z+.28),pr(-rw*.45,FY,z)]);ctx.fill()}}
 /* things along the walls, drawn far to near */
-const obj=[];const kids=hallDoors(hallId),slots=hallSlots(kids.length),busy=(s,a,b)=>slots.some(([ss,z0])=>ss===s&&z0<b&&z0+.95>a);
-kids.forEach((id,i)=>{const[s,z0]=slots[i];obj.push({z:z0+.5,d:()=>hallDoor(pr,f,col,s,z0,id,t)})});
+const obj=[];const kids=hallDoors(hallId).concat(GH[hallId].filter(solved)),slots=hallSlots(kids.length).map(([s0,z])=>[HS.flip?-s0:s0,z]),busy=(s,a,b)=>slots.some(([ss,z0])=>ss===s&&z0<b&&z0+.95>a);
+kids.forEach((id,i)=>{const[s,z0]=slots[i],gh=!hallDoors(hallId).includes(id);obj.push({z:z0+.5,d:()=>hallDoor(pr,f,col,s,z0,id,t,gh)})});
 for(const z of[2,6,9,12])for(const s of[-1,1])if(!busy(s,z-.05,z+.25))obj.push({z,d:()=>{quad([pr(s*HW,FY,z),pr(s*(HW-.14),FY,z),pr(s*(HW-.14),CY,z),pr(s*HW,CY,z)],col([140,126,108],z));quad([pr(s*(HW-.14),FY,z),pr(s*(HW-.14),FY,z+.2),pr(s*(HW-.14),CY,z+.2),pr(s*(HW-.14),CY,z)],col([118,106,90],z));
-const fl=pr(s*(HW-.2),-.55,z-.02),fz=f/z;ctx.fillStyle="#2b2622";ctx.fillRect(fl[0]-fz*.03,fl[1],fz*.06,fz*.18);glow(fl[0],fl[1],fz*.55*(.92+.08*Math.sin(t*11+z+s)),.5,[255,165,70]);ctx.fillStyle="#ffd27a";ctx.beginPath();ctx.ellipse(fl[0],fl[1]-fz*.04,fz*.025,fz*.06,0,0,7);ctx.fill()}});
-{const free=[[-1,2.5,3.7],[1,2.9,4.1],[-1,4.4,5.6],[1,4.7,5.9],[-1,6.6,7.8],[1,6.9,8.1]].filter(([s0,a,b])=>!busy(s0,a,b)),art=hallArt(hallId,free.length);free.slice(0,art.length).forEach(([s0,a,b],i)=>obj.push({z:(a+b)/2,d:()=>painting(pr,col,s0,a,b,art[i])}))}
-if(!busy(-1,9.0,10.2))obj.push({z:9.6,d:()=>statue(pr,f,col,-1,9.6)});if(!busy(1,9.6,10.8))obj.push({z:10.2,d:()=>statue(pr,f,col,1,10.2)});
+hallLight(HS.light,pr,f,s,z,t)}});
+{const free=[[-1,2.5,3.7],[1,2.9,4.1],[-1,4.4,5.6],[1,4.7,5.9],[-1,6.6,7.8],[1,6.9,8.1]].filter(([s0,a,b])=>!busy(s0,a,b)),art=hallArt(hallId,free.length);free.slice(0,art.length).forEach(([s0,a,b],i)=>obj.push({z:(a+b)/2,d:()=>HS.win&&i%2===1?hallWindow(pr,col,s0,a,b,t):painting(pr,col,s0,a,b,art[i])}))}
+{const m=hallMinds(hallId);if(!busy(-1,9.0,10.2))obj.push({z:9.6,d:()=>statue(pr,f,col,-1,9.6,m[0])});if(!busy(1,9.6,10.8))obj.push({z:10.2,d:()=>statue(pr,f,col,1,10.2,m[1])})}
 obj.sort((a,b)=>b.z-a.z).forEach(o=>o.d());
-const vg=ctx.createRadialGradient(W/2,H*.47,Math.min(W,H)*.25,W/2,H*.47,Math.max(W,H)*.8);vg.addColorStop(0,"rgba(0,0,0,0)");vg.addColorStop(1,"rgba(0,0,0,.65)");ctx.fillStyle=vg;ctx.fillRect(0,0,W,H)}
-function hallDoor(pr,f,col,s,z0,id,t){const HW=1.5,FY=1.1,top=-.5,ar=.475,zc=z0+ar,st=doorState(id),pts=[pr(s*HW,FY,z0)];
+const vg=ctx.createRadialGradient(W/2,H*.47,Math.min(W,H)*.25,W/2,H*.47,Math.max(W,H)*.8);vg.addColorStop(0,"rgba(0,0,0,0)");vg.addColorStop(1,"rgba(0,0,0,.65)");ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);if(BP)drawBlueprint(t)}
+function hallDoor(pr,f,col,s,z0,id,t,gh){const HW=1.5,FY=1.1,top=-.5,ar=.475,zc=z0+ar,st=doorState(id),pts=[pr(s*HW,FY,z0)];
 for(let k=0;k<=12;k++){const a=Math.PI*k/12;pts.push(pr(s*HW,top-Math.sin(a)*ar*.9,z0+(1-Math.cos(a))*ar))}pts.push(pr(s*HW,FY,z0+2*ar));
 if(st==="amber"){ctx.save();ctx.globalCompositeOperation="lighter";const c=pr(s*HW,.1,zc);glow(c[0],c[1],1.3*f/zc,.28+.12*Math.sin(t*3),[255,160,50]);const fl=pr(s*1.05,FY,zc);ctx.fillStyle=`rgba(255,160,60,${.12+.05*Math.sin(t*3)})`;ctx.beginPath();ctx.ellipse(fl[0],fl[1],.55*f/zc,.12*f/zc,0,0,7);ctx.fill();ctx.restore()}
-ctx.fillStyle=st==="open"?"#0d0908":col([104,68,40],zc);poly(pts);ctx.fill();
-if(st!=="open"){ctx.strokeStyle=col([60,38,22],zc);ctx.lineWidth=1;for(const zz of[.24,.48,.72]){ctx.beginPath();ctx.moveTo(...pr(s*HW,FY,z0+zz*2*ar));ctx.lineTo(...pr(s*HW,top-.3,z0+zz*2*ar));ctx.stroke()}
+ctx.fillStyle=st==="open"?"#0d0908":col([104,68,40],zc);poly(pts);ctx.fill();if(gh){ctx.fillStyle="rgba(120,200,140,.35)";poly(pts);ctx.fill();ctx.strokeStyle="rgba(230,255,235,.55)";ctx.lineWidth=Math.max(1,.02*f/zc);for(const zz of[.33,.66]){ctx.beginPath();ctx.moveTo(...pr(s*HW,FY,z0+zz*2*ar));ctx.lineTo(...pr(s*HW,top-.35,z0+zz*2*ar));ctx.stroke()}for(const yy of[.5,-.1]){ctx.beginPath();ctx.moveTo(...pr(s*HW,yy,z0));ctx.lineTo(...pr(s*HW,yy,z0+2*ar));ctx.stroke()}const r_=rng(id*7);ctx.fillStyle="rgba(60,140,70,.8)";for(let i=0;i<16;i++){const q=pr(s*HW,FY-r_()*.9,z0+r_()*2*ar);ctx.beginPath();ctx.ellipse(q[0],q[1],.03*f/zc,.018*f/zc,r_()*3,0,7);ctx.fill()}}
+if(st!=="open"&&!gh){ctx.strokeStyle=col([60,38,22],zc);ctx.lineWidth=1;for(const zz of[.24,.48,.72]){ctx.beginPath();ctx.moveTo(...pr(s*HW,FY,z0+zz*2*ar));ctx.lineTo(...pr(s*HW,top-.3,z0+zz*2*ar));ctx.stroke()}
 const c=pr(s*HW,.18,zc),r=.13*f/zc;ctx.save();ctx.translate(c[0],c[1]);ctx.scale(.55,1);drawPlate(0,0,r);if(r>9){lockFace(id,0,0,r*FK);plateLabel(id,0,0,r)}if(st==="covered")coverPlate(r);ctx.restore()}
 ctx.strokeStyle=col([150,136,116],zc);ctx.lineWidth=Math.max(2,.07*f/zc);poly(pts);ctx.stroke();hallHits.push({poly:pts,kind:"door",id,st})}
 /* a covered lock: the lock is still visible behind an iron cover */
@@ -842,7 +849,7 @@ function painting(pr,col,s,za,zb,id){const HW=1.49,ya=-1.3,yb=-.2,zc=(za+zb)/2,q
 at=(u,v)=>pr(s*HW,ya+v*(yb-ya),s<0?za+u*(zb-za):zb-u*(zb-za)),N=10;
 for(let i=0;i<N;i++){const u0=i/N,u1=(i+1)/N,TL=at(u0,0),TR=at(u1,0),BL=at(u0,1),BR=at(u1,1),ux=[(TR[0]-TL[0])/(iw/N),(TR[1]-TL[1])/(iw/N)],vy=[(BL[0]-TL[0])/ih,(BL[1]-TL[1])/ih];
 ctx.save();poly([TL,at(Math.min(1,u1+.01),0),at(Math.min(1,u1+.01),1),BL]);ctx.clip();ctx.transform(ux[0],ux[1],vy[0],vy[1],TL[0]-ux[0]*u0*iw,TL[1]-ux[1]*u0*iw);ctx.drawImage(img,0,0);ctx.restore()}
-ctx.fillStyle=`rgba(0,0,0,${clamp(1-Math.exp(-(zc-1)*.15)*1.15,0,.8)})`;poly(q);ctx.fill();ctx.strokeStyle=col([210,160,60],zc);ctx.lineWidth=Math.max(2,4/zc*3);poly(q);ctx.stroke()}
+ctx.fillStyle=`rgba(0,0,0,${clamp(1-Math.exp(-(zc-1)*.15)*1.15,0,.8)})`;poly(q);ctx.fill();ctx.strokeStyle=col([210,160,60],zc);ctx.lineWidth=Math.max(2,4/zc*3);poly(q);ctx.stroke();hallHits.push({poly:q,kind:"art",id})}
 /* the finished figure of a proposition on parchment, made once and kept */
 const ART={};
 function faceFull(id,cx,cy,r){if(id===1)drawL1(cx,cy,r,FULL,false);else if(id===4)drawL4(cx,cy,r,FULL4,false);else if(FIGS[id])drawFig(cx,cy,r,FIGF[id],false)}
@@ -853,27 +860,94 @@ ctx=g;try{faceFull(id,160,150,150)}finally{ctx=keep}g.font="600 24px Georgia,ser
 function hallArt(n,k){const out=[];for(let i=n+1;i<=48&&out.length<k;i++)if(hasLock(i))out.push(i);for(let i=n-1;i>=1&&out.length<k;i--)if(hasLock(i))out.push(i);return out}
 /* hall n has a door to c only once everything else c needs is solved: this proof is what opens that room */
 const hallDoors=n=>KIDS[n].filter(c=>USES[c].every(u=>u===n||solved(u)));
-function statue(pr,f,col,s,z){const x=s*1.08,FY=1.1,k=f/z,m=c=>col(c,z);
-ctx.fillStyle=m([150,140,126]);poly([pr(x-.28,FY,z),pr(x+.28,FY,z),pr(x+.28,.55,z),pr(x-.28,.55,z)]);ctx.fill();ctx.fillStyle=m([175,165,150]);poly([pr(x-.3,.55,z),pr(x+.3,.55,z),pr(x+.3,.5,z),pr(x-.3,.5,z)]);ctx.fill();
-ctx.fillStyle=m([214,208,196]);poly([pr(x-.2,.5,z),pr(x+.2,.5,z),pr(x+.13,-.62,z),pr(x-.13,-.62,z)]);ctx.fill();
+function statue(pr,f,col,s,z,who){const x=s*1.08,FY=1.1,k=f/z,br=who&&who.bronze,m=c=>col(br?[c[0]*.75,c[1]*.55,c[2]*.3]:c,z),bust=who&&who.bust,top=bust?-.12:.55;
+ctx.fillStyle=col([150,140,126],z);poly([pr(x-.24,FY,z),pr(x+.24,FY,z),pr(x+.24,top,z),pr(x-.24,top,z)]);ctx.fill();ctx.fillStyle=col([175,165,150],z);poly([pr(x-.28,top,z),pr(x+.28,top,z),pr(x+.28,top-.05,z),pr(x-.28,top-.05,z)]);ctx.fill();
+if(bust){ctx.fillStyle=m([214,208,196]);poly([pr(x-.22,top-.05,z),pr(x+.22,top-.05,z),pr(x+.14,top-.3,z),pr(x-.14,top-.3,z)]);ctx.fill();poly([pr(x-.05,top-.3,z),pr(x+.05,top-.3,z),pr(x+.05,top-.4,z),pr(x-.05,top-.4,z)]);ctx.fill();const h=pr(x,top-.55,z);ctx.fillStyle=m([222,216,204]);circ(h[0],h[1],.15*k);ctx.fill()}
+else{ctx.fillStyle=m([214,208,196]);poly([pr(x-.2,.5,z),pr(x+.2,.5,z),pr(x+.13,-.62,z),pr(x-.13,-.62,z)]);ctx.fill();
 ctx.strokeStyle=m([150,142,130]);ctx.lineWidth=1;for(const d of[-.06,.02,.09]){ctx.beginPath();ctx.moveTo(...pr(x+d,.5,z));ctx.lineTo(...pr(x+d*.7,-.5,z));ctx.stroke()}
 const h=pr(x,-.8,z);ctx.fillStyle=m([222,216,204]);circ(h[0],h[1],.16*k);ctx.fill();
-ctx.strokeStyle=m([90,80,70]);ctx.lineWidth=Math.max(1,.03*k);ctx.beginPath();ctx.moveTo(...pr(x+s*-.14,-.35,z));ctx.lineTo(...pr(x+s*-.32,.1,z));ctx.moveTo(...pr(x+s*-.14,-.35,z));ctx.lineTo(...pr(x+s*-.2,.12,z));ctx.stroke();
-const r=rng(z*10);ctx.fillStyle="#3c6a32";for(let i=0;i<14;i++){const p=pr(x+(r()-.5)*.6,FY-r()*.6,z);ctx.beginPath();ctx.ellipse(p[0],p[1],.03*k,.02*k,r()*3,0,7);ctx.fill()}}
+ctx.strokeStyle=m([90,80,70]);ctx.lineWidth=Math.max(1,.03*k);ctx.beginPath();ctx.moveTo(...pr(x+s*-.14,-.35,z));ctx.lineTo(...pr(x+s*-.32,.1,z));ctx.moveTo(...pr(x+s*-.14,-.35,z));ctx.lineTo(...pr(x+s*-.2,.12,z));ctx.stroke()}
+/* the plaque */
+const py=bust?.25:.72;ctx.fillStyle=col([206,166,78],z);poly([pr(x-.14,py,z),pr(x+.14,py,z),pr(x+.14,py+.13,z),pr(x-.14,py+.13,z)]);ctx.fill();ctx.strokeStyle=col([90,60,20],z);ctx.lineWidth=1;for(const yy of[.04,.08])if(k>40){ctx.beginPath();ctx.moveTo(...pr(x-.1,py+yy,z));ctx.lineTo(...pr(x+.1,py+yy,z));ctx.stroke()}
+const r=rng(z*10);ctx.fillStyle="#3c6a32";for(let i=0;i<14;i++){const p=pr(x+(r()-.5)*.6,FY-r()*.6,z);ctx.beginPath();ctx.ellipse(p[0],p[1],.03*k,.02*k,r()*3,0,7);ctx.fill()}
+if(who)hallHits.push({poly:[pr(x-.3,FY,z),pr(x+.3,FY,z),pr(x+.3,-1,z),pr(x-.3,-1,z)],kind:"mind",who})}
+/* each hall gets its own look, the same every visit */
+const HSC={};
+function hallStyle(n){if(HSC[n])return HSC[n];const r=rng(n*977+13),pick=a=>a[Math.floor(r()*a.length)];
+const w=pick([[112,100,86],[126,106,84],[96,104,114],[120,94,86],[100,112,96],[130,122,106],[92,88,104]]),fl=pick([[[96,82,64],[120,104,82]],[[70,66,62],[150,144,134]],[[112,70,52],[142,98,72]],[[60,72,80],[96,110,118]],[[88,96,70],[122,126,98]],[[40,38,36],[200,194,182]]]);
+return HSC[n]={far:w.map(v=>v*.98),wl:w,wr:w.map(v=>v*.93),ce:w.map(v=>v*.55),fa:fl[0],fb:fl[1],flip:r()<.5,rug:r()<.6?pick([[120,30,34],[30,60,110],[40,90,60],[110,80,20],[80,40,90]]):null,light:n===1?"torch":pick(["torch","sconce","candelabra","lamp","tiffany"]),win:r()<.5}}
+function hallLight(type,pr,f,s,z,t){const HW=1.5,FY=1.1,fz=f/z,fl=(a,b)=>.92+.08*Math.sin(t*a+z+s*b);
+if(type==="torch"){const p=pr(s*(HW-.2),-.55,z-.02);ctx.fillStyle="#2b2622";ctx.fillRect(p[0]-fz*.03,p[1],fz*.06,fz*.18);glow(p[0],p[1],fz*.55*fl(11,1),.5,[255,165,70]);ctx.fillStyle="#ffd27a";ctx.beginPath();ctx.ellipse(p[0],p[1]-fz*.04,fz*.025,fz*.06,0,0,7);ctx.fill();return}
+if(type==="sconce"){const p=pr(s*(HW-.17),-.7,z-.02);ctx.fillStyle="#8a6a2a";ctx.fillRect(p[0]-fz*.04,p[1]+fz*.05,fz*.08,fz*.12);glow(p[0],p[1],fz*.5*fl(3,1),.45,[255,225,170]);ctx.fillStyle="rgba(255,240,210,.95)";circ(p[0],p[1],fz*.06);ctx.fill();return}
+const x=s*(HW-.38),zz=z-.25,k=f/zz;
+if(type==="candelabra"){const b=pr(x,FY,zz),tp=pr(x,-.15,zz);ctx.strokeStyle="#b08a3a";ctx.lineWidth=Math.max(1,k*.025);ctx.beginPath();ctx.moveTo(...b);ctx.lineTo(...tp);ctx.moveTo(...pr(x-.14,-.15,zz));ctx.quadraticCurveTo(...pr(x,.06,zz),...pr(x+.14,-.15,zz));ctx.stroke();ctx.fillStyle="#8a6a2a";ctx.beginPath();ctx.ellipse(b[0],b[1],k*.09,k*.025,0,0,7);ctx.fill();
+for(const dx of[-.14,0,.14]){const c=pr(x+dx,-.15,zz);ctx.fillStyle="#f2ead8";ctx.fillRect(c[0]-k*.012,c[1]-k*.1,k*.024,k*.1);glow(c[0],c[1]-k*.13,k*.22*fl(13,dx*20),.45,[255,180,90]);ctx.fillStyle="#ffd27a";ctx.beginPath();ctx.ellipse(c[0],c[1]-k*.13,k*.012,k*.03,0,0,7);ctx.fill()}return}
+if(type==="lamp"){const b=pr(x,FY,zz),tp=pr(x,-.42,zz);ctx.strokeStyle="#2b2622";ctx.lineWidth=Math.max(1,k*.02);ctx.beginPath();ctx.moveTo(...b);ctx.lineTo(...tp);ctx.stroke();glow(tp[0],tp[1]+k*.06,k*.6,.4,[255,215,150]);ctx.fillStyle="#e9d3a0";poly([pr(x-.09,-.6,zz),pr(x+.09,-.6,zz),pr(x+.15,-.38,zz),pr(x-.15,-.38,zz)]);ctx.fill();return}
+/* a Tiffany lamp on a small table */
+ctx.fillStyle="#4a2e18";poly([pr(x-.18,.36,zz),pr(x+.18,.36,zz),pr(x+.18,.3,zz),pr(x-.18,.3,zz)]);ctx.fill();ctx.strokeStyle="#3a2412";ctx.lineWidth=Math.max(1,k*.02);ctx.beginPath();ctx.moveTo(...pr(x,.36,zz));ctx.lineTo(...pr(x,FY,zz));ctx.stroke();
+ctx.strokeStyle="#5a4a2a";ctx.beginPath();ctx.moveTo(...pr(x,.3,zz));ctx.lineTo(...pr(x,0,zz));ctx.stroke();const c=pr(x,0,zz);glow(c[0],c[1]+k*.05,k*.5,.42*fl(2,1),[255,200,120]);
+const cl=["#c23b22","#2e8b57","#e0a526","#2f5fa8","#c23b22","#2e8b57"];for(let i=0;i<6;i++){ctx.fillStyle=cl[i];ctx.beginPath();ctx.moveTo(c[0],c[1]-k*.13);ctx.lineTo(c[0]+k*(-.16+i*.0533),c[1]+k*.02);ctx.lineTo(c[0]+k*(-.16+(i+1)*.0533),c[1]+k*.02);ctx.closePath();ctx.fill()}}
+/* a window onto the night */
+function hallWindow(pr,col,s,za,zb,t){const HW=1.49,ya=-1.35,yb=-.15,zc=(za+zb)/2,at=(u,v)=>pr(s*HW,ya+v*(yb-ya),za+u*(zb-za)),q=[at(0,0),at(1,0),at(1,1),at(0,1)];
+const g=ctx.createLinearGradient(0,q[0][1],0,q[3][1]);g.addColorStop(0,"#0b1430");g.addColorStop(1,"#3a2a55");ctx.fillStyle=g;poly(q);ctx.fill();const r=rng(Math.round(za*100));for(let i=0;i<14;i++){const p=at(r(),r()*.8);ctx.fillStyle=`rgba(255,250,230,${.4+.4*Math.sin(t*2+i)})`;ctx.fillRect(p[0],p[1],1.5,1.5)}
+const m=at(.3,.25);glow(m[0],m[1],Math.abs(q[1][0]-q[0][0])*.3,.5,[230,235,255]);ctx.fillStyle="#eef0ff";circ(m[0],m[1],Math.max(2,Math.abs(q[1][0]-q[0][0])*.07));ctx.fill();
+ctx.strokeStyle=col([160,146,126],zc);ctx.lineWidth=Math.max(2,9/zc);poly(q);ctx.stroke();ctx.lineWidth=Math.max(1,5/zc);ctx.beginPath();ctx.moveTo(...at(.5,0));ctx.lineTo(...at(.5,1));ctx.moveTo(...at(0,.45));ctx.lineTo(...at(1,.45));ctx.stroke();
+const fl=pr(s*1.0,1.1,zc);ctx.fillStyle="rgba(190,205,255,.08)";ctx.beginPath();ctx.ellipse(fl[0],fl[1],Math.abs(q[1][0]-q[0][0])*1.2,Math.abs(q[1][0]-q[0][0])*.25,0,0,7);ctx.fill()}
+/* great minds, two to a hall, each with a plaque */
+const MINDS=[
+{n:"Euclid",d:"lived around 300 BC",q:"There is no royal road to geometry.",src:"said to King Ptolemy, as told by Proclus",a:"Wrote the Elements, the book of geometry these halls are built from."},
+{n:"Archimedes",d:"c. 287 – 212 BC",q:"Give me a place to stand, and I will move the Earth.",src:"as reported by Pappus of Alexandria",a:"Found the area of a circle and the volume of a sphere, and explained the lever."},
+{n:"Eratosthenes",d:"c. 276 – c. 194 BC",q:"",src:"None of his sayings survive.",a:"Measured the size of the Earth from the shadows the noon sun cast in two cities."},
+{n:"Hypatia",d:"c. 360 – 415",q:"",src:"None of her sayings survive.",a:"Taught mathematics and astronomy in Alexandria, and wrote commentaries on Diophantus and Apollonius."},
+{n:"Galileo Galilei",d:"1564 – 1642",q:"The book of nature is written in the language of mathematics.",src:"a shortened form of a line in The Assayer (1623)",a:"Turned a telescope on the sky, found four moons of Jupiter, and studied how things fall."},
+{n:"René Descartes",d:"1596 – 1650",q:"I think, therefore I am.",src:"Discourse on the Method (1637)",a:"Joined algebra to geometry: points became pairs of numbers, and curves became equations."},
+{n:"Isaac Newton",d:"1643 – 1727",q:"If I have seen further it is by standing on the shoulders of Giants.",src:"letter to Robert Hooke (1676)",a:"Gave the laws of motion and of gravity, and invented calculus."},
+{n:"Leonhard Euler",d:"1707 – 1783",q:"Read Euler, read Euler, he is the master of us all.",src:"Pierre-Simon Laplace, speaking of him",a:"Wrote more mathematics than almost anyone, and began graph theory with the bridges of Königsberg."},
+{n:"Sophie Germain",d:"1776 – 1831",q:"Algebra is but written geometry and geometry is but figured algebra.",src:"as quoted in Memorabilia Mathematica (1914)",a:"Made the first big general step towards Fermat's Last Theorem, and founded the mathematics of elastic surfaces."},
+{n:"Carl Friedrich Gauss",d:"1777 – 1855",q:"Mathematics is the queen of the sciences.",src:"as recalled by his friend Sartorius von Waltershausen",a:"Showed that a regular 17-sided polygon can be drawn with compass and straightedge alone."},
+{n:"Ada Lovelace",d:"1815 – 1852",q:"The Analytical Engine weaves algebraical patterns just as the Jacquard loom weaves flowers and leaves.",src:"her Notes on the Analytical Engine (1843)",a:"Wrote the first published program for a computing machine."},
+{n:"Albert Einstein",d:"1879 – 1955",q:"Do not worry about your difficulties in mathematics. I can assure you mine are still greater.",src:"letter to a schoolgirl (1943)",a:"Showed with relativity that space and time bend, and that mass and energy are one (E = mc²)."},
+{n:"Emmy Noether",d:"1882 – 1935",q:"My methods are really methods of working and thinking; this is why they have crept in everywhere anonymously.",src:"letter to Helmut Hasse (1931)",a:"Linked every symmetry in physics to a conserved quantity, and shaped modern abstract algebra."}];
+MINDS.forEach((m,i)=>{m.bust=i%2===0;m.bronze=i%3===2});
+const hallMinds=n=>{const i=(n*5)%MINDS.length;return[MINDS[i],MINDS[(i+7)%MINDS.length]]};
+let PLQ=false;const plq=document.getElementById("plaque"),esc=x=>String(x).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+function showPlaque(m){plq.innerHTML=`<h2>${esc(m.n)}</h2><div class="d">${esc(m.d)}</div>${m.q?`<q>${esc(m.q)}</q>`:""}<div class="src">${m.q?"— ":""}${esc(m.src)}</div><div class="a">${esc(m.a)}</div><div class="x">Tap to close</div>`;plq.style.display="block";PLQ=true;sfxChime(false)}
+function hidePlaque(){plq.style.display="none";PLQ=false}plq.addEventListener("click",hidePlaque);
+/* blueprints: double-tap a painting to see its figure, its number and its steps */
+let BP=null,artTap={id:null,t:0};const BPC={};
+function bpCanvas(id){if(BPC[id])return BPC[id];const c=document.createElement("canvas");c.width=c.height=480;const g=c.getContext("2d"),keep=ctx;ctx=g;try{faceFull(id,240,240,220)}finally{ctx=keep}g.globalCompositeOperation="source-in";g.fillStyle="#eef6ff";g.fillRect(0,0,480,480);return BPC[id]=c}
+const ANGN=v=>"∠"+v[1]+v[0]+v[2];
+function stepText(st){switch(st.t){case"line":return`Join ${st.a}${st.b}`;case"tri":return`Build the equilateral triangle ${st.p.join("")} (1.1)`;case"short":return st.show.length?`Find ${st.show.join(", ")} by an earlier proof`:"Use an earlier proof";case"ext":return`Extend ${st.o}${st.e}`;case"tap":return`Mark ${st.n}`;case"circ":return`Circle about ${st.c} through ${st.p}`;case"copy":return`Carry ${st.src.join("")} to ${st.to.join("")} (1.2)`;case"swing":return`Swing ${st.seg.join("")} about ${st.piv} onto ${st.to.join("")}`;case"pretend":return`Suppose ${st.n} lay elsewhere`;case"flip":return`Turn triangle ${st.tri.join("")} over`;case"amatch":return`Lay ${ANGN(st.v)} on ${ANGN(st.to)}`;case"slide":return`Slide ${st.tri.join("")} onto ${st.to.join("")}`;case"spin":return`Spin ${ANGN(st.v)} onto ${ANGN(st.to)}`;case"turn":return`Turn ${st.tri.join("")} about ${st.piv}`}return""}
+const bpSteps=id=>id===1?["Circle about A through B","Circle about B through A","Join AC","Join BC"]:id===4?["Lay AC on DF","Lay AB on DE","Lay ∠BAC on ∠EDF","Slide ABC onto DEF"]:FIGS[id]?FIGS[id].steps.map(stepText):[];
+const fitT=(s0,w)=>{if(ctx.measureText(s0).width<=w)return s0;while(s0.length>3&&ctx.measureText(s0+"…").width>w)s0=s0.slice(0,-1);return s0+"…"};
+function drawBlueprint(t){const id=BP.id;ctx.save();ctx.globalAlpha=clamp((now()-BP.t0)/300);ctx.fillStyle="#1b4f8f";ctx.fillRect(0,0,W,H);ctx.strokeStyle="rgba(200,225,255,.13)";ctx.lineWidth=1;const gs=Math.max(16,Math.min(W,H)/24);for(let x=0;x<W;x+=gs){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}for(let y=0;y<H;y+=gs){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+ctx.strokeStyle="rgba(230,242,255,.75)";ctx.lineWidth=2;ctx.strokeRect(10,10,W-20,H-20);const S0=Math.min(W*.92,H*.52);ctx.drawImage(bpCanvas(id),(W-S0)/2,64+H*.06,S0,S0);
+const big=Math.min(34,W*.07);ctx.fillStyle="#eef6ff";ctx.textAlign="left";ctx.font=`600 ${big}px Georgia,serif`;ctx.fillText("1."+id,24,62+big);ctx.textAlign="right";ctx.font=`italic ${Math.max(12,big*.42)}px Georgia,serif`;ctx.fillText("Tap to close",W-24,62+big*.7);ctx.textAlign="left";
+const steps=bpSteps(id),fs=Math.max(11,Math.min(15,W*.033)),bw=Math.min(W*.66,360),bh=fs*1.45*(steps.length+1)+fs*1.2,bx=W-bw-18,by=H-bh-74;ctx.fillStyle="rgba(18,58,108,.94)";ctx.fillRect(bx,by,bw,bh);ctx.strokeStyle="#eef6ff";ctx.strokeRect(bx,by,bw,bh);
+ctx.fillStyle="#eef6ff";ctx.font=`600 ${fs}px Georgia,serif`;let y=by+fs*1.35;ctx.fillText(fitT(`Proposition 1.${id}: ${NAMES[id]||""}`,bw-16),bx+8,y);ctx.beginPath();ctx.moveTo(bx,y+fs*.45);ctx.lineTo(bx+bw,y+fs*.45);ctx.stroke();ctx.font=`${fs}px system-ui,sans-serif`;steps.forEach((s0,i)=>{y+=fs*1.45;ctx.fillText(fitT(`${i+1}. ${s0}`,bw-16),bx+8,y)});ctx.restore()}
 function inPoly(p,q){let c=false;for(let i=0,j=q.length-1;i<q.length;j=i++){if(((q[i][1]>p[1])!==(q[j][1]>p[1]))&&(p[0]<(q[j][0]-q[i][0])*(p[1]-q[i][1])/(q[j][1]-q[i][1])+q[i][0]))c=!c}return c}
 
 /* ---------- the map: every proposition as a star; tap one you can reach ---------- */
 let mapPrev="doors",mapHits=[];
-function drawMap(t){ctx.fillStyle="#05060c";ctx.fillRect(0,0,W,H);skyBack(t,.5);const rot=H>W,top=92,bot=70,pad=22,mw=rot?MAP.Hd:MAP.Wd,mh=rot?MAP.Wd:MAP.Hd,kx=(W-2*pad)/mw,ky=(H-top-bot)/mh,
-P=id=>{const q=MAP.pos[id],x=rot?q[1]:q[0],y=rot?q[0]:q[1];return[W/2+x*kx,top+(H-top-bot)/2+y*ky]},r=clamp(Math.min(kx,ky)*16,9,17),here=mapPrev==="hall"?hallId:null;mapHits=[];
-ctx.lineWidth=1.2;for(const[u,p]of MAP.edges){const a=P(u),b=P(p);ctx.strokeStyle=solved(u)&&solved(p)?"rgba(227,176,75,.6)":"rgba(150,170,220,.22)";ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...b);ctx.stroke()}
+function drawMap(t){const rot=H>W,top=96,bot=70,pad=30,mw=rot?MAP.Hd:MAP.Wd,mh=rot?MAP.Wd:MAP.Hd,kx=(W-2*pad)/mw,ky=(H-top-bot)/mh,
+Pm=q=>{const x=rot?q[1]:q[0],y=rot?q[0]:q[1];return[W/2+x*kx,top+(H-top-bot)/2+y*ky]},P=id=>Pm(MAP.pos[id]),r=clamp(Math.min(kx,ky)*14,8,16),here=mapPrev==="hall"?hallId:null;mapHits=[];
+/* the building plan, on blueprint paper */
+const bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,"#1d2c44");bg.addColorStop(1,"#121b2d");ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);ctx.strokeStyle="rgba(170,200,240,.07)";ctx.lineWidth=1;for(let x=0;x<W;x+=18){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}for(let y=0;y<H;y+=18){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const id of IDS){const q=P(id);x0=Math.min(x0,q[0]);y0=Math.min(y0,q[1]);x1=Math.max(x1,q[0]);y1=Math.max(y1,q[1])}
+ctx.fillStyle="rgba(40,52,72,.6)";ctx.fillRect(x0-r*2,y0-r*2,x1-x0+r*4,y1-y0+r*4);ctx.strokeStyle="#c9b48a";ctx.lineWidth=4;ctx.strokeRect(x0-r*2,y0-r*2,x1-x0+r*4,y1-y0+r*4);
+/* corridors run straight and turn square corners */
+for(const[u,p]of MAP.edges){const a=MAP.pos[u],b=MAP.pos[p],xm=b[0]-30,path=[a,[xm,a[1]],[xm,b[1]],b].map(Pm),lit=solved(u)&&solved(p);ctx.strokeStyle=lit?"rgba(227,176,75,.8)":"rgba(150,170,220,.22)";ctx.lineWidth=lit?3:1.4;ctx.beginPath();path.forEach((q,k)=>k?ctx.lineTo(...q):ctx.moveTo(...q));ctx.stroke()}
+/* greenhouses between neighbouring rooms */
+for(const id of IDS)for(const nb of GH[id]){if(nb<id)continue;const a=P(id),b=P(nb),open=solved(id)&&solved(nb),vert=Math.abs(a[0]-b[0])<1,len=(vert?Math.abs(a[1]-b[1]):Math.abs(a[0]-b[0]))-2*r,w=r*.9;if(len<=2)continue;const cx=(a[0]+b[0])/2,cy=(a[1]+b[1])/2,rx=vert?cx-w/2:cx-len/2,ry=vert?cy-len/2:cy-w/2,rw=vert?w:len,rh=vert?len:w;
+ctx.fillStyle=open?"rgba(110,200,130,.5)":"rgba(90,140,100,.16)";ctx.fillRect(rx,ry,rw,rh);ctx.strokeStyle=open?"rgba(220,255,225,.75)":"rgba(180,220,190,.22)";ctx.lineWidth=1;ctx.strokeRect(rx,ry,rw,rh);if(open){const rr=rng(id*31+nb);ctx.fillStyle="rgba(40,120,60,.9)";for(let k=0;k<5;k++){ctx.beginPath();ctx.ellipse(rx+rr()*rw,ry+rr()*rh,2.2,1.4,rr()*3,0,7);ctx.fill()}}}
+/* rooms */
 for(const id of IDS){const q=P(id),st=doorState(id),ok=hasLock(id);
-if(st==="amber"&&ok){glow(q[0],q[1],r*2.4,.35+.2*Math.sin(t*3+id),[255,170,60]);pulse(q[0],q[1],r,t+id*.1)}
-ctx.fillStyle=st==="open"?"#e3b04b":st==="amber"?(ok?"#d98a2b":"#7a5a35"):"#3a3d4a";circ(q[0],q[1],r);ctx.fill();ctx.strokeStyle=st==="covered"?"#7d8192":"#f3e2b4";ctx.lineWidth=1;circ(q[0],q[1],r);ctx.stroke();
-if(id===here){ctx.strokeStyle="#9fd0ff";ctx.lineWidth=2.5;circ(q[0],q[1],r+5);ctx.stroke()}
-if(r>=8){ctx.fillStyle=st==="covered"?"#b4b8c6":"#1d140a";ctx.font=`700 ${Math.round(r*.95)}px system-ui,sans-serif`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(id,q[0],q[1]+.5);ctx.textBaseline="alphabetic"}
+if(st==="amber"&&ok){glow(q[0],q[1],r*2.4,.35+.2*Math.sin(t*3+id),[255,170,60]);ctx.strokeStyle=`rgba(255,176,60,${.5+.4*Math.sin(t*3+id)})`;ctx.lineWidth=2;ctx.strokeRect(q[0]-r-4,q[1]-r-4,2*r+8,2*r+8)}
+ctx.fillStyle=st==="open"?"#e3b04b":st==="amber"?(ok?"#d98a2b":"#7a5a35"):"#3a3d4a";ctx.fillRect(q[0]-r,q[1]-r,2*r,2*r);ctx.strokeStyle=st==="covered"?"#7d8192":"#f3e2b4";ctx.lineWidth=1.5;ctx.strokeRect(q[0]-r,q[1]-r,2*r,2*r);
+if(id===here){ctx.strokeStyle="#9fd0ff";ctx.lineWidth=2.5;ctx.strokeRect(q[0]-r-5,q[1]-r-5,2*r+10,2*r+10)}
+ctx.fillStyle=st==="covered"?"#b4b8c6":"#1d140a";ctx.font=`700 ${Math.round(r*.95)}px system-ui,sans-serif`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(id,q[0],q[1]+.5);ctx.textBaseline="alphabetic";
 mapHits.push({id,q,r:Math.max(r,14)})}
-const ly=72,items=[["#e3b04b","solved"],["#d98a2b","ready"],["#3a3d4a","locked"]];ctx.font="13px system-ui,sans-serif";ctx.textAlign="left";let lx=14;for(const[c,w]of items){ctx.fillStyle=c;circ(lx+6,ly-4,6);ctx.fill();ctx.strokeStyle="#f3e2b4";ctx.lineWidth=1;circ(lx+6,ly-4,6);ctx.stroke();ctx.fillStyle="#f3e2b4";ctx.fillText(w,lx+16,ly);lx+=ctx.measureText(w).width+34}}
+const ly=76,items=[["#e3b04b","solved"],["#d98a2b","ready"],["#3a3d4a","locked"],["rgba(110,200,130,.8)","greenhouse"]];ctx.font="13px system-ui,sans-serif";ctx.textAlign="left";let lx=14;for(const[c,w]of items){ctx.fillStyle=c;ctx.fillRect(lx,ly-10,12,12);ctx.strokeStyle="#f3e2b4";ctx.lineWidth=1;ctx.strokeRect(lx,ly-10,12,12);ctx.fillStyle="#f3e2b4";ctx.fillText(w,lx+17,ly);lx+=ctx.measureText(w).width+30}}
 function mapTap(x,y){let best=null,bd=1e9;for(const h of mapHits){const d=dist([x,y],h.q);if(d<h.r*1.4&&d<bd){bd=d;best=h.id}}if(best==null)return;const st=doorState(best);
 if(st==="open"){hallStack=[best];hallId=best;fadeTo("hall",700)}else if(st==="amber"){if(hasLock(best)){openLock(best);lockFrom=mapPrev}else{sfxChime(false);toast("This lock is still being made.")}}else{sfxRattle();toast("Its lock is covered.")}}
 
@@ -884,7 +958,7 @@ if(scene==="title"){if(!hasProgress())begin();return}if(scene==="intro")return e
 if(scene==="doors"){const D=doorLayout();if(y<D.y0||y>D.y0+D.dh||x<D.x0||x>D.x0+D.tw)return;const id=x<D.x0+D.lw?1:4;
 if(!solved(id))return openLock(id);if(doorOpenAmt(id)>=1){hallStack=[];enterHall(id)}return}
 if(scene==="lock"){cv.setPointerCapture(e.pointerId);return lockId===4?l4Down(x,y):FIGS[lockId]?figDown(x,y):lkDown(x,y)}
-if(scene==="hall"){for(let i=hallHits.length-1;i>=0;i--){const h=hallHits[i];if(!inPoly([x,y],h.poly))continue;if(h.st==="amber"){if(hasLock(h.id))openLock(h.id);else{sfxChime(false);toast("This lock is still being made.")}}else if(h.st==="open")enterHall(h.id);else if(h.st==="covered"){sfxRattle();toast("Its lock is covered.")}return}}});
+if(scene==="hall"){if(BP){BP=null;return}if(PLQ){hidePlaque();return}for(let i=hallHits.length-1;i>=0;i--){const h=hallHits[i];if(!inPoly([x,y],h.poly))continue;if(h.kind==="mind"){showPlaque(h.who);return}if(h.kind==="art"){const T=now();if(artTap.id===h.id&&T-artTap.t<450){BP={id:h.id,t0:T};document.getElementById("toast").style.opacity=0;artTap={id:null,t:0};sfxChime(false)}else{artTap={id:h.id,t:T};if(!S.bpHint){S.bpHint=1;save();toast("Double-tap a painting to see its blueprint.")}}return}if(h.st==="amber"){if(hasLock(h.id))openLock(h.id);else{sfxChime(false);toast("This lock is still being made.")}}else if(h.st==="open")enterHall(h.id);else if(h.st==="covered"){sfxRattle();toast("Its lock is covered.")}return}}});
 cv.addEventListener("pointermove",e=>{if(scene==="lock")(lockId===4?l4Move:FIGS[lockId]?figMove:lkMove)(e.clientX,e.clientY)});
 cv.addEventListener("pointerup",e=>{if(scene==="lock")(lockId===4?l4Up:FIGS[lockId]?figUp:lkUp)(e.clientX,e.clientY)});
 cv.addEventListener("pointercancel",()=>{if(scene==="lock"){LK.drag=null;LK4.drag=null;if(LKF){LKF.drag=null;LKF.ghost=null;LKF.ext=null}if(LK4.ghost&&LK4.ghost.t!=="t")LK4.ghost=null}});

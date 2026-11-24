@@ -156,3 +156,11 @@ Proposed rules (open to change):
 ## 7. Art note
 
 All art is drawn in code (canvas): stars, the solar system, the temple, stone walls, ivy, bronze plates, wooden doors, and halls in perspective. This keeps the game to one small file and sharp at any screen size, but the style is clean and illustrated rather than painted. If painted art is wanted later, each scene has a single drawing function that an image could replace.
+
+Built (23 Nov 2026), from the feedback list:
+- Every hall has its own look, the same on each visit (seeded by its number). It sets the wall and floor colours, which wall the doors start on, and whether there is a rug and night windows. It also picks the lighting: torches, sconces, candelabras, floor lamps or a Tiffany lamp on a side table.
+- Two great minds stand in each hall, as busts or full figures in marble or bronze. Tap one to read its plaque: name, dates, a saying with its source, and its greatest work. Thirteen people so far, from Euclid to Emmy Noether. Each quote was checked against a source, and Eratosthenes and Hypatia say "None of his/her sayings survive" rather than carry a made-up quote.
+- Double-tap a painting, or the figure on the far wall, to see its blueprint: the finished figure in white on blue, its number, and the step list in a title block at the bottom right.
+- Equal marks shine in their own colours as they are cut (one tick cyan, two rose, three green, four violet), not gold.
+- The map is a building plan. Rooms are squares and corridors turn square corners. Greenhouses join rooms that sit next to each other in one column. Once both rooms are solved, the greenhouse shows as a glass door in each hall, so you can cross between branches without walking back.
+- Matching two equal lines in a lock: touch an end to an end, and the line swivels on and is pulled into place.
