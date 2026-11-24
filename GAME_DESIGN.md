@@ -168,3 +168,13 @@ Built (23 Nov 2026), from the feedback list:
 Built (23 Nov 2026): one source for every proof. Every lock except the two front doors (1.1 and 1.4) now shows the Home page's own proof on the bronze plate. The Home page opens in embed mode (`index.html?lock=N`), which shows only the figure, in bronze colours on a clear background. It tells the game what to say in the caption and when the proof is won, and the game's ? button asks it for one step. So every change to a Home proof reaches the game at once, and locks 29–48 are open too. Plates, paintings and blueprints use Home's finished figures (thumbs.js), and blueprint step lists come from proofs.js. The game's own copies of Props 2–28 (FIGS) are gone.
 
 Built (23 Nov 2026): bridge greenhouses. In the farthest solved room of a branch (none of its next rooms solved yet), a proof it opens may still wait on one from another branch. That room then gets a glass greenhouse door straight to the nearest lock you can open on the way to the missing proof, found by following what it relies on back to a ready lock. On the map these show as curved glass passages, and they change as you solve.
+
+Built (23 Nov 2026): greenhouse plants. `plants.js` brings over the plant symbols from the Planting Guide repo: its drawPlant code and the 50 plants (name, silhouette, colours, mature size). The art is reworked to look more lifelike:
+- pointed leaves with light and shaded halves, a midrib and side veins
+- rounded masses lit from the upper left, and big foliage dappled with small leaves
+- glints on fruit and berries
+- tapered bark trunks with furrows
+- shaded terracotta pots
+- a soft shadow on the ground
+
+Each greenhouse gets 3–4 plants picked at random once per game. They grow behind the glass doors, in planters either side of each glass door, and as tiny plants in the map's glasshouses.
