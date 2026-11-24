@@ -6,18 +6,19 @@ File: `game.html` (one self-contained page, linked from the site's **Game** butt
 
 ## 1. Opening scene (built)
 
-Skippable at any moment with any key, click or tap.
+About 38 seconds; skippable at any moment with any key, click or tap. The four lines of text ("When things are too big, too complex to be understood," / "we make connections, we simplify," / "we go back…" / "to the beginning.") are spread across the whole journey, starting in the night sky.
 
-1. Many stars fade in. 48 of them are the propositions, laid out exactly as on the relationship map.
-2. The lines of the map draw themselves between those 48 stars. The other stars fade away.
-3. The camera zooms towards 45 (no labels), then swerves to 1. Text appears at the bottom in four parts: "When things are too big, too complex to be understood," / "we make connections, we simplify," / "we go back…" / "to the beginning."
-4. Star 1 swells into a sun. The view resolves into a solar system and zooms in on the Earth.
-5. A ruined temple at dusk. The camera sweeps up the great stairs to a pair of massive doors. The left lock glows amber.
+1. Night sky. Many stars fade in. 48 of them are the propositions, laid out as on the relationship map, and the map's lines draw themselves. The other stars fade.
+2. The camera goes to 48, the most advanced proposition, and travels back along the chain of what it relies on, all the way to 1 (48 → 47 → 41 → 37 → 31 → 23 → 22 → 20 → 19 → 18 → 16 → 15 → 13 → 11 → 8 → 7 → 5 → 3 → 2 → 1). The road travelled glows gold.
+3. Star 1 swells into the sun. We fly towards it among the planets, and the Earth swings across our path until it fills the view.
+4. We fall through the atmosphere (cloud rushing past), a continent grows beneath us, and we drop towards a mountain at dusk with a temple on its shoulder.
+5. The ruined temple: the camera sweeps up the great stairs to the doors.
 
 ## 2. The building model (how the map becomes architecture)
 
 - **Halls.** Every proposition *n* is a hall (a long corridor with statues, paintings and torches). You enter hall *n* by opening lock *n*.
-- **Doors in a hall.** Hall *n* has one door for each proposition that relies on *n* (its children on the map). For example, hall 1 has doors to 2, 9, 10 and 11.
+- **Doors in a hall.** Hall *n* only has doors to rooms that *n* opens: a door to *c* appears once everything else *c* relies on is solved, so *n* is the last thing needed. For example, hall 1 starts with just the door to 2; doors to 9, 10 and 11 appear once 3 and 8 (and 9, for 10) are solved. There are no ornamental doors, and no arch at the end: the end wall carries the hall's own finished figure.
+- **Wall art.** Paintings along the walls show finished figures of the next propositions ahead (from the lock engine); near the end of the book, where there are none ahead, earlier ones hang instead.
 - **Door states.**
   - *Open*: that proposition is solved.
   - *Amber*: every proposition it relies on is solved, so it is a valid next step. Several doors can be amber at once.
@@ -51,6 +52,14 @@ Skippable at any moment with any key, click or tap.
 - Hall doors now work. An amber door opens its lock, a solved door leads into its hall, and Back steps back through the halls you walked through. Each door's plate shows its lock's figure, cut or uncut. Amber doors without a lock yet say so.
 - Equal parts on lock plates are marked the classic way, with cut ticks and arcs, since the plates are bronze and gold only.
 - **Next:** port the site's proposition engine (the `OPS` steps and short versions) so that any proposition's figure can sit on a lock plate. The engine stays the same; only the drawing and the effects change.
+
+## 3a. Lettering, help, replay and the map (built)
+
+- **Lettering.** Every lock plate carries its number (1.n) cut across the top like a coin, and its name along the bottom, upright and reading left to right. The figure sits inside an inner ring and never overlaps the lettering.
+- **Help.** The ? button in a lock plays a pale blue ghost hand through the next move, twice. Moves that carry or swing a line show where they should land (a dashed target and an arrow), and they accept a loose drop. (Later this can cost a scroll.)
+- **Continue or Start over.** With a saved game, the title screen offers Continue (straight to the doors) or Start over (tap twice to confirm; it erases progress and plays the opening).
+- **Replay.** In any hall, ↺ Lock plays that hall's lock again without changing progress.
+- **Map.** The Map button (at the doors and in halls) shows all 48 as stars: gold solved, glowing amber ready, grey locked, with a blue ring where you are. Tap a solved star to walk into its hall, or a ready one to open its lock. Shops will be marked here once they exist.
 
 ## 4. Treasure, coins and the statue shop
 
@@ -102,7 +111,7 @@ Proposed rules (open to change):
 
 ## 5. Sound
 
-- **Music:** ten songs in a dungeon-crawl style, but bright (adventure, curiosity, fun). They are composed in code from a seed: a melody, bass, pad, arpeggio and drums, with an echo like a stone room. Each song plays twice, then the next one starts.
+- **Music:** ten songs in a dungeon-crawl style, but bright (adventure, curiosity, fun). Drums lead (kick, snare backbeat, hats, fills on every song); the lead line is kept soft. They are composed in code from a seed: a melody, bass, pad, arpeggio and drums, with an echo like a stone room. Each song plays twice, then the next one starts.
   - Songs: The First Postulate, Lantern Corridor, Compass and Ivy, Gnomon's March, The Greenhouse Fountain, Parallel Halls, The Gilded Theorem, Stairs of Alexandria, Byrne's Colours, Q.E.D.
   - The bottom-right corner always has: on/off, a song list, next song, and a volume slider.
 - **Effects (built):** unlock (tumblers, then bolt, creak and thud), chimes as each part of the figure is cut, ticks while sweeping, and a rattle on a closed door.
