@@ -36,6 +36,10 @@ button.chip{padding:4px 10px;font-size:14px;border-radius:20px}
 .angarc.pinkc{stroke:#E7298A}.bx{display:inline-block;width:1.5em}.goal{font-weight:700;margin:4px 0 8px}
 li.st::before{content:none!important}.cb{display:inline-block;width:1.6em;font-weight:700}li.st.on .cb{color:#1a9850}.why{color:var(--mute);font-size:13px;margin:2px 0 4px 1.6em}
 .arrow{fill:var(--c2);stroke:var(--card);stroke-width:1.5;animation:ar 1s infinite}@keyframes ar{50%{opacity:.35}}
+/* embed mode: the game shows just the figure, on its bronze plate */
+html.embed,html.embed body{background:transparent!important;overflow:hidden}html.embed{--card:#c9944a;--ink:#3b1f08;--line:#8a5a24;--mute:#5a3a18}
+html.embed main{padding:0;max-width:none}html.embed #top,html.embed #home,html.embed #map,html.embed #ttl,html.embed #stmt,html.embed #goal,html.embed #cases,html.embed #tools,html.embed #uses,html.embed #msg,html.embed #prg,html.embed #stepcard,html.embed #done,html.embed #logic,html.embed #relies,html.embed #prop>.card,html.embed #prop>p.sub{display:none!important}
+html.embed #stage,html.embed #stage svg{background:transparent!important;border:0!important}html.embed .lab{fill:#2a1404}html.embed .pt{stroke:#e8c47c}
 </style>
 </head>
 <body>
@@ -453,7 +457,7 @@ if(bd<26*sc){const t=pa[best];shift(W.pts[t][0]-W.pts[best][0],W.pts[t][1]-W.pts
 else{const c=W.pts[W.sl.pivot],a0=angOf(c,d.last),a1=angOf(c,p),dl=nrm(a1-a0);for(const k of mv)if(k!==W.sl.pivot)W.pts[k]=rotP(W.pts[k],c,dl);d.last=p;
 const others=mv.filter(k=>k!==W.sl.pivot);let best=null,bd=1e9;for(const k of others){const dd=dist(W.pts[k],W.pts[pa[k]]);if(dd<bd){bd=dd;best=k}}if(best&&bd<16*sc){const t=pa[best],th=nrm(angOf(c,W.pts[t])-angOf(c,W.pts[best]));for(const j of others)W.pts[j]=rotP(W.pts[j],c,th);W.sl.matched=true;W.sl.aligned=true;slideWin()}}
 draw()}
-async function slideWin(){W.drag=null;const first=!W.won;W.won=true;W.sl.pivot=null;say("");draw();if(first){markDone();fx(P.winTxt);$("done").innerHTML=`<div class="card"><b>${P.winTxt}</b><div class="sub">Tap the figure to start again.</div></div>`}renderSteps()}
+async function slideWin(){W.drag=null;const first=!W.won;W.won=true;W.sl.pivot=null;say("");draw();if(first){markDone();fx(P.winTxt);toGame({won:1,txt:P.winTxt});$("done").innerHTML=`<div class="card"><b>${P.winTxt}</b><div class="sub">Tap the figure to start again.</div></div>`}renderSteps()}
 svg.addEventListener("pointerdown",e=>{if(P.kind==="read")return;if(W.hl){if(W._skip)W._skip();else W._hurry=true;return}if(W.busy)return;if(W.won){load(P.id);return}const p=xy(e);if(P.kind==="slide")return slideDown(e,p);const id=near(p),sc=W.vb[2]/640;
 const ly=pending(o=>o.t==="lay")[0];if(ly&&inPoly(p,ly.tri.map(k=>W.pts[k]))){svg.setPointerCapture(e.pointerId);W.drag={mode:"lay",op:ly,start:p,off:[0,0]};W.ghost=layImg(ly,[0,0],0);say("");draw();return}
 const wr=pending(o=>o.t==="wrong")[0];if(wr){const a=W.pts[wr.n]||wr.path(W,0);if(dist(a,p)<30*sc){svg.setPointerCapture(e.pointerId);wrongInit(wr);W.drag={mode:"wrong",op:wr,s:0};say("");draw();return}}
@@ -529,7 +533,7 @@ if(p.flip)await flipAnim(p.flip);
 if(p.anim){const S=clone(W.pts),n=p.anim.n||30;say(p.txt);W._hurry=false;for(let i=0;i<=n&&!W.stop;i++){if(W._hurry)i=n;p.anim.f(W,i/n,S);draw();if(!W._hurry)await sleep(40)}W._hurry=false;if(p.anim.keep)W.keep=p.anim.keep;if(!FAST)fit()}
 if(p.swing){const[c,f,t]=p.swing,C=W.pts[c],a0=angOf(C,W.pts[f]),dl=nrm(angOf(C,W.pts[t])-a0),r=dist(C,W.pts[f]);for(let i=0;i<=24&&!W.stop;i++){W.pts.cur=[C[0]+r*Math.cos(a0+dl*i/24),C[1]+r*Math.sin(a0+dl*i/24)];W.extra=[[c,"cur"]];say(p.txt);draw();await sleep(40)}delete W.pts.cur;W.extra=null}
 if(p.extra)W.extra=p.extra;say(p.txt);draw();$("prg").textContent="Tap the figure to go on.";await pause(2400)}
-W.hl=null;draw();markDone();fx(P.winTxt);say("");$("done").innerHTML=`<div class="card"><b>${P.winTxt}</b><div class="row"><button id="again">Watch the proof again</button></div><div class="sub">Tap the figure to start again.</div></div>`;$("prg").textContent="Done! Tap the figure to start again.";usesBar()}
+W.hl=null;draw();markDone();fx(P.winTxt);toGame({won:1,txt:P.winTxt});say("");$("done").innerHTML=`<div class="card"><b>${P.winTxt}</b><div class="row"><button id="again">Watch the proof again</button></div><div class="sub">Tap the figure to start again.</div></div>`;$("prg").textContent="Done! Tap the figure to start again.";usesBar()}
 /* ---- Solve it for me / One small step / Use ---- */
 function setCursor(p){W.cursor=p?p.slice():null}
 async function glide(to,steps=14){if(!W.cursor){setCursor(to);draw();return}const f=W.cursor.slice();for(let i=1;i<=steps&&!W.stop;i++){setCursor([f[0]+(to[0]-f[0])*i/steps,f[1]+(to[1]-f[1])*i/steps]);draw();await sleep(22)}}
@@ -574,7 +578,13 @@ if(b.id==="zin")return zoom(1/1.25);if(b.id==="zout")return zoom(1.25);if(b.id==
 if(b.id==="hs"){showSteps=!showSteps;return P.kind==="read"?renderRead():renderSteps()}if(b.id==="rn"){W.k++;return renderRead()}if(b.id==="ra"){W.k=P.proof.length;return renderRead()}
 if(b.id==="prev"&&cur>0)return go(ALL[cur-1].id);if(b.id==="next"&&cur<ALL.length-1)return go(ALL[cur+1].id);
 if(b.id==="reset"){W.stop=true;return load(P.id)}});
-if(typeof NOBOOT==="undefined")go("home");
+/* embed mode (?lock=N): the game's lock plate shows this proof; it hears "step" and "reset", and is told when the proof is won */
+const EMBED=+(new URLSearchParams(location.search).get("lock")||0),toGame=m=>{if(EMBED&&parent!==window)parent.postMessage({euclid:1,id:EMBED,...m},"*")};
+if(EMBED){document.documentElement.classList.add("embed");document.documentElement.dataset.theme="light";setPal();
+new MutationObserver(()=>toGame({say:$("msg").textContent,prg:W&&W.won?"":$("prg").textContent})).observe($("msg"),{childList:true,characterData:true,subtree:true});
+new MutationObserver(()=>toGame({say:$("msg").textContent,prg:W&&W.won?"":$("prg").textContent})).observe($("prg"),{childList:true,characterData:true,subtree:true});
+addEventListener("message",e=>{const c=e.data&&e.data.cmd;if(c==="step"&&W&&!W.busy&&!W.won)runOps(null,true);if(c==="reset"&&P)load(P.id)})}
+if(typeof NOBOOT==="undefined")go(EMBED||"home");
 
 </script>
 </body>
