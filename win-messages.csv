@@ -15,7 +15,7 @@ Prop,Name,Win message,User steps,Engine steps,Taps,Watched frames,Hands-on share
 1.14,Two angles that make a straight line,Angles that make two right angles lie on one straight line!,2,5,4,1,29%,Prop 11; tap an angle ×3; 1 watched frame
 1.15,Vertical angles are equal,"When two lines cross, opposite angles are equal!",4,6,5,1,40%,tap a line ×2; tap an angle ×3; 1 watched frame
 1.16,The outside angle is bigger,The outside angle is bigger than either inside opposite angle!,7,7,1,6,50%,Prop 10; 6 watched frames
-1.17,Two angles of a triangle are less than two right angles,Any two angles of a triangle make less than two right angles!,1,5,0,5,17%,5 watched frames
+1.17,Two angles of a triangle are less than two right angles,Any two angles of a triangle make less than two right angles!,6,1,0,1,86%,1 watched frame
 1.18,The greater side has the greater angle opposite it,The longer side faces the bigger angle!,2,4,0,4,33%,4 watched frames
 1.19,The greater angle has the greater side opposite it,The bigger angle faces the longer side!,1,3,0,3,25%,3 watched frames
 1.20,Two sides together are longer than the third,Two sides of a triangle are always longer than the third!,3,4,0,4,43%,4 watched frames
@@ -31,7 +31,7 @@ Prop,Name,Win message,User steps,Engine steps,Taps,Watched frames,Hands-on share
 1.29,Parallel lines make equal angles,Parallel lines make equal angles!,3,6,0,6,33%,6 watched frames
 1.30,Parallel to the same line means parallel to each other,"Parallel to the same line, parallel to each other!",1,6,2,4,14%,choose a point ×2; 4 watched frames
 1.31,Draw a parallel through a point,A parallel line through any point!,2,4,2,2,33%,choose a point; Prop 23; 2 watched frames
-1.32,Angles of a triangle add to two right angles,The angles of a triangle make two right angles!,1,5,1,4,17%,Prop 31; 4 watched frames
+1.32,Angles of a triangle add to two right angles,The angles of a triangle make two right angles!,6,2,1,1,75%,Prop 31; 1 watched frame
 1.33,Joining the ends of equal parallel lines,Equal and parallel on both sides!,3,4,0,4,43%,4 watched frames
 1.34,Opposite sides and angles of a parallelogram,"Opposite sides and angles match, and the diagonal halves it!",1,5,0,5,17%,5 watched frames
 1.35,"Same base, same parallels: equal parallelograms","Same base, same parallels, same area!",3,6,0,6,33%,6 watched frames

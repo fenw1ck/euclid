@@ -7,7 +7,8 @@ The names and win messages come from proofs.js, so edit them there and re-run th
 The goal is a learner who drags, swings and pulls: one who does the work, not one who clicks
 through a slideshow. So a click counts as the engine's work, not the learner's.
 
-User steps:     hands-on moves: drag, swing (pivot), sweep, pull (extend), slide, turn, flip.
+User steps:     hands-on moves: drag, swing (pivot), sweep, pull (extend), slide, turn, flip;
+                each gem dragged into a hollow counts as one.
 Engine steps:   everything else the learner sits through = Taps + Watched frames.
   Taps:           one click and the engine does the work (a short version such as "Prop 31",
                   choosing a point, tapping a triangle, line or angle).
@@ -23,7 +24,7 @@ from playwright.async_api import async_playwright
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 HANDS_ON = {"line", "circ", "ext", "rot", "wrong", "push", "flip", "amatch", "smatch", "lift",
-            "wcmp", "spinw", "turn", "raise", "lay"}
+            "wcmp", "spinw", "turn", "raise", "lay", "gemin"}
 TAP_NAMES = {"place": "choose a point", "tri": "tap a triangle", "tapseg": "tap a line",
              "rmark": "tap an angle", "wmark": "tap an angle", "tapang": "tap an angle"}
 SHORT = {"midp", "par", "ang", "cpy", "cut", "bis", "perp", "pgram", "apl", "sq"}  # index.html's MAC: tap a short version
@@ -34,7 +35,7 @@ SHORT = {"midp", "par", "ang", "cpy", "cut", "bis", "perp", "pgram", "apl", "sq"
 SLIDE = {4: (5, [], 1), 8: (2, [], 1)}
 
 COUNT = """async ([id,c])=>{CASE[id]=c;load(id);const kind=P.kind,ops=[];
-  if(kind==='play')for(const o of OPS)if(!auto(o))ops.push({t:o.t,prop:o.prop||null,k:o.t==='line'?sk(o.a,o.b):null});
+  if(kind==='play')for(const o of OPS)if(!auto(o))ops.push({t:o.t,prop:o.prop||null,k:o.t==='line'?sk(o.a,o.b):null,n:o.t==='hollow'?o.gems.length:1});
   await solveAll();for(let k=0;k<300&&!W.won;k++)await new Promise(r=>setTimeout(r,20));
   const left=ops.filter(o=>!(o.t==='line'&&W.covered&&W.covered.has(o.k)));
   return{kind,name:P.t,win:P.winTxt||'',ops:left,frames:kind==='play'?P.phases(W).length:null,won:W.won}}"""
@@ -42,7 +43,9 @@ COUNT = """async ([id,c])=>{CASE[id]=c;load(id);const kind=P.kind,ops=[];
 def classify(ops):
     user, taps = 0, []
     for o in ops:
-        if o["t"] in HANDS_ON:
+        if o["t"] == "hollow":
+            user += o["n"]  # one drag per gem
+        elif o["t"] in HANDS_ON:
             user += 1
         elif o["t"] in SHORT:
             taps.append(f"Prop {o['prop']}")
