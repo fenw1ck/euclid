@@ -16,6 +16,8 @@ canvas{display:block;width:100vw;height:100vh;touch-action:none}
 #music input{width:90px;accent-color:#e3b04b}
 #toast{position:fixed;left:50%;bottom:72px;transform:translateX(-50%);background:rgba(15,12,8,.82);border:1px solid rgba(230,190,110,.5);padding:8px 14px;border-radius:10px;font:15px Georgia,serif;opacity:0;transition:opacity .4s;pointer-events:none;z-index:6;max-width:80vw;text-align:center}
 #plaque{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:7;width:min(420px,86vw);background:linear-gradient(#3a2a18,#22180e);border:2px solid #c9a55a;border-radius:12px;padding:16px 18px;box-shadow:0 10px 40px rgba(0,0,0,.7);display:none;text-align:center}#plaque h2{margin:0;font:600 22px Georgia,serif;color:#f3e2b4}#plaque .d{font:13px system-ui,sans-serif;color:#c9b48a;margin:2px 0 10px}#plaque q{display:block;font:italic 16px/1.4 Georgia,serif;color:#f3e6c4}#plaque .src{font:12px system-ui,sans-serif;color:#b9a47c;margin:4px 0 10px}#plaque .a{font:15px/1.4 Georgia,serif;color:#e8d9b4}#plaque .x{font:12px system-ui,sans-serif;color:#9d8a66;margin-top:10px}
+#lockf{position:fixed;border:0;background:transparent;z-index:4;display:none}
+#cap{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(66px + env(safe-area-inset-bottom));width:max-content;max-width:88vw;font:15px/1.35 Georgia,serif;text-align:center;color:#f3e6c4;background:rgba(15,12,8,.72);border:1px solid rgba(230,190,110,.35);border-radius:10px;padding:6px 12px;z-index:5;display:none;pointer-events:none}
 #menu{position:fixed;left:50%;top:56%;transform:translateX(-50%);z-index:6;gap:12px}.btn.big{font-size:17px;padding:11px 18px}
 @media (max-width:520px){#music select{max-width:92px}#music input{width:60px}}
 </style>
@@ -27,7 +29,9 @@ canvas{display:block;width:100vw;height:100vh;touch-action:none}
 <div id="music"><button class="btn" id="mute" title="Music on or off" aria-label="Music on or off">♪</button><select id="track" aria-label="Song"></select><button class="btn" id="nexttr" title="Next song" aria-label="Next song">⏭</button><input id="vol" type="range" min="0" max="1" step="0.01" aria-label="Music volume"></div>
 <div id="toast"></div>
 <div id="plaque"></div>
+<iframe id="lockf" title="Lock" allowtransparency="true"></iframe><div id="cap"></div>
 <script src="proofs.js"></script>
+<script src="thumbs.js"></script>
 <script>
 "use strict";
 /* ============================================================
@@ -194,7 +198,7 @@ function pulse(x,y,base,t,c="255,176,60"){const f=(t*1.1)%1;ctx.strokeStyle=`rgb
 /* ---------- scenes ---------- */
 let scene="title",sceneT0=now(),fade=null,lastT=now();
 const hasProgress=()=>S.solved.length>0;
-function go(s){scene=s;sceneT0=now();if(typeof BP!=="undefined"){BP=null;hidePlaque()}const show=(id,on)=>document.getElementById(id).style.display=on?"":"none";
+function go(s){scene=s;sceneT0=now();if(s!=="lock"&&typeof EMB!=="undefined"&&EMB)hideEmbed();if(typeof BP!=="undefined"){BP=null;hidePlaque()}const show=(id,on)=>document.getElementById(id).style.display=on?"":"none";
 show("back",s==="lock"||s==="hall");show("mapb",s==="doors"||s==="hall"||s==="map");show("relock",s==="hall");show("help",s==="lock");document.getElementById("menu").style.display=s==="title"&&hasProgress()?"flex":"none";
 document.getElementById("mapb").textContent=s==="map"?"✕ Map":"Map";HELP=null}
 function fadeTo(s,ms=700,cb){if(fade)return;fade={t0:now(),ms,s,cb,sw:false}}
@@ -406,7 +410,7 @@ ctx.fillStyle="rgba(255,232,180,.45)";ctx.fillText(ch,size*.05,size*.07);ctx.fil
 function plateLabel(id,cx,cy,P){const big=P*.1;if(big<5)return;arcText("1."+id,cx,cy,P*.74,big,false);
 const nm=NAMES[id]||"";ctx.font=`600 ${big}px Georgia,serif`;const w=ctx.measureText(nm).width,maxArc=P*.86*Math.PI*.92,size=Math.max(big*.4,Math.min(big*.85,big*.85*maxArc/w));if(size<4.5)return;arcText(nm,cx,cy,P*.86,size,true)}
 function drawLock(t){ctx.drawImage(woodCanvas(),0,0,W,H);const{R,P,cx,cy}=lockGeo(),T=now(),dt=Math.min(.05,(T-lastT)/1000);
-glow(cx,cy,P*1.6,.18,[255,170,60]);if(LKF&&LKF.drag&&LKF.drag.k==="copy"&&LKF.tip){const s_=LKF.def.steps[LKF.step];if(s_&&s_.t==="copy")gcopy(LKF,LKF.drag,LKF.tip,s_,dt)}drawPlate(cx,cy,P);plateLabel(lockId,cx,cy,P);if(lockId===4)drawL4(cx,cy,R,LK4,true);else if(FIGS[lockId])drawFig(cx,cy,R,LKF,true);else{stepAuto(dt);drawL1(cx,cy,R,LK,true)}drawHelp(cx,cy,R)}
+glow(cx,cy,P*1.6,.18,[255,170,60]);if(LKF&&LKF.drag&&LKF.drag.k==="copy"&&LKF.tip){const s_=LKF.def.steps[LKF.step];if(s_&&s_.t==="copy")gcopy(LKF,LKF.drag,LKF.tip,s_,dt)}drawPlate(cx,cy,P);plateLabel(lockId,cx,cy,P);if(EMB)placeEmbed();else if(lockId===4)drawL4(cx,cy,R,LK4,true);else if(FIGS[lockId])drawFig(cx,cy,R,LKF,true);else{stepAuto(dt);drawL1(cx,cy,R,LK,true)}drawHelp(cx,cy,R)}
 function toLocal(x,y){const{R,cx,cy}=lockGeo();return[(x-cx)/R,(y-cy)/R]}
 const angDeg=(c,p)=>Math.atan2(p[1]-c[1],p[0]-c[0])*180/Math.PI;
 function markArc(cov,from,d){const T=now(),n=Math.ceil(Math.abs(d));for(let j=0;j<=n;j++){const g=from+d*j/Math.max(1,n),i=((Math.floor(g)%360)+360)%360;if(!cov[i])cov[i]=T}}
@@ -512,7 +516,15 @@ if(pts.length===1){const a=1-u;ctx.strokeStyle=`rgba(150,205,255,${a})`;ctx.line
 const L=[0];for(let i=1;i<pts.length;i++)L.push(L[i-1]+dist(pts[i-1],pts[i]));const tot=L[L.length-1],at=ease(u)*tot;let i=1;while(i<pts.length-1&&L[i]<at)i++;const f=clamp((at-L[i-1])/((L[i]-L[i-1])||1)),q=[lerp(pts[i-1][0],pts[i][0],f),lerp(pts[i-1][1],pts[i][1],f)];
 ctx.setLineDash([5,7]);ctx.strokeStyle="rgba(150,205,255,.45)";ctx.lineWidth=2;ctx.beginPath();pts.forEach((p,j)=>j?ctx.lineTo(...p):ctx.moveTo(...p));ctx.stroke();ctx.setLineDash([]);
 glow(q[0],q[1],R*.16,.85,[150,205,255]);glow(q[0],q[1],R*.045,1,[235,245,255]);ctx.restore()}
-function openLock(id){lockId=id;lockFrom=scene;if(id===4)LK4=mkLock4();else if(FIGS[id])LKF=mkFig(id);else LK=mkLock();fadeTo("lock",700)}
+let EMB=null;const lockF=document.getElementById("lockf"),capE=document.getElementById("cap");
+const homeLock=id=>id!==1&&id!==4&&!!PROOF(id)&&PROOF(id).kind!=="read";
+function placeEmbed(){if(!EMB)return;const{P,cx,cy}=lockGeo(),w=P*1.5,h=w*420/640,k=`${cx-w/2},${cy-h/2},${w},${h}`;if(lockF._k===k)return;lockF._k=k;Object.assign(lockF.style,{left:cx-w/2+"px",top:cy-h/2+"px",width:w+"px",height:h+"px"})}
+function showEmbed(id){EMB={id};lockF._k=null;lockF.src=`index.html?lock=${id}`;lockF.style.display="block";placeEmbed();capE.textContent="";capE.style.display="none"}
+function hideEmbed(){EMB=null;lockF.style.display="none";lockF.src="about:blank";capE.style.display="none"}
+addEventListener("message",e=>{const m=e.data;if(!m||!m.euclid||!EMB||m.id!==EMB.id||e.source!==lockF.contentWindow)return;
+if(m.won){const id=EMB.id;if(EMB.won)return;EMB.won=1;if(!solved(id)){S.solved.push(id);save()}sfxChime(true);setTimeout(()=>{sfxUnlock();fadeTo(lockFrom,900)},1400);return}
+const t=(m.say||"").trim()||(m.prg||"").trim();capE.textContent=t;capE.style.display=t?"block":"none"});
+function openLock(id){if(homeLock(id)){lockId=id;lockFrom=scene;LKF=null;fadeTo("lock",700,()=>showEmbed(id));return}lockId=id;lockFrom=scene;if(id===4)LK4=mkLock4();else if(FIGS[id])LKF=mkFig(id);else LK=mkLock();fadeTo("lock",700)}
 /* ---------- a general lock: a figure cut step by step ----------
    A lock is points (plate units, centre 0,0, radius 1), the given figure, and steps:
    line    drag one point to another                              {t:"line",a,b}
@@ -541,137 +553,7 @@ const FIGS={};
 /* equal marks shine in their own colours, not gold: one tick, two ticks, three... */
 const EQC=["120,215,255","255,140,195","150,240,160","205,170,255"];
 const U_=(p,q)=>{const L=dist(p,q);return[(q[0]-p[0])/L,(q[1]-p[1])/L]},X_=(p,d,k)=>[p[0]+d[0]*k,p[1]+d[1]*k];
-FIGS[2]=(()=>{const A=[-.15,.06],B=[.15,.06],D=[0,.06-.3*Math.sqrt(3)/2],r=.22,C=[B[0]+r*.866,B[1]+r*.5],dB=U_(D,B),dA=U_(D,A),F=X_(B,dB,r),E=X_(D,dA,dist(D,F));
-return{pts:{A,B,C,D,E,F,Bx:X_(F,dB,.07),Ax:X_(E,dA,.07)},given:{pts:["A","B","C"],lines:[["B","C"]]},
-steps:[{t:"line",a:"A",b:"B"},{t:"tri",p:["A","B","D"]},{t:"ext",o:"D",e:"B",to:"Bx"},{t:"ext",o:"D",e:"A",to:"Ax"},{t:"circ",c:"B",p:"C",show:["F"]},{t:"circ",c:"D",p:"F",show:["E"]},
-{t:"swing",seg:["A","E"],piv:"D",to:["B","F"],then:{piv:"B",to:["B","C"]},mark:[["A","E",1],["B","C",1]]}],glow:[["A","E"],["B","C"]]}})();
-FIGS[3]=(()=>{const A=[-.4,.2],B=[.65,.2],C=[-.1,-.3],D=[.2,-.3],L=.3,G=[A[0]+L*Math.cos(-Math.PI/3),A[1]+L*Math.sin(-Math.PI/3)],H=[A[0]+L,A[1]];
-return{pts:{A,B,C,D,G,H},given:{pts:["A","B","C","D"],lines:[["A","B"],["C","D"]]},
-steps:[{t:"copy",src:["C","D"],to:["A","G"],mark:[["C","D",1],["A","G",1]]},{t:"circ",c:"A",p:"G",show:["H"],mark:[["A","H",1]]}],glow:[["A","H"]]}})();
-/* 5: the base angles of an isosceles triangle are equal */
-FIGS[5]=(()=>{const A=[0,-.55],B=[-.28,.04],C=[.28,.04],uB=U_(A,B),uC=U_(A,C),k=dist(A,B);
-return{pts:{A,B,C,D:X_(A,uB,k+.46),E:X_(A,uC,k+.46),F:X_(A,uB,k+.28),G:X_(A,uC,k+.28)},given:{pts:["A","B","C"],lines:[["A","B"],["A","C"],["B","C"]],ticks:[["A","B",1],["A","C",1]]},
-steps:[{t:"ext",o:"A",e:"B",to:"D"},{t:"ext",o:"A",e:"C",to:"E"},{t:"tap",on:["B","D"],n:"F"},{t:"circ",c:"A",p:"F",show:["G"],arc:true},{t:"line",a:"F",b:"C"},{t:"line",a:"G",b:"B"},
-{t:"flip",tri:["A","F","C"],from:"F",to:"G",mark:[["F","C",2],["G","B",2]]},
-{t:"amatch",v:["B","F","C"],to:["C","G","B"],arcs:[["B","F","C",1],["C","G","B",1]]},
-{t:"amatch",v:["B","A","C"],to:["C","A","B"],arcs:[["B","A","C",2],["C","A","B",2]]}],glow:[["A","B","C"]]}})();
-/* 6: equal angles mean equal sides (by contradiction) */
-FIGS[6]=(()=>{const A=[0,-.3],B=[-.4,.35],C=[.4,.35],A1=[.28,-.27],D=X_(B,U_(B,A1),dist(A1,C));
-return{pts:{A,B,C,A0:A.slice(),A1,D},given:{pts:["A","B","C"],lines:[["A","B"],["A","C"],["B","C"]],arcs:[["B","A","C",1],["C","A","B",1]]},
-steps:[{t:"pretend",n:"A",to:"A1"},{t:"copy",src:["C","A"],to:["B","D"],mark:[["A","C",1],["B","D",1]]},{t:"line",a:"D",b:"C"},
-{t:"swing",seg:["C","D"],piv:"C",to:["C","A"],collapse:{n:"A",to:"A0",merge:"D",keep:["B|D"]}}],glow:[["A","B"],["A","C"]]}})();
-/* 7: only one point fits two given sides (by contradiction) */
-FIGS[7]=(()=>{const A=[-.45,.3],B=[.45,.3],C=[-.1,-.3];
-return{pts:{A,B,C,D:C.slice(),C0:C.slice(),D1:[.22,-.2]},given:{pts:["A","B","C"],lines:[["A","B"],["A","C"],["B","C"]]},
-steps:[{t:"pretend",n:"D",to:"D1",lines:[["A","D"],["B","D"]],mark:[["A","C",1],["A","D",1],["B","C",2],["B","D",2]]},{t:"line",a:"C",b:"D"},
-{t:"amatch",v:["C","A","D"],to:["D","A","C"],arcs:[["C","A","D",1],["D","A","C",1]]},
-{t:"amatch",v:["C","D","B"],to:["D","C","B"],fail:true,collapse:{n:"D",to:"C0",merge:"D"}}],glow:[["A","B","C"]]}})();
-/* 8: three equal sides, so the triangles fit */
-FIGS[8]=(()=>{const A=[-.7,.22],B=[-.25,.22],C=[-.448,-.228],D=[.2,.3],th=-.663,rt=q=>{const x=q[0]-A[0],y=q[1]-A[1];return[D[0]+x*Math.cos(th)-y*Math.sin(th),D[1]+x*Math.sin(th)+y*Math.cos(th)]};
-return{pts:{A,B,C,D,E:rt(B),F:rt(C)},given:{pts:["A","B","C","D","E","F"],lines:[["A","B"],["B","C"],["A","C"],["D","E"],["E","F"],["D","F"]],ticks:[["A","B",1],["D","E",1],["A","C",2],["D","F",2],["B","C",3],["E","F",3]]},
-steps:[{t:"slide",tri:["A","B","C"],to:["D","E","F"],arcs:[["A","B","C",1],["D","E","F",1]]}],glow:[["A","B","C"],["D","E","F"]]}})();
-/* apex of the equilateral triangle on PQ, on the side away from X */
-const apex=(P,Q,X)=>{const m=[(P[0]+Q[0])/2,(P[1]+Q[1])/2],u=U_(P,Q),h=dist(P,Q)*Math.sqrt(3)/2,c=[[m[0]-u[1]*h,m[1]+u[0]*h],[m[0]+u[1]*h,m[1]-u[0]*h]];return dist(c[0],X)>dist(c[1],X)?c[0]:c[1]};
-/* 9: cut an angle in half */
-FIGS[9]=(()=>{const A=[-.55,.38],B=[.65,.38],u=[Math.cos(-50*Math.PI/180),Math.sin(-50*Math.PI/180)],C=X_(A,u,1.05),D=X_(A,[1,0],.6),E=X_(A,u,.6),F=apex(D,E,A);
-return{pts:{A,B,C,D,E,F},given:{pts:["A","B","C"],lines:[["A","B"],["A","C"]]},
-steps:[{t:"tap",on:["A","B"],n:"D"},{t:"circ",c:"A",p:"D",show:["E"],arc:true,mark:[["A","D",1],["A","E",1]]},{t:"line",a:"D",b:"E"},{t:"tri",p:["D","E","F"],mark:[["D","F",2],["E","F",2]]},
-{t:"line",a:"A",b:"F",arcs:[["A","D","F",1],["A","F","E",1]]}],glow:[["A","F"]]}})();
-/* 10: cut a line in half (Prop 1, then Prop 9 at the top) */
-FIGS[10]=(()=>{const A=[-.45,.3],B=[.45,.3],C=apex(A,B,[0,1]),M=[0,.3];
-return{pts:{A,B,C,M},given:{pts:["A","B"],lines:[["A","B"]]},
-steps:[{t:"tri",p:["A","B","C"],mark:[["A","C",1],["B","C",1]]},{t:"short",lines:[["C","M"]],show:["M"],arcs:[["C","A","M",1],["C","M","B",1]]},
-{t:"flip",tri:["C","A","M"],from:"A",to:"B",mark:[["A","M",2],["M","B",2]]}],glow:[["A","M"],["M","B"]]}})();
-/* 11: stand a line at right angles on a point of a line */
-FIGS[11]=(()=>{const A=[-.7,.25],B=[.7,.25],C=[-.05,.25],D=[-.35,.25],E=[.25,.25],F=apex(D,E,[0,1]);
-return{pts:{A,B,C,D,E,F},given:{pts:["A","B","C"],lines:[["A","B"]]},
-steps:[{t:"tap",on:["C","A"],n:"D"},{t:"circ",c:"C",p:"D",show:["E"],mark:[["C","D",1],["C","E",1]]},{t:"tri",p:["D","E","F"],mark:[["D","F",2],["E","F",2]]},
-{t:"line",a:"C",b:"F",arcs:[["C","D","F",1],["C","F","E",1]]}],glow:[["C","F"]]}})();
-/* 12: drop a line at right angles from a point to a line (Prop 10 does the halving) */
-FIGS[12]=(()=>{const A=[-.78,.15],B=[.78,.15],C=[-.05,-.1],D=[.1,.35],r=dist(C,D),dx=Math.sqrt(r*r-.0625),F=[C[0]-dx,.15],G=[C[0]+dx,.15],H=[C[0],.15];
-return{pts:{A,B,C,D,F,G,H},given:{pts:["C"],lines:[["A","B"]]},
-steps:[{t:"tap",n:"D",at:1},{t:"line",a:"C",b:"D"},{t:"circ",c:"C",p:"D",show:["F","G"],mark:[["C","F",1],["C","G",1]]},{t:"line",a:"C",b:"F"},{t:"line",a:"C",b:"G"},
-{t:"short",lines:[],show:["H"],mark:[["F","H",2],["H","G",2]]},{t:"line",a:"C",b:"H",arcs:[["H","F","C",1],["H","C","G",1]]}],glow:[["C","H"]]}})();
-/* 13: angles along a straight line make two right angles */
-FIGS[13]=(()=>{const D=[-.7,.25],B=[-.1,.25],C=[.7,.25],A=[.25,-.4],E=[-.1,-.4];
-return{pts:{A,B,C,D,E},given:{pts:["A","B","C","D"],lines:[["C","D"],["A","B"]]},
-steps:[{t:"short",lines:[["B","E"]],show:["E"],arcs:[["B","C","E",1],["B","E","D",1]]},
-{t:"swing",seg:["B","A"],piv:"B",to:["B","C"],then:{piv:"B",to:["B","D"]}}],glow:[["C","D"]]}})();
-/* 14: two angles making two right angles lie on one straight line (by contradiction) */
-FIGS[14]=(()=>{const C=[-.7,.25],B=[0,.25],D0=[.62,.25],A=[-.35,-.4],t=-40*Math.PI/180,D1=[B[0]+.62*Math.cos(t),B[1]+.62*Math.sin(t)];
-return{pts:{A,B,C,D:D0.slice(),D0,D1,E:[.38,.25]},given:{pts:["A","B","C","D"],lines:[["A","B"],["B","C"],["B","D"]]},
-steps:[{t:"pretend",n:"D",to:"D1"},{t:"ext",o:"C",e:"B",to:"E",show:true},{t:"swing",seg:["B","D"],piv:"B",to:["B","E"],collapse:{n:"D",to:"D0"}}],glow:[["C","B"],["B","D"]]}})();
-/* 15: where two lines cross, opposite angles are equal */
-FIGS[15]=(()=>{const D=[-.7,.15],C=[.7,.15],E=[0,.15],A=[-.4,-.45],B=[E[0]+(E[0]-A[0])*.85,E[1]+(E[1]-A[1])*.85];
-return{pts:{A,B,C,D,E},given:{pts:["A","C","D","E"],lines:[["C","D"]]},
-steps:[{t:"line",a:"A",b:"E"},{t:"ext",o:"A",e:"E",to:"B",show:true},{t:"spin",v:["E","C","A"],to:["E","D","B"],arcs:[["E","C","A",1],["E","D","B",1]]},
-{t:"spin",v:["E","A","D"],to:["E","B","C"],arcs:[["E","A","D",2],["E","B","C",2]]}],glow:[["A","B"],["C","D"]]}})();
-/* 16: the outside angle of a triangle is bigger than either far inside angle */
-FIGS[16]=(()=>{const B=[-.7,.35],C=[.1,.35],A=[-.25,-.3],E=[(A[0]+C[0])/2,(A[1]+C[1])/2],F=[2*E[0]-B[0],2*E[1]-B[1]];
-return{pts:{A,B,C,D:[.6,.35],E,F},given:{pts:["A","B","C"],lines:[["A","B"],["B","C"],["A","C"]]},
-steps:[{t:"ext",o:"B",e:"C",to:"D"},{t:"short",lines:[],show:["E"],mark:[["A","E",1],["E","C",1]]},{t:"line",a:"B",b:"E"},{t:"ext",o:"B",e:"E",to:"F",show:true,mark:[["B","E",2],["E","F",2]]},{t:"line",a:"F",b:"C"},
-{t:"turn",tri:["A","B","E"],piv:"E",to:["C","F","E"],arcs:[["A","B","E",1],["C","E","F",1]]},
-{t:"amatch",v:["A","B","C"],to:["C","A","D"],rot:Math.PI}],glow:[["w","C","A","D"],["C","D"],["C","A"]]}})();
-/* 17: any two angles of a triangle make less than two right angles */
-FIGS[17]=(()=>{const A=[-.45,-.45],B=[-.3,.3],C=[.35,.3],D=[.7,.3];
-return{pts:{A,B,C,D},given:{pts:["A","B","C"],lines:[["A","B"],["B","C"],["A","C"]]},
-steps:[{t:"ext",o:"B",e:"C",to:"D"},{t:"amatch",v:["B","A","C"],to:["C","A","D"],rot:0}],glow:[["w","C","A","D"],["w","C","B","A"],["B","D"]]}})();
-/* 18: the longer side faces the bigger angle */
-FIGS[18]=(()=>{const A=[-.5,-.4],B=[-.28,.3],C=[.6,.3],D=X_(A,U_(A,C),dist(A,B));
-return{pts:{A,B,C,D},given:{pts:["A","B","C"],lines:[["A","B"],["B","C"],["A","C"]]},
-steps:[{t:"circ",c:"A",p:"B",show:["D"],arc:true,mark:[["A","B",1],["A","D",1]]},{t:"line",a:"B",b:"D",arcs:[["B","A","D",1],["D","A","B",1]]},
-{t:"amatch",v:["C","D","B"],to:["D","A","B"],rot:0}],glow:[["w","B","A","C"],["w","C","A","B"]]}})();
-/* 19: the bigger angle faces the longer side (by contradiction) */
-FIGS[19]=(()=>{const B=[-.6,.3],C=[.5,.3],A=[-.25,-.35];
-return{pts:{A,B,C,A0:A.slice(),A1:[-.05,-.35]},given:{pts:["A","B","C"],lines:[["A","B"],["B","C"],["A","C"]]},
-steps:[{t:"amatch",v:["C","B","A"],to:["B","C","A"],mirror:true},{t:"pretend",n:"A",to:"A1",mark:[["A","B",1],["A","C",1]]},
-{t:"amatch",v:["B","C","A"],to:["C","B","A"],mirror:true,fail:true,collapse:{n:"A",to:"A0",unmark:["A|B","A|C"]}}],glow:[["A","C"]]}})();
-/* 20: two sides of a triangle together are longer than the third */
-FIGS[20]=(()=>{const B=[-.55,.42],C=[.47,.42],A=[-.3,.08],u=U_(B,A),D=X_(A,u,dist(A,C));
-return{pts:{A,B,C,D,Dx:X_(A,u,dist(A,C)+.08)},given:{pts:["A","B","C"],lines:[["A","B"],["B","C"],["A","C"]]},
-steps:[{t:"ext",o:"B",e:"A",to:"Dx"},{t:"circ",c:"A",p:"C",show:["D"],arc:true,mark:[["A","C",1],["A","D",1]]},{t:"line",a:"D",b:"C",arcs:[["D","A","C",1],["C","A","D",1]]},
-{t:"swing",seg:["B","C"],piv:"B",to:["B","D"],keep:1}],glow:[["A","D"],["A","C"]]}})();
-/* where lines PQ and RS cross; where two circles cross (the upper crossing) */
-const lineX=(P,Q,R,S)=>{const d1=[Q[0]-P[0],Q[1]-P[1]],d2=[S[0]-R[0],S[1]-R[1]],den=d1[0]*d2[1]-d1[1]*d2[0],t=((R[0]-P[0])*d2[1]-(R[1]-P[1])*d2[0])/den;return[P[0]+d1[0]*t,P[1]+d1[1]*t]};
-const circX=(c1,r1,c2,r2)=>{const d=dist(c1,c2),a=(r1*r1-r2*r2+d*d)/(2*d),h=Math.sqrt(Math.max(0,r1*r1-a*a)),u=U_(c1,c2),m=X_(c1,u,a),k=[[m[0]-u[1]*h,m[1]+u[0]*h],[m[0]+u[1]*h,m[1]-u[0]*h]];return k[0][1]<k[1][1]?k[0]:k[1]};
-/* 21: two lines meeting inside a triangle make a wider angle */
-FIGS[21]=(()=>{const B=[-.7,.4],C=[.7,.4],A=[-.45,-.4],D=[-.25,.15],E=lineX(B,D,A,C);
-return{pts:{A,B,C,D,E},given:{pts:["A","B","C","D"],lines:[["A","B"],["B","C"],["A","C"],["B","D"],["C","D"]]},
-steps:[{t:"ext",o:"B",e:"D",to:"E",show:true},{t:"amatch",v:["A","B","C"],to:["E","B","C"],rot:0},{t:"amatch",v:["E","B","C"],to:["D","B","C"],rot:0}],glow:[["w","D","B","C"],["w","A","B","C"]]}})();
-/* 22: a triangle from three given lengths */
-FIGS[22]=(()=>{const P=[-.72,-.45],Q=[-.27,-.45],R=[-.22,-.45],S=[.28,-.45],T=[.33,-.45],U=[.73,-.45],D=[-.75,.45],E=[.78,.45],F=[-.3,.45],G=[.2,.45],H=[.6,.45],K=circX(F,.45,G,.4);
-return{pts:{P,Q,R,S,T,U,D,E,F,G,H,K},given:{pts:["P","Q","R","S","T","U","D"],lines:[["P","Q"],["R","S"],["T","U"],["D","E"]],ticks:[["P","Q",1],["R","S",2],["T","U",3]]},
-steps:[{t:"copy",src:["P","Q"],to:["D","F"],mark:[["D","F",1]]},{t:"copy",src:["R","S"],to:["F","G"],mark:[["F","G",2]]},{t:"copy",src:["T","U"],to:["G","H"],mark:[["G","H",3]]},
-{t:"circ",c:"F",p:"D",show:["K"],arc:true},{t:"circ",c:"G",p:"H",show:["K"],arc:true},{t:"line",a:"K",b:"F",mark:[["K","F",1]]},{t:"line",a:"K",b:"G",mark:[["K","G",3]]}],glow:[["K","F","G"]]}})();
-/* 23: copy an angle onto a line (Props 2 and 22 as shortcuts) */
-FIGS[23]=(()=>{const C=[-.7,-.1],X=[-.15,-.1],r=-40*Math.PI/180,Y=[C[0]+.55*Math.cos(r),C[1]+.55*Math.sin(r)],A=[-.35,.45],B=[.7,.45],D=[-.3,-.1],E=[C[0]+.4*Math.cos(r),C[1]+.4*Math.sin(r)],F=[.05,.45],K=[A[0]+.4*Math.cos(r),A[1]+.4*Math.sin(r)];
-return{pts:{C,X,Y,A,B,D,E,F,K},given:{pts:["C","A"],lines:[["C","X"],["C","Y"],["A","B"]]},
-steps:[{t:"tap",on:["C","X"],n:"D"},{t:"tap",on:["C","Y"],n:"E"},{t:"line",a:"D",b:"E"},{t:"copy",src:["C","D"],to:["A","F"],mark:[["C","D",1],["A","F",1]]},
-{t:"short",lines:[["A","K"],["F","K"]],show:["K"],mark:[["C","E",2],["A","K",2],["D","E",3],["F","K",3]],arcs:[["C","D","E",1],["A","F","K",1]]}],glow:[["w","A","F","K"],["w","C","D","E"]]}})();
-/* 24: the hinge: a wider angle between equal sides gives a longer base */
-FIGS[24]=(()=>{const A=[-.6,-.45],D=[.05,-.45],u=a=>[Math.cos(a*Math.PI/180),Math.sin(a*Math.PI/180)],B=X_(A,u(60),.7),C=X_(A,u(100),.62),E=X_(D,u(60),.7),F=X_(D,u(85),.62),G=X_(D,u(100),.62);
-return{pts:{A,B,C,D,E,F,G},given:{pts:["A","B","C","D","E","F"],lines:[["A","B"],["A","C"],["B","C"],["D","E"],["D","F"],["E","F"]],ticks:[["A","B",1],["D","E",1],["A","C",2],["D","F",2]]},
-steps:[{t:"slide",tri:["A","B","C"],to:["D","E","G"],oneway:1,lines:[["D","G"],["E","G"]],show:["G"],mark:[["D","G",2],["B","C",3],["E","G",3]]},
-{t:"line",a:"F",b:"G",arcs:[["F","D","G",1],["G","D","F",1]]},{t:"swing",seg:["E","F"],piv:"E",to:["E","G"],keep:1}],glow:[["E","G"],["B","C"]]}})();
-/* 25: converse of the hinge: a longer base means a wider angle */
-FIGS[25]=(()=>{const u=a=>[Math.cos(a*Math.PI/180),Math.sin(a*Math.PI/180)],A=[-.4,-.5],D=[.35,-.5],B=X_(A,u(75),.8),C=X_(A,u(125),.7),E=X_(D,u(75),.8),F=X_(D,u(105),.7),C1=X_(A,u(105),.7);
-return{pts:{A,B,C,D,E,F,C0:C.slice(),C1},given:{pts:["A","B","C","D","E","F"],lines:[["A","B"],["A","C"],["B","C"],["D","E"],["D","F"],["E","F"]],ticks:[["A","B",1],["D","E",1],["A","C",2],["D","F",2]]},
-steps:[{t:"pretend",n:"C",to:"C1",about:"A",mark:[["B","C",3],["E","F",3]]},{t:"amatch",v:["A","B","C"],to:["D","E","F"],fail:true,collapse:{n:"C",to:"C0",unmark:["B|C","E|F"]}},
-{t:"amatch",v:["D","E","F"],to:["A","B","C"],rot:0}],glow:[["w","A","B","C"]]}})();
-/* 26: two angles and the side between them fix the triangle (by contradiction) */
-FIGS[26]=(()=>{const dir=a=>[Math.cos(a*Math.PI/180),Math.sin(a*Math.PI/180)],B=[-.72,.35],C=[-.12,.35],A=lineX(B,X_(B,dir(-70),1),C,X_(C,dir(-130),1)),E=[.15,.35],F=[.75,.35],D=[A[0]+.87,A[1]];
-return{pts:{A,B,C,D,E,F,A0:A.slice(),A1:X_(B,U_(B,A),dist(B,A)*1.32),G:A.slice()},given:{pts:["A","B","C","D","E","F"],lines:[["A","B"],["A","C"],["B","C"],["D","E"],["D","F"],["E","F"]],ticks:[["B","C",1],["E","F",1]],arcs:[["B","A","C",1],["E","D","F",1],["C","A","B",2],["F","D","E",2]]},
-steps:[{t:"pretend",n:"A",to:"A1"},{t:"short",lines:[],show:["G"],mark:[["B","G",2],["D","E",2]]},{t:"line",a:"G",b:"C"},
-{t:"amatch",v:["F","E","D"],to:["C","B","G"],fail:true,collapse:{n:"A",to:"A0",merge:"G",keep:["B|G"]}}],glow:[["A","B"],["D","E"]]}})();
-/* 27: equal alternate angles mean the lines never meet (by contradiction) */
-FIGS[27]=(()=>{const A=[-.75,-.2],B=[.45,-.2],C=[-.75,.25],F=[.15,.25],D=[.6,.25],E=[-.25,-.2],t=-40*Math.PI/180,D1=[F[0]+.45*Math.cos(t),F[1]+.45*Math.sin(t)],G=lineX(A,B,F,D1);
-return{pts:{A,B,C,D,E,F,D0:D.slice(),D1,G},given:{pts:["A","B","C","D","E","F"],lines:[["A","B"],["C","F"],["F","D"],["E","F"]],arcs:[["E","A","F",1],["F","E","D",1]]},
-steps:[{t:"pretend",n:"D",to:"D1",about:"F"},{t:"ext",o:"A",e:"B",to:"G",show:true},{t:"ext",o:"F",e:"D",to:"G"},
-{t:"amatch",v:["F","E","G"],to:["E","A","F"],rot:Math.PI,collapse:{n:"D",to:"D0",drop:["B|G","D|G"],hide:["G"]}}],glow:[["A","B"],["C","D"]]}})();
-/* 28: matching angles mean parallel lines */
-FIGS[28]=(()=>{const A=[-.75,-.2],B=[.62,-.2],C=[-.75,.3],D=[.62,.3],E=[-.3,-.55],F=[.2,.6],G=lineX(E,F,A,B),H=lineX(E,F,C,D);
-return{pts:{A,B,C,D,E,F,G,H,Bx:[.8,-.2],Dx:[.8,.3]},given:{pts:["A","B","C","D","E","F","G","H"],lines:[["A","B"],["C","D"],["E","F"]],arcs:[["G","E","B",1],["H","G","D",1]]},
-steps:[{t:"ext",o:"A",e:"B",to:"Bx"},{t:"ext",o:"C",e:"D",to:"Dx"},{t:"spin",v:["G","E","B"],to:["G","H","A"],arcs:[["G","H","A",1]]}],glow:[["A","Bx"],["C","Dx"]]}})();
+/* The game no longer keeps its own copies of Props 2–48: their locks show the Home page's proof (proofs.js) on the plate. */
 const lkey=(a,b)=>[a,b].sort().join("|");
 function mkFig(id){const def=FIGS[id],g=def.given,lk={id,def,pts:JSON.parse(JSON.stringify(def.pts)),step:0,lines:{},circs:[],vis:new Set(g.pts),marks:[],won:0,drag:null,ghost:null,anim:null,auto:null,trail:[],tip:null,sw:null,ext:null,mv:null};
 for(const[a,b]of g.lines)lk.lines[lkey(a,b)]=1;for(const[a,b,n]of g.ticks||[])lk.marks.push({a,b,n,t:1});for(const[v,a,b,n]of g.arcs||[])lk.marks.push({v,a,b,n,t:1});return lk}
@@ -804,8 +686,13 @@ else if(d.k==="spin"){if(d.th!==undefined&&Math.abs(wrapA(d.th-d.tT))<.35)snapTo
 else if(d.k==="turn"){if(d.th!==undefined&&Math.abs(wrapA(d.th-d.tT))<.35)snapTo(lk,{pts:st.to.map(n=>pt[n])},250,()=>{linger(lk,400);figDone(lk)});else lk.ghost=null}
 else if(d.k==="amatch"){const g=lk.ghost;if(dist(g.V,pt[d.tgt[0]])<.16){const T=wedgeAt(lk,d.tgt);if(st.mirror){const m1=Math.PI-g.a1,m2=Math.PI-g.a2;snapTo(lk,{V:T.V,a1:m1,a2:m2},300,()=>{if(st.fail){sfxRattle();setTimeout(()=>{lk.ghost=null;figDone(lk)},600)}else{figDone(lk);linger(lk,2600)}})}else if(st.rot!==undefined){const rr=d.tgt===st.to?st.rot:-st.rot;snapTo(lk,{V:T.V,a1:g.a1+rr,a2:g.a2+rr},300,()=>{figDone(lk);linger(lk,2600)})}else if(st.fail){snapTo(lk,{V:T.V,a1:g.a1,a2:g.a2},250,()=>{sfxRattle();setTimeout(()=>{lk.ghost=null;figDone(lk)},500)})}else snapTo(lk,T,320,()=>{lk.ghost=null;figDone(lk)})}else lk.ghost=null}}
 /* the figure on any lock plate, solved or not */
-function lockFace(id,cx,cy,r){const ok=solved(id);if(id===1)drawL1(cx,cy,r,ok?FULL:BLANK,false);else if(id===4)drawL4(cx,cy,r,ok?FULL4:BLANK4,false);else if(FIGS[id])drawFig(cx,cy,r,ok?FIGF[id]:FIGB[id],false)}
-const hasLock=id=>id===1||id===4||!!FIGS[id];
+/* Home's finished figure for a proposition, cut in bronze: an image made from thumbs.js */
+const TIMG={};
+function thumbImg(id){if(TIMG[id])return TIMG[id];const t=(window.THUMBS||{})[id];if(!t)return null;const css=".seg{stroke:#3b1f08;stroke-width:2.6px;stroke-linecap:round}.seg.dot,.ray{stroke-dasharray:3 6}.arc{fill:none;stroke:#5a3a18;stroke-width:1.3px;opacity:.8}.angarc{fill:none;stroke:#5a3a18;stroke-width:2px}.pt{fill:#2a1404}text{display:none}*{vector-effect:non-scaling-stroke}",
+img=new Image();img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${t.vb}" width="640" height="420"><style>${css}</style>${t.h}</svg>`);const vb=t.vb.split(" ").map(Number);img._ar=vb[2]/vb[3];return TIMG[id]=img}
+function drawThumb(id,cx,cy,r){const im=thumbImg(id);if(!im||!im.complete||!im.naturalWidth)return false;const w=r*1.7,h=w/im._ar;ctx.drawImage(im,cx-w/2,cy-h/2,w,h);return true}
+function lockFace(id,cx,cy,r){const ok=solved(id);if(id===1)drawL1(cx,cy,r,ok?FULL:BLANK,false);else if(id===4)drawL4(cx,cy,r,ok?FULL4:BLANK4,false);else if(ok)drawThumb(id,cx,cy,r)}
+const hasLock=id=>id===1||id===4||homeLock(id);
 let lockFrom="doors",hallStack=[];
 function enterHall(id){hallStack.push(id);hallId=id;fadeTo("hall",800)}
 
@@ -855,10 +742,10 @@ ctx.save();poly([TL,at(Math.min(1,u1+.01),0),at(Math.min(1,u1+.01),1),BL]);ctx.c
 ctx.fillStyle=`rgba(0,0,0,${clamp(1-Math.exp(-(zc-1)*.15)*1.15,0,.8)})`;poly(q);ctx.fill();ctx.strokeStyle=col([210,160,60],zc);ctx.lineWidth=Math.max(2,4/zc*3);poly(q);ctx.stroke();hallHits.push({poly:q,kind:"art",id})}
 /* the finished figure of a proposition on parchment, made once and kept */
 const ART={};
-function faceFull(id,cx,cy,r){if(id===1)drawL1(cx,cy,r,FULL,false);else if(id===4)drawL4(cx,cy,r,FULL4,false);else if(FIGS[id])drawFig(cx,cy,r,FIGF[id],false)}
+function faceFull(id,cx,cy,r){if(id===1)drawL1(cx,cy,r,FULL,false);else if(id===4)drawL4(cx,cy,r,FULL4,false);else return drawThumb(id,cx,cy,r);return true}
 function artCanvas(id){if(ART[id])return ART[id];const c=document.createElement("canvas");c.width=c.height=320;const g=c.getContext("2d"),keep=ctx;
 const pg=g.createRadialGradient(160,150,20,160,160,240);pg.addColorStop(0,"#efe0bb");pg.addColorStop(1,"#b89a64");g.fillStyle=pg;g.fillRect(0,0,320,320);
-ctx=g;try{faceFull(id,160,150,150)}finally{ctx=keep}g.font="600 24px Georgia,serif";g.textAlign="center";g.fillStyle="rgba(70,40,12,.85)";g.fillText("1."+id,160,306);return ART[id]=c}
+let ok;ctx=g;try{ok=faceFull(id,160,150,150)}finally{ctx=keep}if(!ok){thumbImg(id);return c}g.font="600 24px Georgia,serif";g.textAlign="center";g.fillStyle="rgba(70,40,12,.85)";g.fillText("1."+id,160,306);return ART[id]=c}
 /* which finished figures hang in hall n: the next ones ahead first, then earlier ones near the end of the book */
 function hallArt(n,k){const out=[];for(let i=n+1;i<=48&&out.length<k;i++)if(hasLock(i))out.push(i);for(let i=n-1;i>=1&&out.length<k;i--)if(hasLock(i))out.push(i);return out}
 /* hall n has a door to c only once everything else c needs is solved: this proof is what opens that room */
@@ -918,10 +805,10 @@ function showPlaque(m){plq.innerHTML=`<h2>${esc(m.n)}</h2><div class="d">${esc(m
 function hidePlaque(){plq.style.display="none";PLQ=false}plq.addEventListener("click",hidePlaque);
 /* blueprints: double-tap a painting to see its figure, its number and its steps */
 let BP=null,artTap={id:null,t:0};const BPC={};
-function bpCanvas(id){if(BPC[id])return BPC[id];const c=document.createElement("canvas");c.width=c.height=480;const g=c.getContext("2d"),keep=ctx;ctx=g;try{faceFull(id,240,240,220)}finally{ctx=keep}g.globalCompositeOperation="source-in";g.fillStyle="#eef6ff";g.fillRect(0,0,480,480);return BPC[id]=c}
+function bpCanvas(id){if(BPC[id])return BPC[id];const c=document.createElement("canvas");c.width=c.height=480;const g=c.getContext("2d"),keep=ctx;let ok;ctx=g;try{ok=faceFull(id,240,240,220)}finally{ctx=keep}g.globalCompositeOperation="source-in";g.fillStyle="#eef6ff";g.fillRect(0,0,480,480);if(ok)BPC[id]=c;return c}
 const ANGN=v=>"∠"+v[1]+v[0]+v[2];
 function stepText(st){switch(st.t){case"line":return`Join ${st.a}${st.b}`;case"tri":return`Build the equilateral triangle ${st.p.join("")} (1.1)`;case"short":return st.show.length?`Find ${st.show.join(", ")} by an earlier proof`:"Use an earlier proof";case"ext":return`Extend ${st.o}${st.e}`;case"tap":return`Mark ${st.n}`;case"circ":return`Circle about ${st.c} through ${st.p}`;case"copy":return`Carry ${st.src.join("")} to ${st.to.join("")} (1.2)`;case"swing":return`Swing ${st.seg.join("")} about ${st.piv} onto ${st.to.join("")}`;case"pretend":return`Suppose ${st.n} lay elsewhere`;case"flip":return`Turn triangle ${st.tri.join("")} over`;case"amatch":return`Lay ${ANGN(st.v)} on ${ANGN(st.to)}`;case"slide":return`Slide ${st.tri.join("")} onto ${st.to.join("")}`;case"spin":return`Spin ${ANGN(st.v)} onto ${ANGN(st.to)}`;case"turn":return`Turn ${st.tri.join("")} about ${st.piv}`}return""}
-const bpSteps=id=>id===1?["Circle about A through B","Circle about B through A","Join AC","Join BC"]:id===4?["Lay AC on DF","Lay AB on DE","Lay ∠BAC on ∠EDF","Slide ABC onto DEF"]:FIGS[id]?FIGS[id].steps.map(stepText):[];
+const bpSteps=id=>id===1?["Circle about A through B","Circle about B through A","Join AC","Join BC"]:id===4?["Lay AC on DF","Lay AB on DE","Lay ∠BAC on ∠EDF","Slide ABC onto DEF"]:PROOF(id)&&PROOF(id).steps?PROOF(id).steps.map(x=>x[0]):[];
 const fitT=(s0,w)=>{if(ctx.measureText(s0).width<=w)return s0;while(s0.length>3&&ctx.measureText(s0+"…").width>w)s0=s0.slice(0,-1);return s0+"…"};
 function drawBlueprint(t){const id=BP.id;ctx.save();ctx.globalAlpha=clamp((now()-BP.t0)/300);ctx.fillStyle="#1b4f8f";ctx.fillRect(0,0,W,H);ctx.strokeStyle="rgba(200,225,255,.13)";ctx.lineWidth=1;const gs=Math.max(16,Math.min(W,H)/24);for(let x=0;x<W;x+=gs){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}for(let y=0;y<H;y+=gs){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
 ctx.strokeStyle="rgba(230,242,255,.75)";ctx.lineWidth=2;ctx.strokeRect(10,10,W-20,H-20);const S0=Math.min(W*.92,H*.52);ctx.drawImage(bpCanvas(id),(W-S0)/2,64+H*.06,S0,S0);
@@ -974,7 +861,7 @@ const newB=document.getElementById("newg");let newArm=-1e9;
 newB.addEventListener("click",()=>{audioInit();if(now()-newArm>3500){newArm=now();newB.textContent="Erase progress?";setTimeout(()=>newB.textContent="Start over",3500);return}
 S.solved=[];S.coins=0;S.inv=[];save();doorOpenT={1:null,4:null};hallStack=[];newB.textContent="Start over";begin()});
 document.getElementById("relock").addEventListener("click",()=>{if(scene==="hall"&&hasLock(hallId))openLock(hallId)});
-document.getElementById("help").addEventListener("click",()=>{if(scene==="lock")HELP={t0:now(),path:helpPath()}});
+document.getElementById("help").addEventListener("click",()=>{if(scene==="lock"&&EMB){lockF.contentWindow.postMessage({cmd:"step"},"*");return}if(scene==="lock")HELP={t0:now(),path:helpPath()}});
 document.getElementById("mapb").addEventListener("click",()=>{audioInit();if(scene==="map")fadeTo(mapPrev,500);else{mapPrev=scene;fadeTo("map",500)}});
 go("title");requestAnimationFrame(frame);
 </script>
