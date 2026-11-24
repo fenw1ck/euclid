@@ -137,3 +137,8 @@ Features already in place: a control panel inside the figure (Solve, Step, Slowe
   - 1.7 starts with AC ≠ CB. After D and CD, the learner matches AC with AD (blue) and CB with BD (orange). Then they pull triangle ADC out of the figure (`lift`: it stands upright below the figure, letters and all), match its base angles, and do the same for BCD.
   - 1.13: three `wcmp` comparisons. Pull pieces out to a tray, then lay the other angle (or pair) on top: CBE = CBA + ABE, ABD = ABE + EBD, and the three pieces DBE, EBA, ABC under CBA + ABD.
   - 1.14: D no longer moves. The learner pulls CB on past B freehand. Aiming at D gets "Hmmm, maybe the line needed to be a little lower…" with a shaded guide below. Then BF stands at right angles, the learner taps CBF and FBE (the user's note said FBD; FBE is the right angle), and taps inside DBE to turn it alarm red. Dragging E up to D swings the straight line (with C and F) onto BD and clears the red.
+- Feedback batch C (done, 23 Nov 2026):
+  - 1.15: tap line CD, then tap its two angles CEA and AED. Tap line AB, then DEB. Then grab CEA and turn it about E onto DEB, and AED onto CEB (new ops `tapseg`, `wmark` and `spinw`).
+  - 1.16: the last step is the learner's. They grab A and drag it round to C (or B to F), and triangle ABE turns about E onto CFE (new op `turn`).
+  - The flashing extension and its arrow can be grabbed to pull a line on, as well as the line itself.
+  - Still to do: more phase animations that move comparison pieces should become drags the learner does, with the engine snapping the rotation.
