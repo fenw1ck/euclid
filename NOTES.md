@@ -89,6 +89,12 @@ Features already in place: a control panel inside the figure (Solve, Step, Slowe
 - The interactive part needs no maths and no English.
 - The written Logic section is for readers with strong maths.
 
+## Home page thumbnails
+
+- Each proposition on the home page shows its finished figure. They live in `thumbs.js` (`window.THUMBS[id] = {vb, h}`: the SVG viewBox and inner markup), loaded before the main script.
+- They are made by `tools/make-thumbs.py`, which solves every proposition in fast mode and saves the final SVG. Re-run it after changing any figure.
+- The thumbnails use the page's CSS colour variables, so they follow light and dark mode. Tapping one opens the proposition.
+
 ## Known issues
 
 - Fixed in Batch 5: figures no longer run out of letters.
