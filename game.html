@@ -27,6 +27,7 @@ canvas{display:block;width:100vw;height:100vh;touch-action:none}
 <div id="music"><button class="btn" id="mute" title="Music on or off" aria-label="Music on or off">♪</button><select id="track" aria-label="Song"></select><button class="btn" id="nexttr" title="Next song" aria-label="Next song">⏭</button><input id="vol" type="range" min="0" max="1" step="0.01" aria-label="Music volume"></div>
 <div id="toast"></div>
 <div id="plaque"></div>
+<script src="proofs.js"></script>
 <script>
 "use strict";
 /* ============================================================
@@ -395,7 +396,9 @@ for(const yy of[.1,.9]){g.fillStyle="#2d2a27";g.fillRect(0,H*yy-14,W,28);g.fillS
 const vg=g.createRadialGradient(W/2,H/2,Math.min(W,H)*.3,W/2,H/2,Math.max(W,H)*.75);vg.addColorStop(0,"rgba(0,0,0,0)");vg.addColorStop(1,"rgba(0,0,0,.75)");g.fillStyle=vg;g.fillRect(0,0,W,H);woodC={c,w:W,h:H,d:DPR};return c}
 /* the figure sits inside the lettering: FK is its size as a share of the plate */
 const FK=.74,lockGeo=()=>{const P=Math.min(W,H)*.45,R=P*FK;return{R,P,cx:W/2,cy:H/2}};
-const NAMES={"1": "Construct an equilateral triangle", "2": "Place a line equal to a given line at a point", "3": "Cut off a line equal to a shorter one", "4": "Two sides and the angle between them", "5": "Base angles of an isosceles triangle", "6": "Equal angles mean equal sides", "7": "Two triangles cannot share a base and sides", "8": "Three equal sides make equal triangles", "9": "Bisect an angle", "10": "Bisect a line", "11": "Draw a perpendicular at a point on a line", "12": "Draw a perpendicular from a point off a line", "13": "Angles on a straight line", "14": "Two angles that make a straight line", "15": "Vertical angles are equal", "16": "The outside angle is bigger", "17": "Two angles of a triangle are less than two right angles", "18": "The greater side has the greater angle opposite it", "19": "The greater angle has the greater side opposite it", "20": "Two sides together are longer than the third", "21": "Two lines meeting inside a triangle", "22": "Triangle from three given lines", "23": "Copy an angle onto a line", "24": "Hinge: a bigger angle gives a bigger base", "25": "Converse of the hinge", "26": "Two angles and a side", "27": "Equal alternate angles mean parallel lines", "28": "More tests for parallel lines", "29": "Parallel lines make equal angles", "30": "Parallel to the same line means parallel to each other", "31": "Draw a parallel through a point", "32": "Angles of a triangle add to two right angles", "33": "Joining the ends of equal parallel lines", "34": "Opposite sides and angles of a parallelogram", "35": "Same base, same parallels: equal parallelograms", "36": "Equal bases, same parallels", "37": "Triangles on the same base between parallels", "38": "Triangles on equal bases between parallels", "39": "Equal triangles on one base lie between parallels", "40": "Equal triangles on equal bases lie between parallels", "41": "A parallelogram is double a triangle", "42": "Make a parallelogram equal to a triangle", "43": "Complements of a parallelogram", "44": "Apply a parallelogram to a line", "45": "A parallelogram equal to any straight-sided figure", "46": "A square on a line", "47": "The Pythagorean theorem", "48": "Converse of the Pythagorean theorem"};
+/* names and win words come from proofs.js, the same file the site reads */
+const PROOF=id=>(typeof ALL!=="undefined"&&ALL.find(p=>p.id===id))||null,NAMES={};for(let i=1;i<=48;i++)NAMES[i]=(PROOF(i)||{}).t||"";
+const winToast=id=>{const p=PROOF(id);if(p&&p.winTxt)setTimeout(()=>toast(p.winTxt),400)};
 /* letters cut round the rim, like a coin: the number across the top, the name along the bottom, upright */
 function arcText(txt,cx,cy,r,size,bottom){ctx.font=`600 ${size}px Georgia,serif`;ctx.textAlign="center";ctx.textBaseline="alphabetic";const ws=[...txt].map(c=>ctx.measureText(c).width),tot=ws.reduce((a,b)=>a+b,0)/r;let acc=0;
 [...txt].forEach((ch,i)=>{const a=bottom?Math.PI/2+tot/2-(acc+ws[i]/2)/r:-Math.PI/2-tot/2+(acc+ws[i]/2)/r;acc+=ws[i];ctx.save();ctx.translate(cx+r*Math.cos(a),cy+r*Math.sin(a));ctx.rotate(bottom?a-Math.PI/2:a+Math.PI/2);
@@ -421,7 +424,7 @@ let to=null;for(const n of["A","B","C"])if(n!==d.from&&dist(p,L1[n])<hit)to=n;if
 if((key==="AC"||key==="BC")&&!LK[key]){LK[key]=now();sfxChime(false);if(LK.AC&&LK.BC)win1()}}
 function stepAuto(dt){const a=LK.auto;if(!a)return;const step=560*dt*a.dir;markArc(a.cov,a.ang,step);a.ang+=step;const r=a.ang*Math.PI/180;LK.tip=[a.ctr[0]+Math.cos(r)*L1.r,a.ctr[1]+Math.sin(r)*L1.r];LK.trail.push({p:LK.tip.slice(),t:now()});
 if(a.cov.every(v=>v>0)){LK.auto=null;LK[a.k==="A"?"dA":"dB"]=true;sfxChime(false);if(LK.dA&&LK.dB&&!LK.C){LK.C=now();setTimeout(()=>sfxChime(true),150)}}}
-function win1(){const T=now();LK.won=T;LK.AB=T;LK.AC=T;LK.BC=T;setTimeout(()=>sfxChime(true),250);
+function win1(){const T=now();LK.won=T;winToast(1);LK.AB=T;LK.AC=T;LK.BC=T;setTimeout(()=>sfxChime(true),250);
 const first=!solved(1);if(first){S.solved.push(1);save()}setTimeout(()=>{sfxUnlock();if(lockFrom!=="doors"||!first)return fadeTo(lockFrom,900);doorOpenT[1]=null;fadeTo("doors",900,()=>{doorOpenT[1]=now()+700})},1900)}
 
 /* Proposition 4 lock. Two triangles: two sides and the angle between them are equal.
@@ -483,7 +486,7 @@ const snap=(to,dur,done)=>{lk.anim={f:JSON.parse(JSON.stringify(g)),to,t0:now(),
 if(d.k==="AC"||d.k==="AB"){const T=d.tgt.map(n=>L4[n]),m=[(g.p[0]+g.q[0])/2,(g.p[1]+g.q[1])/2],mt=[(T[0][0]+T[1][0])/2,(T[0][1]+T[1][1])/2];
 if(dist(m,mt)<.16)snap({p:T[0],q:T[1]},280,()=>{lk[d.k]=now();lk.ghost=null;sfxChime(false)});else lk.ghost=null;return}
 const T=wedgeOf(d.tgt);if(dist(g.V,T.V)<.16)snap(T,320,()=>{lk.ang=now();lk.ghost=null;sfxChime(false);setTimeout(()=>{lk.BC=now();sfxChime(true)},450)});else lk.ghost=null}
-function win4(){const T=now();LK4.won=T;LK4.ghost=null;setTimeout(()=>sfxChime(true),200);
+function win4(){const T=now();LK4.won=T;winToast(4);LK4.ghost=null;setTimeout(()=>sfxChime(true),200);
 const first=!solved(4);if(first){S.solved.push(4);save()}setTimeout(()=>{sfxUnlock();if(lockFrom!=="doors"||!first)return fadeTo(lockFrom,900);doorOpenT[4]=null;fadeTo("doors",900,()=>{doorOpenT[4]=now()+700})},1900)}
 /* the help hand: a pale blue ghost finger plays the next move twice (figure units) */
 let HELP=null;
@@ -696,7 +699,7 @@ d.mg=Math.abs(df)<.55?Math.min(1,(d.mg||0)+dt/.65):Math.max(0,(d.mg||0)-dt/.25);
 const O=[V[0]+Ln*Math.cos(a),V[1]+Ln*Math.sin(a)];lk.ghost=gi===0?{p:V.slice(),q:O}:{p:O,q:V.slice()};if(d.mg>=1&&!d.fired){d.fired=1;lk.drag=null;gcopyDone(lk,st,d)}}
 function gcopyDone(lk,st,d){const pt=lk.pts,sw=d.piv&&d.piv[0]!==d.piv[1];snapTo(lk,sw?{p:pt[st.to[1]],q:pt[st.to[0]]}:{p:pt[st.to[0]],q:pt[st.to[1]]},250,()=>{lk.ghost=null;lk.spark=lk.spark||{};lk.spark[st.to[1]]=now();figDone(lk)})}
 function figDone(lk){const st=lk.def.steps[lk.step],before=JSON.parse(JSON.stringify(lk.pts));applyStep(lk,st,now());if(st.collapse){lk.mv={from:before,t0:now()+(st.fail?700:450),dur:1100};if(!st.fail)setTimeout(sfxRattle,250)}lk.step++;sfxChime(false);if(lk.step>=lk.def.steps.length)setTimeout(()=>figWin(lk),st.collapse?1500:0)}
-function figWin(lk){const id=lk.id;lk.won=now();setTimeout(()=>sfxChime(true),250);if(!solved(id)){S.solved.push(id);save()}setTimeout(()=>{sfxUnlock();fadeTo(lockFrom,900)},1900)}
+function figWin(lk){const id=lk.id;lk.won=now();winToast(id);setTimeout(()=>sfxChime(true),250);if(!solved(id)){S.solved.push(id);save()}setTimeout(()=>{sfxUnlock();fadeTo(lockFrom,900)},1900)}
 /* where a point is drawn: points slide home after a contradiction */
 function figPos(lk,n){const m=lk.mv,p=lk.pts[n];if(!m)return p;const u=ease(clamp((now()-m.t0)/m.dur)),f=m.from[n];return f?[lerp(f[0],p[0],u),lerp(f[1],p[1],u)]:p}
 function drawFig(cx,cy,R,lk,live){const T=now(),def=lk.def,P=q=>[cx+q[0]*R,cy+q[1]*R],pos=n=>figPos(lk,n),Q=n=>P(pos(n)),gw=Math.max(1.4,R*.02),LIFE=1500,D2R=Math.PI/180,st=def.steps[lk.step];
