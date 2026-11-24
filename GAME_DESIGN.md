@@ -43,6 +43,11 @@ Skippable at any moment with any key, click or tap.
   - Prop 6: the base angles are marked equal. Pretend AB is longer by dragging A along the arrow; carry AC onto B (it lands as BD); join DC; swing CD round C towards CA, and A slides home with D merged into it: AB = AC.
   - Prop 7: pretend a second apex: drag D out of C, with AD and BD ticked equal to AC and BC; join CD; match angle ACD to ADC; then try to match DCB to CDB. It rattles, because it can't, and D falls back into C.
   - Prop 8: three pairs of sides ticked 1, 2, 3; slide one triangle onto the other until it clicks and swings into place, and the angles at A and D get arcs.
+- **Built:** Props 9–12. New moves: *short* (tap faint preview lines or a glowing spot, standing in for an earlier lock in one tap, as the triangle tap does for Prop 1) and tapping a glowing spot to place a point.
+  - Prop 9: tap D on AB; sweep D round A onto AC at E; join DE; tap the faint triangle DEF (Prop 1); join AF. The two halves of the angle get one arc each.
+  - Prop 10: tap the faint triangle ABC (Prop 1); tap the faint line from C (Prop 9 cuts the top angle in half), which meets AB at M; drag A onto B, so triangle CAM turns over onto CBM: AM = MB.
+  - Prop 11: tap D on the line; sweep D round C to E; tap the faint triangle DEF (Prop 1); join CF. The two angles at C get one arc each, so both are right angles.
+  - Prop 12: tap the glowing spot D below the line; join CD; sweep D round C until the circle crosses the line twice (F and G); join CF and CG; tap the glowing middle H (Prop 10); join CH.
 - Hall doors now work. An amber door opens its lock, a solved door leads into its hall, and Back steps back through the halls you walked through. Each door's plate shows its lock's figure, cut or uncut. Amber doors without a lock yet say so.
 - Equal parts on lock plates are marked the classic way, with cut ticks and arcs, since the plates are bronze and gold only.
 - **Next:** port the site's proposition engine (the `OPS` steps and short versions) so that any proposition's figure can sit on a lock plate. The engine stays the same; only the drawing and the effects change.
@@ -114,7 +119,7 @@ Proposed rules (open to change):
    - the ten songs and the volume control;
    - the item data and the coin roll;
    - the progress save.
-2. **Locks for all 48:** Props 1–8 are done, and walking between halls works. With 1–8 solved, Hall 1's doors 9 and 11 turn amber. Next: 9–12.
+2. **Locks for all 48:** Props 1–12 are done, and walking between halls works. Next: 13–16 (angles on a line, vertical angles, the exterior angle).
 3. **Greenhouses:** junctions, fountains with water sound, the blue statue shop, chests and coins, and an inventory and character screen with clothes.
 4. **Scrolls** (guided mode), more art variety for halls (different statues, paintings showing each hall's own figure), and phone testing across all 48.
 

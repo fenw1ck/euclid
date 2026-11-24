@@ -429,8 +429,9 @@ function openLock(id){lockId=id;lockFrom=scene;if(id===4)LK4=mkLock4();else if(F
    A lock is points (plate units, centre 0,0, radius 1), the given figure, and steps:
    line    drag one point to another                              {t:"line",a,b}
    tri     tap the faint triangle: Prop 1's short version          {t:"tri",p:[a,b,new]}
+   short   tap faint lines or a glowing spot: an earlier lock done in one tap (Props 9, 10) {t:"short",lines,show}
    ext     pull a line on past its end                             {t:"ext",o,e,to,show}
-   tap     tap a line to put a point on it                         {t:"tap",on:[a,b],n}
+   tap     tap a line to put a point on it (at:1 taps a glowing spot)  {t:"tap",on:[a,b],n}
    circ    sweep a point round a centre; the light finishes the circle once the arc passes what it needs
            (arc:true keeps just the arc swept, for circles too big for the plate) {t:"circ",c,p,show,arc}
    copy    carry a line onto a point: Prop 2's short version       {t:"copy",src:[a,b],to:[a,b]}
@@ -474,6 +475,28 @@ steps:[{t:"pretend",n:"D",to:"D1",lines:[["A","D"],["B","D"]],mark:[["A","C",1],
 FIGS[8]=(()=>{const A=[-.7,.22],B=[-.25,.22],C=[-.448,-.228],D=[.2,.3],th=-.663,rt=q=>{const x=q[0]-A[0],y=q[1]-A[1];return[D[0]+x*Math.cos(th)-y*Math.sin(th),D[1]+x*Math.sin(th)+y*Math.cos(th)]};
 return{pts:{A,B,C,D,E:rt(B),F:rt(C)},given:{pts:["A","B","C","D","E","F"],lines:[["A","B"],["B","C"],["A","C"],["D","E"],["E","F"],["D","F"]],ticks:[["A","B",1],["D","E",1],["A","C",2],["D","F",2],["B","C",3],["E","F",3]]},
 steps:[{t:"slide",tri:["A","B","C"],to:["D","E","F"],arcs:[["A","B","C",1],["D","E","F",1]]}],glow:[["A","B","C"],["D","E","F"]]}})();
+/* apex of the equilateral triangle on PQ, on the side away from X */
+const apex=(P,Q,X)=>{const m=[(P[0]+Q[0])/2,(P[1]+Q[1])/2],u=U_(P,Q),h=dist(P,Q)*Math.sqrt(3)/2,c=[[m[0]-u[1]*h,m[1]+u[0]*h],[m[0]+u[1]*h,m[1]-u[0]*h]];return dist(c[0],X)>dist(c[1],X)?c[0]:c[1]};
+/* 9: cut an angle in half */
+FIGS[9]=(()=>{const A=[-.55,.38],B=[.65,.38],u=[Math.cos(-50*Math.PI/180),Math.sin(-50*Math.PI/180)],C=X_(A,u,1.05),D=X_(A,[1,0],.6),E=X_(A,u,.6),F=apex(D,E,A);
+return{pts:{A,B,C,D,E,F},given:{pts:["A","B","C"],lines:[["A","B"],["A","C"]]},
+steps:[{t:"tap",on:["A","B"],n:"D"},{t:"circ",c:"A",p:"D",show:["E"],arc:true,mark:[["A","D",1],["A","E",1]]},{t:"line",a:"D",b:"E"},{t:"tri",p:["D","E","F"],mark:[["D","F",2],["E","F",2]]},
+{t:"line",a:"A",b:"F",arcs:[["A","D","F",1],["A","F","E",1]]}],glow:[["A","F"]]}})();
+/* 10: cut a line in half (Prop 1, then Prop 9 at the top) */
+FIGS[10]=(()=>{const A=[-.45,.3],B=[.45,.3],C=apex(A,B,[0,1]),M=[0,.3];
+return{pts:{A,B,C,M},given:{pts:["A","B"],lines:[["A","B"]]},
+steps:[{t:"tri",p:["A","B","C"],mark:[["A","C",1],["B","C",1]]},{t:"short",lines:[["C","M"]],show:["M"],arcs:[["C","A","M",1],["C","M","B",1]]},
+{t:"flip",tri:["C","A","M"],from:"A",to:"B",mark:[["A","M",2],["M","B",2]]}],glow:[["A","M"],["M","B"]]}})();
+/* 11: stand a line at right angles on a point of a line */
+FIGS[11]=(()=>{const A=[-.7,.25],B=[.7,.25],C=[-.05,.25],D=[-.35,.25],E=[.25,.25],F=apex(D,E,[0,1]);
+return{pts:{A,B,C,D,E,F},given:{pts:["A","B","C"],lines:[["A","B"]]},
+steps:[{t:"tap",on:["C","A"],n:"D"},{t:"circ",c:"C",p:"D",show:["E"],mark:[["C","D",1],["C","E",1]]},{t:"tri",p:["D","E","F"],mark:[["D","F",2],["E","F",2]]},
+{t:"line",a:"C",b:"F",arcs:[["C","D","F",1],["C","F","E",1]]}],glow:[["C","F"]]}})();
+/* 12: drop a line at right angles from a point to a line (Prop 10 does the halving) */
+FIGS[12]=(()=>{const A=[-.78,.15],B=[.78,.15],C=[-.05,-.1],D=[.1,.35],r=dist(C,D),dx=Math.sqrt(r*r-.0625),F=[C[0]-dx,.15],G=[C[0]+dx,.15],H=[C[0],.15];
+return{pts:{A,B,C,D,F,G,H},given:{pts:["C"],lines:[["A","B"]]},
+steps:[{t:"tap",n:"D",at:1},{t:"line",a:"C",b:"D"},{t:"circ",c:"C",p:"D",show:["F","G"],mark:[["C","F",1],["C","G",1]]},{t:"line",a:"C",b:"F"},{t:"line",a:"C",b:"G"},
+{t:"short",lines:[],show:["H"],mark:[["F","H",2],["H","G",2]]},{t:"line",a:"C",b:"H",arcs:[["H","F","C",1],["H","C","G",1]]}],glow:[["C","H"]]}})();
 const lkey=(a,b)=>[a,b].sort().join("|");
 function mkFig(id){const def=FIGS[id],g=def.given,lk={id,def,pts:JSON.parse(JSON.stringify(def.pts)),step:0,lines:{},circs:[],vis:new Set(g.pts),marks:[],won:0,drag:null,ghost:null,anim:null,auto:null,trail:[],tip:null,sw:null,ext:null,mv:null};
 for(const[a,b]of g.lines)lk.lines[lkey(a,b)]=1;for(const[a,b,n]of g.ticks||[])lk.marks.push({a,b,n,t:1});for(const[v,a,b,n]of g.arcs||[])lk.marks.push({v,a,b,n,t:1});return lk}
@@ -482,6 +505,7 @@ const needDeg=(c,q)=>((Math.floor(angDeg(c,q))%360)+360)%360;
 function applyStep(lk,st,T){const L=(a,b)=>lk.lines[lkey(a,b)]=T,pt=lk.pts;
 if(st.t==="line")L(st.a,st.b);else if(st.t==="tri"){L(st.p[0],st.p[2]);L(st.p[1],st.p[2]);lk.vis.add(st.p[2])}else if(st.t==="ext"){L(st.e,st.to);if(st.show)lk.vis.add(st.to)}
 else if(st.t==="tap")lk.vis.add(st.n);
+else if(st.t==="short"){for(const[a,b]of st.lines)L(a,b);st.show.forEach(n=>lk.vis.add(n))}
 else if(st.t==="circ"){const o=figCirc(lk,st.c,st.p);if(st.arc){if(T===1){const a=needDeg(pt[st.c],pt[st.p]),b=needDeg(pt[st.c],pt[st.show[0]]);let d=b-a;while(d>180)d-=360;while(d<-180)d+=360;markArc(o.cov,a,d);for(let i=0;i<360;i++)if(o.cov[i])o.cov[i]=1}}else for(let i=0;i<360;i++)if(!o.cov[i])o.cov[i]=T;st.show.forEach(n=>lk.vis.add(n))}
 else if(st.t==="copy"){L(...st.to);lk.vis.add(st.to[1])}
 else if(st.t==="pretend"){pt[st.n]=pt[st.to].slice();lk.vis.add(st.n);for(const[a,b]of st.lines||[])L(a,b)}
@@ -523,7 +547,8 @@ if(live&&st&&!lk.won&&!lk.drag&&!lk.anim&&!lk.auto&&!lk.mv){const t=T/1000,pb=R*
 if(st.t==="line"){pulse(...Q(st.a),pb,t);pulse(...Q(st.b),pb,t+.5)}
 else if(st.t==="tri"){ctx.save();ctx.setLineDash([gw*2,gw*3]);ctx.strokeStyle=`rgba(255,215,140,${.45+.25*Math.sin(t*3)})`;ctx.lineWidth=gw;poly(st.p.map(Q));ctx.stroke();ctx.restore();pulse(...cen(st.p),pb,t)}
 else if(st.t==="ext")pulse(...Q(st.e),pb,t);
-else if(st.t==="tap")pulse(...mid(pt[st.on[0]],pt[st.on[1]]),pb,t);
+else if(st.t==="tap")pulse(...(st.at?Q(st.n):mid(pt[st.on[0]],pt[st.on[1]])),pb,t);
+else if(st.t==="short"){ctx.save();ctx.setLineDash([gw*2,gw*3]);ctx.strokeStyle=`rgba(255,215,140,${.45+.25*Math.sin(t*3)})`;ctx.lineWidth=gw;for(const[a,b]of st.lines){ctx.beginPath();ctx.moveTo(...Q(a));ctx.lineTo(...Q(b));ctx.stroke()}ctx.restore();st.show.forEach((n,i)=>pulse(...Q(n),pb,t+i*.4))}
 else if(st.t==="circ")pulse(...Q(st.p),pb,t);
 else if(st.t==="copy"){pulse(...mid(pt[st.src[0]],pt[st.src[1]]),pb,t);pulse(...Q(st.to[0]),pb,t+.5)}
 else if(st.t==="swing"){const b=lk.sw?lk.sw.base:st.seg.map(n=>pt[n]),pv=lk.sw?pt[lk.sw.piv]:pt[st.piv];if(lk.sw){ctx.strokeStyle="rgba(255,205,110,.5)";ctx.lineWidth=gw*1.8;ctx.beginPath();ctx.moveTo(...P(b[0]));ctx.lineTo(...P(b[1]));ctx.stroke()}pulse(...mid(b[0],b[1]),pb,t);pulse(...P(pv),pb*.8,t+.5)}
@@ -544,7 +569,8 @@ const snapTo=(lk,to,dur,done)=>{lk.anim={f:JSON.parse(JSON.stringify(lk.ghost)),
 function figDown(x,y){const lk=LKF;if(!lk||lk.won||lk.anim||lk.auto||lk.mv)return;const st=lk.def.steps[lk.step];if(!st)return;const pt=lk.pts,p=toLocal(x,y),{R}=lockGeo(),hit=Math.max(.08,24/R);let d=null;
 if(st.t==="line"){for(const n of[st.a,st.b])if(dist(p,pt[n])<hit*1.3){d={k:"line",from:n,to:n===st.a?st.b:st.a};lk.tip=pt[n].slice();break}}
 else if(st.t==="tri"){if(inPoly(p,st.p.map(n=>pt[n]))){lk.spark=lk.spark||{};lk.spark[st.p[2]]=now();figDone(lk);return}}
-else if(st.t==="tap"){if(segD(p,pt[st.on[0]],pt[st.on[1]])<hit){lk.spark=lk.spark||{};lk.spark[st.n]=now();figDone(lk);return}}
+else if(st.t==="short"){if(st.lines.some(([a,b])=>segD(p,pt[a],pt[b])<hit*1.4)||st.show.some(n=>dist(p,pt[n])<hit*1.8)){lk.spark=lk.spark||{};st.show.forEach(n=>lk.spark[n]=now());figDone(lk);return}}
+else if(st.t==="tap"){if(st.at?dist(p,pt[st.n])<hit*2.2:segD(p,pt[st.on[0]],pt[st.on[1]])<hit){lk.spark=lk.spark||{};lk.spark[st.n]=now();figDone(lk);return}}
 else if(st.t==="ext"){if(dist(p,pt[st.e])<hit*1.4||(segD(p,pt[st.o],pt[st.e])<hit&&dist(p,pt[st.e])<.2)){d={k:"ext"};lk.tip=pt[st.e].slice();lk.ext={e:st.e,q:pt[st.e].slice(),f:0}}}
 else if(st.t==="circ"){if(dist(p,pt[st.p])<hit*1.4){const o=figCirc(lk,st.c,st.p);d={k:"circ",o,prev:angDeg(pt[st.c],p),dir:0};const r=d.prev*Math.PI/180;lk.tip=[pt[st.c][0]+Math.cos(r)*o.r,pt[st.c][1]+Math.sin(r)*o.r]}}
 else if(st.t==="copy"){const[a,b]=st.src;if(segD(p,pt[a],pt[b])<hit){d={k:"copy",start:p,base:[pt[a].slice(),pt[b].slice()]};lk.ghost={p:pt[a].slice(),q:pt[b].slice()};lk.tip=p.slice()}}
