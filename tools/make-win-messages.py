@@ -24,7 +24,7 @@ from playwright.async_api import async_playwright
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 HANDS_ON = {"line", "circ", "ext", "rot", "wrong", "push", "flip", "amatch", "smatch", "lift",
-            "wcmp", "spinw", "turn", "raise", "lay", "gemin", "pretend", "straighten"}
+            "wcmp", "spinw", "turn", "raise", "lay", "gemin", "pretend", "straighten", "stretch"}
 TAP_NAMES = {"place": "choose a point", "tri": "tap a triangle", "tapseg": "tap a line",
              "rmark": "tap an angle", "wmark": "tap an angle", "tapang": "tap an angle"}
 SHORT = {"midp", "par", "ang", "cpy", "cut", "bis", "perp", "pgram", "apl", "sq"}  # index.html's MAC: tap a short version
@@ -45,6 +45,8 @@ def classify(ops):
     for o in ops:
         if o["t"] == "hollow":
             user += o["n"]  # one drag per gem
+        elif o["t"] == "stretch":
+            user += 2  # drag the angle over, then stretch it
         elif o["t"] in HANDS_ON:
             user += 1
         elif o["t"] in SHORT:
