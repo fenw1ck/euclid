@@ -32,6 +32,7 @@ canvas{display:block;width:100vw;height:100vh;touch-action:none}
 <iframe id="lockf" title="Lock" allowtransparency="true"></iframe><div id="cap"></div>
 <script src="proofs.js"></script>
 <script src="thumbs.js"></script>
+<script src="plants.js"></script>
 <script>
 "use strict";
 /* ============================================================
@@ -73,6 +74,8 @@ const GH={};IDS.forEach(i=>GH[i]=[]);{const cols={};IDS.forEach(i=>{const x=MAP.
 function needFront(q,seen=new Set()){if(seen.has(q)||solved(q))return[];seen.add(q);if(USES[q].every(solved))return[q];return USES[q].flatMap(u=>needFront(u,seen))}
 /* only from the farthest solved room of a branch: one whose own next rooms are all still unsolved */
 function bridges(n){if(!solved(n)||KIDS[n].some(solved))return[];const out=new Set();for(const k of KIDS[n]){if(solved(k)||USES[k].every(u=>u===n||solved(u)))continue;for(const u of USES[k])if(u!==n&&!solved(u))needFront(u).forEach(x=>out.add(x))}return[...out].filter(x=>x!==n&&!KIDS[n].includes(x)&&hasLock(x))}
+/* greenhouse plants: each greenhouse gets its own few plants from the Planting Guide's list, chosen at random once per game */
+const GPICK=(()=>{const L=(window.PLANTS&&PLANTS.list)||[],m={};return id=>{if(!L.length)return[];if(!m[id]){const n=3+Math.floor(Math.random()*2),a=[];while(a.length<n){const p=L[Math.floor(Math.random()*L.length)];if(!a.includes(p))a.push(p)}m[id]=a}return m[id]}})();
 const SKY=(()=>{const r=rng(7),a=[];for(let k=0;k<900;k++)a.push([(r()-.5)*MAP.Wd*2.4,(r()-.5)*MAP.Hd*2.4,r()*1.3+.4,r()*6.28,.25+r()*.75]);return a})();
 
 /* ---------- treasure (used from phase 3 on; see the design doc) ---------- */
@@ -724,6 +727,8 @@ if(HS.rug){const rw=.42,z0=1.3,z1=10.6;quad([pr(-rw,FY,z0),pr(rw,FY,z0),pr(rw,FY
 /* things along the walls, drawn far to near */
 const obj=[];const kids=hallDoors(hallId).concat(GH[hallId].filter(solved),bridges(hallId).filter(x=>!GH[hallId].includes(x))),slots=hallSlots(kids.length).map(([s0,z])=>[HS.flip?-s0:s0,z]),busy=(s,a,b)=>slots.some(([ss,z0])=>ss===s&&z0<b&&z0+.95>a);
 kids.forEach((id,i)=>{const[s,z0]=slots[i],gh=!hallDoors(hallId).includes(id);obj.push({z:z0+.5,d:()=>hallDoor(pr,f,col,s,z0,id,t,gh)})});
+/* planters full of greenhouse plants stand either side of each glass door */
+kids.forEach((id,i)=>{const[s,z0]=slots[i];if(hallDoors(hallId).includes(id)||!window.PLANTS)return;const ps=GPICK(id);[[z0-.18,0],[z0+1.13,1]].forEach(([zz,j])=>obj.push({z:zz,d:()=>{const x=s*(HW-.28),k=f/zz,a=pr(x-.17,FY,zz),b=pr(x+.17,FY-.2,zz);ctx.fillStyle=col([150,104,70],zz);ctx.fillRect(a[0],b[1],b[0]-a[0],a[1]-b[1]);ctx.fillStyle=col([110,74,48],zz);ctx.fillRect(a[0],b[1],b[0]-a[0],(a[1]-b[1])*.18);const pl=ps[j%ps.length];PLANTS.drawFit(ctx,pl,(a[0]+b[0])/2,b[1]+1,k*.75,"mature",id*3+j)}}))});
 for(const z of[2,6,9,12])for(const s of[-1,1])if(!busy(s,z-.05,z+.25))obj.push({z,d:()=>{quad([pr(s*HW,FY,z),pr(s*(HW-.14),FY,z),pr(s*(HW-.14),CY,z),pr(s*HW,CY,z)],col([140,126,108],z));quad([pr(s*(HW-.14),FY,z),pr(s*(HW-.14),FY,z+.2),pr(s*(HW-.14),CY,z+.2),pr(s*(HW-.14),CY,z)],col([118,106,90],z));
 hallLight(HS.light,pr,f,s,z,t)}});
 {const free=[[-1,2.5,3.7],[1,2.9,4.1],[-1,4.4,5.6],[1,4.7,5.9],[-1,6.6,7.8],[1,6.9,8.1]].filter(([s0,a,b])=>!busy(s0,a,b)),art=hallArt(hallId,free.length);free.slice(0,art.length).forEach(([s0,a,b],i)=>obj.push({z:(a+b)/2,d:()=>HS.win&&i%2===1?hallWindow(pr,col,s0,a,b,t):painting(pr,col,s0,a,b,art[i])}))}
@@ -733,7 +738,7 @@ const vg=ctx.createRadialGradient(W/2,H*.47,Math.min(W,H)*.25,W/2,H*.47,Math.max
 function hallDoor(pr,f,col,s,z0,id,t,gh){const HW=1.5,FY=1.1,top=-.5,ar=.475,zc=z0+ar,st=doorState(id),pts=[pr(s*HW,FY,z0)];
 for(let k=0;k<=12;k++){const a=Math.PI*k/12;pts.push(pr(s*HW,top-Math.sin(a)*ar*.9,z0+(1-Math.cos(a))*ar))}pts.push(pr(s*HW,FY,z0+2*ar));
 if(st==="amber"){ctx.save();ctx.globalCompositeOperation="lighter";const c=pr(s*HW,.1,zc);glow(c[0],c[1],1.3*f/zc,.28+.12*Math.sin(t*3),[255,160,50]);const fl=pr(s*1.05,FY,zc);ctx.fillStyle=`rgba(255,160,60,${.12+.05*Math.sin(t*3)})`;ctx.beginPath();ctx.ellipse(fl[0],fl[1],.55*f/zc,.12*f/zc,0,0,7);ctx.fill();ctx.restore()}
-ctx.fillStyle=st==="open"?"#0d0908":col([104,68,40],zc);poly(pts);ctx.fill();if(gh){ctx.fillStyle="rgba(120,200,140,.35)";poly(pts);ctx.fill();ctx.strokeStyle="rgba(230,255,235,.55)";ctx.lineWidth=Math.max(1,.02*f/zc);for(const zz of[.33,.66]){ctx.beginPath();ctx.moveTo(...pr(s*HW,FY,z0+zz*2*ar));ctx.lineTo(...pr(s*HW,top-.35,z0+zz*2*ar));ctx.stroke()}for(const yy of[.5,-.1]){ctx.beginPath();ctx.moveTo(...pr(s*HW,yy,z0));ctx.lineTo(...pr(s*HW,yy,z0+2*ar));ctx.stroke()}const r_=rng(id*7);ctx.fillStyle="rgba(60,140,70,.8)";for(let i=0;i<16;i++){const q=pr(s*HW,FY-r_()*.9,z0+r_()*2*ar);ctx.beginPath();ctx.ellipse(q[0],q[1],.03*f/zc,.018*f/zc,r_()*3,0,7);ctx.fill()}}
+ctx.fillStyle=st==="open"?"#0d0908":col([104,68,40],zc);poly(pts);ctx.fill();if(gh){ctx.fillStyle="rgba(120,200,140,.35)";poly(pts);ctx.fill();ctx.strokeStyle="rgba(230,255,235,.55)";ctx.lineWidth=Math.max(1,.02*f/zc);for(const zz of[.33,.66]){ctx.beginPath();ctx.moveTo(...pr(s*HW,FY,z0+zz*2*ar));ctx.lineTo(...pr(s*HW,top-.35,z0+zz*2*ar));ctx.stroke()}for(const yy of[.5,-.1]){ctx.beginPath();ctx.moveTo(...pr(s*HW,yy,z0));ctx.lineTo(...pr(s*HW,yy,z0+2*ar));ctx.stroke()}{const ps=GPICK(id);ctx.save();poly(pts);ctx.clip();ps.forEach((pl,i)=>{const zz=z0+(i+.6)/(ps.length+.2)*2*ar,b=pr(s*(HW-.02),FY,zz),k=f/zz;PLANTS.drawFit(ctx,pl,b[0],b[1],k*(.85+.3*((i*37)%3)/2),"mature",id*10+i)});ctx.restore();ctx.fillStyle="rgba(190,235,210,.16)";poly(pts);ctx.fill()}}
 if(st!=="open"&&!gh){ctx.strokeStyle=col([60,38,22],zc);ctx.lineWidth=1;for(const zz of[.24,.48,.72]){ctx.beginPath();ctx.moveTo(...pr(s*HW,FY,z0+zz*2*ar));ctx.lineTo(...pr(s*HW,top-.3,z0+zz*2*ar));ctx.stroke()}
 const c=pr(s*HW,.18,zc),r=.13*f/zc;ctx.save();ctx.translate(c[0],c[1]);ctx.scale(.55,1);drawPlate(0,0,r);if(r>9){lockFace(id,0,0,r*FK);plateLabel(id,0,0,r)}if(st==="covered")coverPlate(r);ctx.restore()}
 ctx.strokeStyle=col([150,136,116],zc);ctx.lineWidth=Math.max(2,.07*f/zc);poly(pts);ctx.stroke();hallHits.push({poly:pts,kind:"door",id,st})}
@@ -836,7 +841,7 @@ for(const[u,p]of MAP.edges){const a=MAP.pos[u],b=MAP.pos[p],xm=b[0]-30,path=[a,[
 ctx.save();for(const n of IDS)for(const x of bridges(n)){const a=P(n),b=P(x),m=[(a[0]+b[0])/2+(b[1]-a[1])*.18,(a[1]+b[1])/2-(b[0]-a[0])*.18];ctx.strokeStyle="rgba(110,200,130,.55)";ctx.lineWidth=r*.7;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(...a);ctx.quadraticCurveTo(...m,...b);ctx.stroke();ctx.strokeStyle="rgba(225,255,230,.8)";ctx.lineWidth=1;ctx.setLineDash([4,5]);ctx.beginPath();ctx.moveTo(...a);ctx.quadraticCurveTo(...m,...b);ctx.stroke();ctx.setLineDash([])}ctx.restore();
 /* greenhouses between neighbouring rooms */
 for(const id of IDS)for(const nb of GH[id]){if(nb<id)continue;const a=P(id),b=P(nb),open=solved(id)&&solved(nb),vert=Math.abs(a[0]-b[0])<1,len=(vert?Math.abs(a[1]-b[1]):Math.abs(a[0]-b[0]))-2*r,w=r*.9;if(len<=2)continue;const cx=(a[0]+b[0])/2,cy=(a[1]+b[1])/2,rx=vert?cx-w/2:cx-len/2,ry=vert?cy-len/2:cy-w/2,rw=vert?w:len,rh=vert?len:w;
-ctx.fillStyle=open?"rgba(110,200,130,.5)":"rgba(90,140,100,.16)";ctx.fillRect(rx,ry,rw,rh);ctx.strokeStyle=open?"rgba(220,255,225,.75)":"rgba(180,220,190,.22)";ctx.lineWidth=1;ctx.strokeRect(rx,ry,rw,rh);if(open){const rr=rng(id*31+nb);ctx.fillStyle="rgba(40,120,60,.9)";for(let k=0;k<5;k++){ctx.beginPath();ctx.ellipse(rx+rr()*rw,ry+rr()*rh,2.2,1.4,rr()*3,0,7);ctx.fill()}}}
+ctx.fillStyle=open?"rgba(110,200,130,.5)":"rgba(90,140,100,.16)";ctx.fillRect(rx,ry,rw,rh);ctx.strokeStyle=open?"rgba(220,255,225,.75)":"rgba(180,220,190,.22)";ctx.lineWidth=1;ctx.strokeRect(rx,ry,rw,rh);if(open&&window.PLANTS){const ps=GPICK(id*100+nb).slice(0,vert?Math.max(1,Math.floor(rh/(w*1.2))):Math.max(1,Math.floor(rw/(w*1.2)))),k=Math.min(rw,rh);ctx.save();ctx.beginPath();ctx.rect(rx,ry,rw,rh);ctx.clip();ps.forEach((pl,i)=>{const t=(i+.5)/ps.length,px=vert?rx+rw/2:rx+rw*t,py=vert?ry+rh*t+k*.45:ry+rh*.95;PLANTS.drawFit(ctx,pl,px,py,k*.9,"mature",i+id)});ctx.restore()}}
 /* rooms */
 for(const id of IDS){const q=P(id),st=doorState(id),ok=hasLock(id);
 if(st==="amber"&&ok){glow(q[0],q[1],r*2.4,.35+.2*Math.sin(t*3+id),[255,170,60]);ctx.strokeStyle=`rgba(255,176,60,${.5+.4*Math.sin(t*3+id)})`;ctx.lineWidth=2;ctx.strokeRect(q[0]-r-4,q[1]-r-4,2*r+8,2*r+8)}
