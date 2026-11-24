@@ -517,7 +517,7 @@ function openLock(id){lockId=id;lockFrom=scene;if(id===4)LK4=mkLock4();else if(F
            (arc:true keeps just the arc swept, for circles too big for the plate) {t:"circ",c,p,show,arc}
    copy    carry a line onto a point: Prop 2's short version       {t:"copy",src:[a,b],to:[a,b]}
    swing   swing a line round a pivot onto another line            {t:"swing",seg,piv,to,then}
-   pretend drag a point to a wrong spot, to test an idea           {t:"pretend",n,to,lines}
+   pretend drag a point to a wrong spot, to test an idea           {t:"pretend",n,to,lines}  (about:X swings it round X)
    flip    drag one corner onto another: the triangle turns over   {t:"flip",tri,from,to}
    amatch  drag an angle onto another angle                        {t:"amatch",v:[vertex,arm,arm],to:[...]}
    slide   slide one triangle onto another until it fits           {t:"slide",tri,to}
@@ -644,6 +644,25 @@ FIGS[24]=(()=>{const A=[-.6,-.45],D=[.05,-.45],u=a=>[Math.cos(a*Math.PI/180),Mat
 return{pts:{A,B,C,D,E,F,G},given:{pts:["A","B","C","D","E","F"],lines:[["A","B"],["A","C"],["B","C"],["D","E"],["D","F"],["E","F"]],ticks:[["A","B",1],["D","E",1],["A","C",2],["D","F",2]]},
 steps:[{t:"slide",tri:["A","B","C"],to:["D","E","G"],oneway:1,lines:[["D","G"],["E","G"]],show:["G"],mark:[["D","G",2],["B","C",3],["E","G",3]]},
 {t:"line",a:"F",b:"G",arcs:[["F","D","G",1],["G","D","F",1]]},{t:"swing",seg:["E","F"],piv:"E",to:["E","G"],keep:1}],glow:[["E","G"],["B","C"]]}})();
+/* 25: converse of the hinge: a longer base means a wider angle */
+FIGS[25]=(()=>{const u=a=>[Math.cos(a*Math.PI/180),Math.sin(a*Math.PI/180)],A=[-.4,-.5],D=[.35,-.5],B=X_(A,u(75),.8),C=X_(A,u(125),.7),E=X_(D,u(75),.8),F=X_(D,u(105),.7),C1=X_(A,u(105),.7);
+return{pts:{A,B,C,D,E,F,C0:C.slice(),C1},given:{pts:["A","B","C","D","E","F"],lines:[["A","B"],["A","C"],["B","C"],["D","E"],["D","F"],["E","F"]],ticks:[["A","B",1],["D","E",1],["A","C",2],["D","F",2]]},
+steps:[{t:"pretend",n:"C",to:"C1",about:"A",mark:[["B","C",3],["E","F",3]]},{t:"amatch",v:["A","B","C"],to:["D","E","F"],fail:true,collapse:{n:"C",to:"C0",unmark:["B|C","E|F"]}},
+{t:"amatch",v:["D","E","F"],to:["A","B","C"],rot:0}],glow:[["w","A","B","C"]]}})();
+/* 26: two angles and the side between them fix the triangle (by contradiction) */
+FIGS[26]=(()=>{const dir=a=>[Math.cos(a*Math.PI/180),Math.sin(a*Math.PI/180)],B=[-.72,.35],C=[-.12,.35],A=lineX(B,X_(B,dir(-70),1),C,X_(C,dir(-130),1)),E=[.15,.35],F=[.75,.35],D=[A[0]+.87,A[1]];
+return{pts:{A,B,C,D,E,F,A0:A.slice(),A1:X_(B,U_(B,A),dist(B,A)*1.32),G:A.slice()},given:{pts:["A","B","C","D","E","F"],lines:[["A","B"],["A","C"],["B","C"],["D","E"],["D","F"],["E","F"]],ticks:[["B","C",1],["E","F",1]],arcs:[["B","A","C",1],["E","D","F",1],["C","A","B",2],["F","D","E",2]]},
+steps:[{t:"pretend",n:"A",to:"A1"},{t:"short",lines:[],show:["G"],mark:[["B","G",2],["D","E",2]]},{t:"line",a:"G",b:"C"},
+{t:"amatch",v:["F","E","D"],to:["C","B","G"],fail:true,collapse:{n:"A",to:"A0",merge:"G",keep:["B|G"]}}],glow:[["A","B"],["D","E"]]}})();
+/* 27: equal alternate angles mean the lines never meet (by contradiction) */
+FIGS[27]=(()=>{const A=[-.75,-.2],B=[.45,-.2],C=[-.75,.25],F=[.15,.25],D=[.6,.25],E=[-.25,-.2],t=-40*Math.PI/180,D1=[F[0]+.45*Math.cos(t),F[1]+.45*Math.sin(t)],G=lineX(A,B,F,D1);
+return{pts:{A,B,C,D,E,F,D0:D.slice(),D1,G},given:{pts:["A","B","C","D","E","F"],lines:[["A","B"],["C","F"],["F","D"],["E","F"]],arcs:[["E","A","F",1],["F","E","D",1]]},
+steps:[{t:"pretend",n:"D",to:"D1",about:"F"},{t:"ext",o:"A",e:"B",to:"G",show:true},{t:"ext",o:"F",e:"D",to:"G"},
+{t:"amatch",v:["F","E","G"],to:["E","A","F"],rot:Math.PI,collapse:{n:"D",to:"D0",drop:["B|G","D|G"],hide:["G"]}}],glow:[["A","B"],["C","D"]]}})();
+/* 28: matching angles mean parallel lines */
+FIGS[28]=(()=>{const A=[-.75,-.2],B=[.62,-.2],C=[-.75,.3],D=[.62,.3],E=[-.3,-.55],F=[.2,.6],G=lineX(E,F,A,B),H=lineX(E,F,C,D);
+return{pts:{A,B,C,D,E,F,G,H,Bx:[.8,-.2],Dx:[.8,.3]},given:{pts:["A","B","C","D","E","F","G","H"],lines:[["A","B"],["C","D"],["E","F"]],arcs:[["G","E","B",1],["H","G","D",1]]},
+steps:[{t:"ext",o:"A",e:"B",to:"Bx"},{t:"ext",o:"C",e:"D",to:"Dx"},{t:"spin",v:["G","E","B"],to:["G","H","A"],arcs:[["G","H","A",1]]}],glow:[["A","Bx"],["C","Dx"]]}})();
 const lkey=(a,b)=>[a,b].sort().join("|");
 function mkFig(id){const def=FIGS[id],g=def.given,lk={id,def,pts:JSON.parse(JSON.stringify(def.pts)),step:0,lines:{},circs:[],vis:new Set(g.pts),marks:[],won:0,drag:null,ghost:null,anim:null,auto:null,trail:[],tip:null,sw:null,ext:null,mv:null};
 for(const[a,b]of g.lines)lk.lines[lkey(a,b)]=1;for(const[a,b,n]of g.ticks||[])lk.marks.push({a,b,n,t:1});for(const[v,a,b,n]of g.arcs||[])lk.marks.push({v,a,b,n,t:1});return lk}
@@ -658,10 +677,10 @@ else if(st.t==="copy"){L(...st.to);lk.vis.add(st.to[1])}
 else if(st.t==="pretend"){pt[st.n]=pt[st.to].slice();lk.vis.add(st.n);for(const[a,b]of st.lines||[])L(a,b)}
 else if(st.t==="slide"){for(const[a,b]of st.lines||[])L(a,b);(st.show||[]).forEach(n=>lk.vis.add(n))}
 for(const[a,b,n]of st.mark||[])lk.marks.push({a,b,n,t:T});for(const[v,a,b,n]of st.arcs||[])lk.marks.push({v,a,b,n,t:T});
-if(st.collapse){const c=st.collapse;pt[c.n]=pt[c.to].slice();if(c.unmark)lk.marks=lk.marks.filter(m=>m.v||!c.unmark.includes(lkey(m.a,m.b)));if(c.merge){pt[c.merge]=pt[c.to].slice();lk.marks=lk.marks.filter(m=>m.v?![m.v,m.a,m.b].includes(c.merge):(m.a!==c.merge&&m.b!==c.merge)||(c.keep||[]).includes(lkey(m.a,m.b)));if(T===1)lk.vis.delete(c.merge);else lk.hide=c.merge}}}
+if(st.collapse){const c=st.collapse;pt[c.n]=pt[c.to].slice();for(const k of c.drop||[])delete lk.lines[k];for(const n of c.hide||[]){lk.vis.delete(n);lk.marks=lk.marks.filter(m=>![m.v,m.a,m.b].includes(n))}if(c.unmark)lk.marks=lk.marks.filter(m=>m.v||!c.unmark.includes(lkey(m.a,m.b)));if(c.merge){pt[c.merge]=pt[c.to].slice();lk.marks=lk.marks.filter(m=>m.v?![m.v,m.a,m.b].includes(c.merge):(m.a!==c.merge&&m.b!==c.merge)||(c.keep||[]).includes(lkey(m.a,m.b)));if(T===1)lk.vis.delete(c.merge);else lk.hide=c.merge}}}
 const FIGB={},FIGF={};for(const id in FIGS){FIGB[id]=mkFig(id);const f=mkFig(id);FIGS[id].steps.forEach(st=>applyStep(f,st,1));f.step=FIGS[id].steps.length;f.won=1;FIGF[id]=f}
 let LKF=null;
-function figDone(lk){const st=lk.def.steps[lk.step],before=JSON.parse(JSON.stringify(lk.pts));applyStep(lk,st,now());if(st.collapse)lk.mv={from:before,t0:now()+(st.fail?700:250),dur:1100};lk.step++;sfxChime(false);if(lk.step>=lk.def.steps.length)setTimeout(()=>figWin(lk),st.collapse?1500:0)}
+function figDone(lk){const st=lk.def.steps[lk.step],before=JSON.parse(JSON.stringify(lk.pts));applyStep(lk,st,now());if(st.collapse){lk.mv={from:before,t0:now()+(st.fail?700:450),dur:1100};if(!st.fail)setTimeout(sfxRattle,250)}lk.step++;sfxChime(false);if(lk.step>=lk.def.steps.length)setTimeout(()=>figWin(lk),st.collapse?1500:0)}
 function figWin(lk){const id=lk.id;lk.won=now();setTimeout(()=>sfxChime(true),250);if(!solved(id)){S.solved.push(id);save()}setTimeout(()=>{sfxUnlock();fadeTo(lockFrom,900)},1900)}
 /* where a point is drawn: points slide home after a contradiction */
 function figPos(lk,n){const m=lk.mv,p=lk.pts[n];if(!m)return p;const u=ease(clamp((now()-m.t0)/m.dur)),f=m.from[n];return f?[lerp(f[0],p[0],u),lerp(f[1],p[1],u)]:p}
@@ -720,7 +739,7 @@ const a=lk.auto;if(a){const step=560*dt*a.dir,o=a.o,c=lk.pts[o.c];markArc(o.cov,
 if(o.cov.every(v=>v>0)){lk.auto=null;const st=lk.def.steps[lk.step];lk.spark=lk.spark||{};st.show.forEach(n=>lk.spark[n]=T);figDone(lk)}}}
 const linger=(lk,ms)=>{const g=lk.ghost;setTimeout(()=>{if(lk.ghost===g)lk.ghost=null},ms)};
 const snapTo=(lk,to,dur,done)=>{lk.anim={f:JSON.parse(JSON.stringify(lk.ghost)),to,t0:now(),dur,done}};
-function figDown(x,y){HELP=null;const lk=LKF;if(!lk||lk.won||lk.anim||lk.auto||lk.mv)return;const st=lk.def.steps[lk.step];if(!st)return;const pt=lk.pts,p=toLocal(x,y),{R}=lockGeo(),hit=Math.max(.08,24/R);let d=null;
+function figDown(x,y){HELP=null;const lk=LKF;if(!lk||lk.won||lk.anim||lk.auto)return;const st=lk.def.steps[lk.step];if(!st)return;const pt=lk.pts,p=toLocal(x,y),{R}=lockGeo(),hit=Math.max(.08,24/R);let d=null;
 if(st.t==="line"){for(const n of[st.a,st.b])if(dist(p,pt[n])<hit*1.3){d={k:"line",from:n,to:n===st.a?st.b:st.a};lk.tip=pt[n].slice();break}}
 else if(st.t==="tri"){if(inPoly(p,st.p.map(n=>pt[n]))){lk.spark=lk.spark||{};lk.spark[st.p[2]]=now();figDone(lk);return}}
 else if(st.t==="short"){if(st.lines.some(([a,b])=>segD(p,pt[a],pt[b])<hit*1.4)||st.show.some(n=>dist(p,pt[n])<hit*1.8)){lk.spark=lk.spark||{};st.show.forEach(n=>lk.spark[n]=now());figDone(lk);return}}
@@ -743,7 +762,7 @@ if(st.arc&&st.show.every(n=>covered(d.o.cov,needDeg(c,pt[n])))){lk.drag=null;lk.
 else if(d.k==="copy"){const o=[p[0]-d.start[0],p[1]-d.start[1]];lk.ghost.p=[d.base[0][0]+o[0],d.base[0][1]+o[1]];lk.ghost.q=[d.base[1][0]+o[0],d.base[1][1]+o[1]]}
 else if(d.k==="swing"){const sw=lk.sw,pv=pt[sw.piv],th=wrapA(ang2(pv,p)-d.a0),tT=wrapA(ang2(pv,pt[sw.to[1]])-ang2(pv,sw.base[1]));lk.ghost={p:rot2(sw.base[0],pv,th),q:rot2(sw.base[1],pv,th)};if(Math.random()<.12)sfxTick();
 d.th=th;d.tT=tT;if(Math.abs(wrapA(th-tT))<.12){if(st.then&&sw.stage===0){sw.base=sw.to.map(n=>pt[n].slice());sw.stage=1;sw.piv=st.then.piv;sw.to=st.then.to;d.a0=ang2(pt[sw.piv],p);lk.ghost={p:sw.base[0].slice(),q:sw.base[1].slice()};sfxChime(false)}else{lk.drag=null;if(st.keep){const pv2=pt[sw.piv];lk.ghost={p:rot2(sw.base[0],pv2,tT),q:rot2(sw.base[1],pv2,tT)};linger(lk,3200)}else lk.ghost=null;lk.sw=null;figDone(lk);return}}}
-else if(d.k==="pretend"){const a=d.from,b=pt[st.to],L=dist(a,b),u=U_(a,b),k=clamp((p[0]-a[0])*u[0]+(p[1]-a[1])*u[1],0,L);d.f=k/L;pt[st.n]=X_(a,u,k);lk.tip=pt[st.n].slice()}
+else if(d.k==="pretend"){const a=d.from,b=pt[st.to];if(st.about){const c=pt[st.about],T=wrapA(ang2(c,b)-ang2(c,a));d.f=clamp(wrapA(ang2(c,p)-ang2(c,a))/T);pt[st.n]=rot2(a,c,T*d.f)}else{const L=dist(a,b),u=U_(a,b),k=clamp((p[0]-a[0])*u[0]+(p[1]-a[1])*u[1],0,L);d.f=k/L;pt[st.n]=X_(a,u,k)}lk.tip=pt[st.n].slice()}
 else if(d.k==="flip"){const a=pt[st.from],b=pt[st.to],L=dist(a,b),u=U_(a,b);d.f=clamp(((p[0]-d.start[0])*u[0]+(p[1]-d.start[1])*u[1])/L);lk.ghost.pts=st.tri.map(n=>{const q=pt[n],r=reflAcross(q,a,b);return[lerp(q[0],r[0],d.f),lerp(q[1],r[1],d.f)]})}
 else if(d.k==="amatch"){lk.ghost.V=[d.V0[0]+p[0]-d.start[0],d.V0[1]+p[1]-d.start[1]]}
 else if(d.k==="spin"){const V=pt[st.v[0]],th=wrapA(ang2(V,p)-d.a0),tT=wrapA(ang2(V,pt[st.to[1]])-ang2(V,pt[st.v[1]]));d.th=th;d.tT=tT;lk.ghost.a1=d.b1+th;lk.ghost.a2=d.b2+th;if(Math.random()<.12)sfxTick();
