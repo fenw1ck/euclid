@@ -68,6 +68,11 @@ for(const d in cols)cols[d].forEach((id,k)=>pos[id]=[38+(d-1)*60-Wd/2,30+(k+.5)*
 const edges=[];IDS.forEach(p=>USES[p].forEach(u=>edges.push([u,p,depth(p)])));edges.sort((a,b)=>a[2]-b[2]);return{pos,edges,Wd,Hd}})();
 /* greenhouses join rooms that sit next to each other in one column of the map, so you can cross between branches */
 const GH={};IDS.forEach(i=>GH[i]=[]);{const cols={};IDS.forEach(i=>{const x=MAP.pos[i][0];(cols[x]=cols[x]||[]).push(i)});for(const x in cols){const c=cols[x].sort((a,b)=>MAP.pos[a][1]-MAP.pos[b][1]);for(let j=0;j+1<c.length;j++){GH[c[j]].push(c[j+1]);GH[c[j+1]].push(c[j])}}}
+/* bridge greenhouses: when a proof that this hall opens still needs one from another branch,
+   a greenhouse leads straight to the nearest lock you can open on the way to it */
+function needFront(q,seen=new Set()){if(seen.has(q)||solved(q))return[];seen.add(q);if(USES[q].every(solved))return[q];return USES[q].flatMap(u=>needFront(u,seen))}
+/* only from the farthest solved room of a branch: one whose own next rooms are all still unsolved */
+function bridges(n){if(!solved(n)||KIDS[n].some(solved))return[];const out=new Set();for(const k of KIDS[n]){if(solved(k)||USES[k].every(u=>u===n||solved(u)))continue;for(const u of USES[k])if(u!==n&&!solved(u))needFront(u).forEach(x=>out.add(x))}return[...out].filter(x=>x!==n&&!KIDS[n].includes(x)&&hasLock(x))}
 const SKY=(()=>{const r=rng(7),a=[];for(let k=0;k<900;k++)a.push([(r()-.5)*MAP.Wd*2.4,(r()-.5)*MAP.Hd*2.4,r()*1.3+.4,r()*6.28,.25+r()*.75]);return a})();
 
 /* ---------- treasure (used from phase 3 on; see the design doc) ---------- */
@@ -717,7 +722,7 @@ ctx.strokeStyle="rgba(0,0,0,.25)";for(let y=FY-.4;y>CY;y-=.4)for(const s of[-1,1
 for(let z=2;z<ZF;z++){ctx.strokeStyle=col([48,34,24],z);ctx.lineWidth=Math.max(1,.07*f/z);ctx.beginPath();ctx.moveTo(...pr(-HW,CY,z));ctx.lineTo(...pr(HW,CY,z));ctx.stroke()}
 if(HS.rug){const rw=.42,z0=1.3,z1=10.6;quad([pr(-rw,FY,z0),pr(rw,FY,z0),pr(rw,FY,z1),pr(-rw,FY,z1)],col(HS.rug,4));ctx.strokeStyle=col([214,180,96],4);ctx.lineWidth=Math.max(1,f*.012);poly([pr(-rw*.86,FY,z0+.15),pr(rw*.86,FY,z0+.15),pr(rw*.86,FY,z1-.15),pr(-rw*.86,FY,z1-.15)]);ctx.stroke();for(let z=z0+.8;z<z1-.4;z+=1.1){ctx.fillStyle=col(HS.rug.map(v=>v*1.5),z);poly([pr(0,FY,z-.28),pr(rw*.45,FY,z),pr(0,FY,z+.28),pr(-rw*.45,FY,z)]);ctx.fill()}}
 /* things along the walls, drawn far to near */
-const obj=[];const kids=hallDoors(hallId).concat(GH[hallId].filter(solved)),slots=hallSlots(kids.length).map(([s0,z])=>[HS.flip?-s0:s0,z]),busy=(s,a,b)=>slots.some(([ss,z0])=>ss===s&&z0<b&&z0+.95>a);
+const obj=[];const kids=hallDoors(hallId).concat(GH[hallId].filter(solved),bridges(hallId).filter(x=>!GH[hallId].includes(x))),slots=hallSlots(kids.length).map(([s0,z])=>[HS.flip?-s0:s0,z]),busy=(s,a,b)=>slots.some(([ss,z0])=>ss===s&&z0<b&&z0+.95>a);
 kids.forEach((id,i)=>{const[s,z0]=slots[i],gh=!hallDoors(hallId).includes(id);obj.push({z:z0+.5,d:()=>hallDoor(pr,f,col,s,z0,id,t,gh)})});
 for(const z of[2,6,9,12])for(const s of[-1,1])if(!busy(s,z-.05,z+.25))obj.push({z,d:()=>{quad([pr(s*HW,FY,z),pr(s*(HW-.14),FY,z),pr(s*(HW-.14),CY,z),pr(s*HW,CY,z)],col([140,126,108],z));quad([pr(s*(HW-.14),FY,z),pr(s*(HW-.14),FY,z+.2),pr(s*(HW-.14),CY,z+.2),pr(s*(HW-.14),CY,z)],col([118,106,90],z));
 hallLight(HS.light,pr,f,s,z,t)}});
@@ -827,6 +832,8 @@ let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const id of IDS){const q=P(id);x0=Math.min
 ctx.fillStyle="rgba(40,52,72,.6)";ctx.fillRect(x0-r*2,y0-r*2,x1-x0+r*4,y1-y0+r*4);ctx.strokeStyle="#c9b48a";ctx.lineWidth=4;ctx.strokeRect(x0-r*2,y0-r*2,x1-x0+r*4,y1-y0+r*4);
 /* corridors run straight and turn square corners */
 for(const[u,p]of MAP.edges){const a=MAP.pos[u],b=MAP.pos[p],xm=b[0]-30,path=[a,[xm,a[1]],[xm,b[1]],b].map(Pm),lit=solved(u)&&solved(p);ctx.strokeStyle=lit?"rgba(227,176,75,.8)":"rgba(150,170,220,.22)";ctx.lineWidth=lit?3:1.4;ctx.beginPath();path.forEach((q,k)=>k?ctx.lineTo(...q):ctx.moveTo(...q));ctx.stroke()}
+/* bridge greenhouses: from the farthest open room of a branch to the lock it is waiting on in another branch */
+ctx.save();for(const n of IDS)for(const x of bridges(n)){const a=P(n),b=P(x),m=[(a[0]+b[0])/2+(b[1]-a[1])*.18,(a[1]+b[1])/2-(b[0]-a[0])*.18];ctx.strokeStyle="rgba(110,200,130,.55)";ctx.lineWidth=r*.7;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(...a);ctx.quadraticCurveTo(...m,...b);ctx.stroke();ctx.strokeStyle="rgba(225,255,230,.8)";ctx.lineWidth=1;ctx.setLineDash([4,5]);ctx.beginPath();ctx.moveTo(...a);ctx.quadraticCurveTo(...m,...b);ctx.stroke();ctx.setLineDash([])}ctx.restore();
 /* greenhouses between neighbouring rooms */
 for(const id of IDS)for(const nb of GH[id]){if(nb<id)continue;const a=P(id),b=P(nb),open=solved(id)&&solved(nb),vert=Math.abs(a[0]-b[0])<1,len=(vert?Math.abs(a[1]-b[1]):Math.abs(a[0]-b[0]))-2*r,w=r*.9;if(len<=2)continue;const cx=(a[0]+b[0])/2,cy=(a[1]+b[1])/2,rx=vert?cx-w/2:cx-len/2,ry=vert?cy-len/2:cy-w/2,rw=vert?w:len,rh=vert?len:w;
 ctx.fillStyle=open?"rgba(110,200,130,.5)":"rgba(90,140,100,.16)";ctx.fillRect(rx,ry,rw,rh);ctx.strokeStyle=open?"rgba(220,255,225,.75)":"rgba(180,220,190,.22)";ctx.lineWidth=1;ctx.strokeRect(rx,ry,rw,rh);if(open){const rr=rng(id*31+nb);ctx.fillStyle="rgba(40,120,60,.9)";for(let k=0;k<5;k++){ctx.beginPath();ctx.ellipse(rx+rr()*rw,ry+rr()*rh,2.2,1.4,rr()*3,0,7);ctx.fill()}}}
