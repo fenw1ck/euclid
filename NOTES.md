@@ -142,3 +142,4 @@ Features already in place: a control panel inside the figure (Solve, Step, Slowe
   - 1.16: the last step is the learner's. They grab A and drag it round to C (or B to F), and triangle ABE turns about E onto CFE (new op `turn`).
   - The flashing extension and its arrow can be grabbed to pull a line on, as well as the line itself.
   - Still to do: more phase animations that move comparison pieces should become drags the learner does, with the engine snapping the rotation.
+- Shared proofs (step 1, 23 Nov 2026): every proof's data (figure, steps, words, short versions) now lives in `proofs.js`, which both index.html and game.html load. The game takes its lock names and win words from it, and shows the win words when a lock opens. The win words for 1.11 and 1.14 come from the Win messages Sheet. Next: the game's locks will run the steps from proofs.js and draw them in bronze, and then the game's own copies (FIGS) can be deleted.
