@@ -399,7 +399,7 @@ ctx.fillStyle="rgba(255,232,180,.45)";ctx.fillText(ch,size*.05,size*.07);ctx.fil
 function plateLabel(id,cx,cy,P){const big=P*.1;if(big<5)return;arcText("1."+id,cx,cy,P*.74,big,false);
 const nm=NAMES[id]||"";ctx.font=`600 ${big}px Georgia,serif`;const w=ctx.measureText(nm).width,maxArc=P*.86*Math.PI*.92,size=Math.max(big*.4,Math.min(big*.85,big*.85*maxArc/w));if(size<4.5)return;arcText(nm,cx,cy,P*.86,size,true)}
 function drawLock(t){ctx.drawImage(woodCanvas(),0,0,W,H);const{R,P,cx,cy}=lockGeo(),T=now(),dt=Math.min(.05,(T-lastT)/1000);
-glow(cx,cy,P*1.6,.18,[255,170,60]);drawPlate(cx,cy,P);plateLabel(lockId,cx,cy,P);if(lockId===4)drawL4(cx,cy,R,LK4,true);else if(FIGS[lockId])drawFig(cx,cy,R,LKF,true);else{stepAuto(dt);drawL1(cx,cy,R,LK,true)}drawHelp(cx,cy,R)}
+glow(cx,cy,P*1.6,.18,[255,170,60]);if(LKF&&LKF.drag&&LKF.drag.k==="copy"&&LKF.tip){const s_=LKF.def.steps[LKF.step];if(s_&&s_.t==="copy")gcopy(LKF,LKF.drag,LKF.tip,s_,dt)}drawPlate(cx,cy,P);plateLabel(lockId,cx,cy,P);if(lockId===4)drawL4(cx,cy,R,LK4,true);else if(FIGS[lockId])drawFig(cx,cy,R,LKF,true);else{stepAuto(dt);drawL1(cx,cy,R,LK,true)}drawHelp(cx,cy,R)}
 function toLocal(x,y){const{R,cx,cy}=lockGeo();return[(x-cx)/R,(y-cy)/R]}
 const angDeg=(c,p)=>Math.atan2(p[1]-c[1],p[0]-c[0])*180/Math.PI;
 function markArc(cov,from,d){const T=now(),n=Math.ceil(Math.abs(d));for(let j=0;j<=n;j++){const g=from+d*j/Math.max(1,n),i=((Math.floor(g)%360)+360)%360;if(!cov[i])cov[i]=T}}
@@ -680,6 +680,15 @@ for(const[a,b,n]of st.mark||[])lk.marks.push({a,b,n,t:T});for(const[v,a,b,n]of s
 if(st.collapse){const c=st.collapse;pt[c.n]=pt[c.to].slice();for(const k of c.drop||[])delete lk.lines[k];for(const n of c.hide||[]){lk.vis.delete(n);lk.marks=lk.marks.filter(m=>![m.v,m.a,m.b].includes(n))}if(c.unmark)lk.marks=lk.marks.filter(m=>m.v||!c.unmark.includes(lkey(m.a,m.b)));if(c.merge){pt[c.merge]=pt[c.to].slice();lk.marks=lk.marks.filter(m=>m.v?![m.v,m.a,m.b].includes(c.merge):(m.a!==c.merge&&m.b!==c.merge)||(c.keep||[]).includes(lkey(m.a,m.b)));if(T===1)lk.vis.delete(c.merge);else lk.hide=c.merge}}}
 const FIGB={},FIGF={};for(const id in FIGS){FIGB[id]=mkFig(id);const f=mkFig(id);FIGS[id].steps.forEach(st=>applyStep(f,st,1));f.step=FIGS[id].steps.length;f.won=1;FIGF[id]=f}
 let LKF=null;
+/* matching two equal lines: touch an end to an end, the line swivels on, and the longer it lies close the harder it pulls */
+function gcopy(lk,d,p,st,dt){const pt=lk.pts,T=[pt[st.to[0]],pt[st.to[1]]],o=[p[0]-d.start[0],p[1]-d.start[1]],E=[[d.base[0][0]+o[0],d.base[0][1]+o[1]],[d.base[1][0]+o[0],d.base[1][1]+o[1]]],Ln=dist(d.base[0],d.base[1]);
+if(d.piv){const rr=dist(T[d.piv[1]],p);if(rr<Math.min(.3*d.r0,.06)||rr>d.r0+.3){d.piv=null;d.mg=0;d.a=undefined;d.near=false}}
+if(!d.piv)for(const gi of[0,1])for(const ti of[0,1])if(!d.piv&&dist(E[gi],T[ti])<.1){d.piv=[gi,ti];d.r0=dist(E[gi],p);d.aoff=wrapA(ang2(E[gi],E[1-gi])-ang2(E[gi],p))}
+if(!d.piv){lk.ghost={p:E[0],q:E[1]};d.mg=0;return}
+const[gi,ti]=d.piv,V=T[ti],tg=ang2(V,T[1-ti]);let a=dist(V,p)>.03?ang2(V,p)+d.aoff:(d.a!==undefined?d.a:ang2(E[gi],E[1-gi]));const df=wrapA(tg-a);
+d.mg=Math.abs(df)<.55?Math.min(1,(d.mg||0)+dt/.65):Math.max(0,(d.mg||0)-dt/.25);const e=d.mg*d.mg*(3-2*d.mg);a+=df*e;d.a=a;d.near=Math.abs(wrapA(tg-a))<.3;
+const O=[V[0]+Ln*Math.cos(a),V[1]+Ln*Math.sin(a)];lk.ghost=gi===0?{p:V.slice(),q:O}:{p:O,q:V.slice()};if(d.mg>=1&&!d.fired){d.fired=1;lk.drag=null;gcopyDone(lk,st,d)}}
+function gcopyDone(lk,st,d){const pt=lk.pts,sw=d.piv&&d.piv[0]!==d.piv[1];snapTo(lk,sw?{p:pt[st.to[1]],q:pt[st.to[0]]}:{p:pt[st.to[0]],q:pt[st.to[1]]},250,()=>{lk.ghost=null;lk.spark=lk.spark||{};lk.spark[st.to[1]]=now();figDone(lk)})}
 function figDone(lk){const st=lk.def.steps[lk.step],before=JSON.parse(JSON.stringify(lk.pts));applyStep(lk,st,now());if(st.collapse){lk.mv={from:before,t0:now()+(st.fail?700:450),dur:1100};if(!st.fail)setTimeout(sfxRattle,250)}lk.step++;sfxChime(false);if(lk.step>=lk.def.steps.length)setTimeout(()=>figWin(lk),st.collapse?1500:0)}
 function figWin(lk){const id=lk.id;lk.won=now();setTimeout(()=>sfxChime(true),250);if(!solved(id)){S.solved.push(id);save()}setTimeout(()=>{sfxUnlock();fadeTo(lockFrom,900)},1900)}
 /* where a point is drawn: points slide home after a contradiction */
@@ -759,7 +768,7 @@ function figMove(x,y){const lk=LKF;if(!lk)return;const d=lk.drag;if(!d)return;co
 if(d.k==="ext"){const e=pt[st.e],to=pt[st.to],L=dist(e,to),u=U_(e,to),k=clamp((p[0]-e[0])*u[0]+(p[1]-e[1])*u[1],0,L);lk.ext.q=X_(e,u,k);lk.ext.f=k/L;lk.tip=lk.ext.q.slice()}
 else if(d.k==="circ"){const c=pt[st.c],a=angDeg(c,p);let dl=a-d.prev;while(dl>180)dl-=360;while(dl<-180)dl+=360;if(Math.abs(dl)>60)return;markArc(d.o.cov,d.prev,dl);d.prev=a;if(dl)d.dir=Math.sign(dl);const r=a*Math.PI/180;lk.tip=[c[0]+Math.cos(r)*d.o.r,c[1]+Math.sin(r)*d.o.r];if(Math.random()<.25)sfxTick();
 if(st.arc&&st.show.every(n=>covered(d.o.cov,needDeg(c,pt[n])))){lk.drag=null;lk.spark=lk.spark||{};st.show.forEach(n=>lk.spark[n]=now());figDone(lk);return}}
-else if(d.k==="copy"){const o=[p[0]-d.start[0],p[1]-d.start[1]];lk.ghost.p=[d.base[0][0]+o[0],d.base[0][1]+o[1]];lk.ghost.q=[d.base[1][0]+o[0],d.base[1][1]+o[1]]}
+else if(d.k==="copy")gcopy(lk,d,p,st,0);
 else if(d.k==="swing"){const sw=lk.sw,pv=pt[sw.piv],th=wrapA(ang2(pv,p)-d.a0),tT=wrapA(ang2(pv,pt[sw.to[1]])-ang2(pv,sw.base[1]));lk.ghost={p:rot2(sw.base[0],pv,th),q:rot2(sw.base[1],pv,th)};if(Math.random()<.12)sfxTick();
 d.th=th;d.tT=tT;if(Math.abs(wrapA(th-tT))<.12){if(st.then&&sw.stage===0){sw.base=sw.to.map(n=>pt[n].slice());sw.stage=1;sw.piv=st.then.piv;sw.to=st.then.to;d.a0=ang2(pt[sw.piv],p);lk.ghost={p:sw.base[0].slice(),q:sw.base[1].slice()};sfxChime(false)}else{lk.drag=null;if(st.keep){const pv2=pt[sw.piv];lk.ghost={p:rot2(sw.base[0],pv2,tT),q:rot2(sw.base[1],pv2,tT)};linger(lk,3200)}else lk.ghost=null;lk.sw=null;figDone(lk);return}}}
 else if(d.k==="pretend"){const a=d.from,b=pt[st.to];if(st.about){const c=pt[st.about],T=wrapA(ang2(c,b)-ang2(c,a));d.f=clamp(wrapA(ang2(c,p)-ang2(c,a))/T);pt[st.n]=rot2(a,c,T*d.f)}else{const L=dist(a,b),u=U_(a,b),k=clamp((p[0]-a[0])*u[0]+(p[1]-a[1])*u[1],0,L);d.f=k/L;pt[st.n]=X_(a,u,k)}lk.tip=pt[st.n].slice()}
@@ -778,7 +787,7 @@ function figUp(x,y){const lk=LKF;if(!lk)return;const d=lk.drag;if(!d)return;lk.d
 if(d.k==="line"){if(dist(p,pt[d.to])<hit*1.3)figDone(lk)}
 else if(d.k==="ext"){const f=lk.ext.f;lk.ext=null;if(f>.3)figDone(lk)}
 else if(d.k==="circ"){if(st.show.every(n=>covered(d.o.cov,needDeg(pt[st.c],pt[n]))))lk.auto={o:d.o,ang:d.prev,dir:d.dir||1}}
-else if(d.k==="copy"){const g=lk.ghost,t0=pt[st.to[0]],t1=pt[st.to[1]],gm=[(g.p[0]+g.q[0])/2,(g.p[1]+g.q[1])/2],tm=[(t0[0]+t1[0])/2,(t0[1]+t1[1])/2];if(dist(g.p,t0)<.2||dist(g.q,t0)<.2||dist(gm,tm)<.22)snapTo(lk,{p:pt[st.to[0]],q:pt[st.to[1]]},300,()=>{lk.ghost=null;lk.spark=lk.spark||{};lk.spark[st.to[1]]=now();figDone(lk)});else lk.ghost=null}
+else if(d.k==="copy"&&d.piv&&d.near)gcopyDone(lk,st,d);else if(d.k==="copy"){const g=lk.ghost,t0=pt[st.to[0]],t1=pt[st.to[1]],gm=[(g.p[0]+g.q[0])/2,(g.p[1]+g.q[1])/2],tm=[(t0[0]+t1[0])/2,(t0[1]+t1[1])/2];if(dist(g.p,t0)<.2||dist(g.q,t0)<.2||dist(gm,tm)<.22)snapTo(lk,{p:pt[st.to[0]],q:pt[st.to[1]]},300,()=>{lk.ghost=null;lk.spark=lk.spark||{};lk.spark[st.to[1]]=now();figDone(lk)});else lk.ghost=null}
 else if(d.k==="swing"){lk.ghost=null;if(d.th!==undefined&&Math.abs(wrapA(d.th-d.tT))<.35){const sw=lk.sw;if(st.then&&sw.stage===0){sw.base=sw.to.map(n=>pt[n].slice());sw.stage=1;sw.piv=st.then.piv;sw.to=st.then.to;sfxChime(false)}else{if(st.keep){const pv2=pt[sw.piv];lk.ghost={p:rot2(sw.base[0],pv2,d.tT),q:rot2(sw.base[1],pv2,d.tT)};linger(lk,3200)}lk.sw=null;figDone(lk)}}}
 else if(d.k==="pretend"){if(d.f>.6){pt[st.n]=pt[st.to].slice();figDone(lk)}else pt[st.n]=d.from}
 else if(d.k==="flip"){if(d.f>.55){const a=pt[st.from],b=pt[st.to];snapTo(lk,{pts:st.tri.map(n=>reflAcross(pt[n],a,b))},250,()=>{linger(lk,500);figDone(lk)})}else lk.ghost=null}
