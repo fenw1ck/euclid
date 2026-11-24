@@ -11,6 +11,7 @@ This file is the single source of truth for how the project is built. Anyone pic
 - `index.html`: the whole game, in one self-contained file.
 - `Elements_Text_Fitzpatrick.pdf`: Richard Fitzpatrick's translation of the *Elements*, the reference for every figure.
 - `NOTES.md`: this file.
+- `win-messages.csv`: each proposition's name, win message, user steps and engine steps. Made by `tools/make-win-messages.py` from `proofs.js`, so edit names and win messages in `proofs.js` and re-run the script. **User steps** are the moves the learner makes by hand with short versions (a tap on a flashing preview counts as one; lines the engine counts as already drawn are left out). **Engine steps** are the frames of the proof animation, which the learner only watches; roadmap step 2 turns these into moves. Props 4 and 8 (triangle slides) are counted by hand in the script. This file replaces the old "Euclid Book I win messages" Sheet.
 
 ## Book I: build status
 
