@@ -521,6 +521,7 @@ function openLock(id){lockId=id;lockFrom=scene;if(id===4)LK4=mkLock4();else if(F
    flip    drag one corner onto another: the triangle turns over   {t:"flip",tri,from,to}
    amatch  drag an angle onto another angle                        {t:"amatch",v:[vertex,arm,arm],to:[...]}
    slide   slide one triangle onto another until it fits           {t:"slide",tri,to}
+           (oneway:1 only the first moves; lines and show draw what it leaves behind where it lands)
    spin    turn a shaded angle about its own corner onto another   {t:"spin",v:[vertex,arm,arm],to:[...]}
    turn    turn a triangle about a point until it lands on another {t:"turn",tri,piv,to}
    (amatch with rot:x drops the angle in turned by x, or mirror:true turned over, inside a bigger one, to show it is smaller;
@@ -621,6 +622,28 @@ FIGS[20]=(()=>{const B=[-.55,.42],C=[.47,.42],A=[-.3,.08],u=U_(B,A),D=X_(A,u,dis
 return{pts:{A,B,C,D,Dx:X_(A,u,dist(A,C)+.08)},given:{pts:["A","B","C"],lines:[["A","B"],["B","C"],["A","C"]]},
 steps:[{t:"ext",o:"B",e:"A",to:"Dx"},{t:"circ",c:"A",p:"C",show:["D"],arc:true,mark:[["A","C",1],["A","D",1]]},{t:"line",a:"D",b:"C",arcs:[["D","A","C",1],["C","A","D",1]]},
 {t:"swing",seg:["B","C"],piv:"B",to:["B","D"],keep:1}],glow:[["A","D"],["A","C"]]}})();
+/* where lines PQ and RS cross; where two circles cross (the upper crossing) */
+const lineX=(P,Q,R,S)=>{const d1=[Q[0]-P[0],Q[1]-P[1]],d2=[S[0]-R[0],S[1]-R[1]],den=d1[0]*d2[1]-d1[1]*d2[0],t=((R[0]-P[0])*d2[1]-(R[1]-P[1])*d2[0])/den;return[P[0]+d1[0]*t,P[1]+d1[1]*t]};
+const circX=(c1,r1,c2,r2)=>{const d=dist(c1,c2),a=(r1*r1-r2*r2+d*d)/(2*d),h=Math.sqrt(Math.max(0,r1*r1-a*a)),u=U_(c1,c2),m=X_(c1,u,a),k=[[m[0]-u[1]*h,m[1]+u[0]*h],[m[0]+u[1]*h,m[1]-u[0]*h]];return k[0][1]<k[1][1]?k[0]:k[1]};
+/* 21: two lines meeting inside a triangle make a wider angle */
+FIGS[21]=(()=>{const B=[-.7,.4],C=[.7,.4],A=[-.45,-.4],D=[-.25,.15],E=lineX(B,D,A,C);
+return{pts:{A,B,C,D,E},given:{pts:["A","B","C","D"],lines:[["A","B"],["B","C"],["A","C"],["B","D"],["C","D"]]},
+steps:[{t:"ext",o:"B",e:"D",to:"E",show:true},{t:"amatch",v:["A","B","C"],to:["E","B","C"],rot:0},{t:"amatch",v:["E","B","C"],to:["D","B","C"],rot:0}],glow:[["w","D","B","C"],["w","A","B","C"]]}})();
+/* 22: a triangle from three given lengths */
+FIGS[22]=(()=>{const P=[-.72,-.45],Q=[-.27,-.45],R=[-.22,-.45],S=[.28,-.45],T=[.33,-.45],U=[.73,-.45],D=[-.75,.45],E=[.78,.45],F=[-.3,.45],G=[.2,.45],H=[.6,.45],K=circX(F,.45,G,.4);
+return{pts:{P,Q,R,S,T,U,D,E,F,G,H,K},given:{pts:["P","Q","R","S","T","U","D"],lines:[["P","Q"],["R","S"],["T","U"],["D","E"]],ticks:[["P","Q",1],["R","S",2],["T","U",3]]},
+steps:[{t:"copy",src:["P","Q"],to:["D","F"],mark:[["D","F",1]]},{t:"copy",src:["R","S"],to:["F","G"],mark:[["F","G",2]]},{t:"copy",src:["T","U"],to:["G","H"],mark:[["G","H",3]]},
+{t:"circ",c:"F",p:"D",show:["K"],arc:true},{t:"circ",c:"G",p:"H",show:["K"],arc:true},{t:"line",a:"K",b:"F",mark:[["K","F",1]]},{t:"line",a:"K",b:"G",mark:[["K","G",3]]}],glow:[["K","F","G"]]}})();
+/* 23: copy an angle onto a line (Props 2 and 22 as shortcuts) */
+FIGS[23]=(()=>{const C=[-.7,-.1],X=[-.15,-.1],r=-40*Math.PI/180,Y=[C[0]+.55*Math.cos(r),C[1]+.55*Math.sin(r)],A=[-.35,.45],B=[.7,.45],D=[-.3,-.1],E=[C[0]+.4*Math.cos(r),C[1]+.4*Math.sin(r)],F=[.05,.45],K=[A[0]+.4*Math.cos(r),A[1]+.4*Math.sin(r)];
+return{pts:{C,X,Y,A,B,D,E,F,K},given:{pts:["C","A"],lines:[["C","X"],["C","Y"],["A","B"]]},
+steps:[{t:"tap",on:["C","X"],n:"D"},{t:"tap",on:["C","Y"],n:"E"},{t:"line",a:"D",b:"E"},{t:"copy",src:["C","D"],to:["A","F"],mark:[["C","D",1],["A","F",1]]},
+{t:"short",lines:[["A","K"],["F","K"]],show:["K"],mark:[["C","E",2],["A","K",2],["D","E",3],["F","K",3]],arcs:[["C","D","E",1],["A","F","K",1]]}],glow:[["w","A","F","K"],["w","C","D","E"]]}})();
+/* 24: the hinge: a wider angle between equal sides gives a longer base */
+FIGS[24]=(()=>{const A=[-.6,-.45],D=[.05,-.45],u=a=>[Math.cos(a*Math.PI/180),Math.sin(a*Math.PI/180)],B=X_(A,u(60),.7),C=X_(A,u(100),.62),E=X_(D,u(60),.7),F=X_(D,u(85),.62),G=X_(D,u(100),.62);
+return{pts:{A,B,C,D,E,F,G},given:{pts:["A","B","C","D","E","F"],lines:[["A","B"],["A","C"],["B","C"],["D","E"],["D","F"],["E","F"]],ticks:[["A","B",1],["D","E",1],["A","C",2],["D","F",2]]},
+steps:[{t:"slide",tri:["A","B","C"],to:["D","E","G"],oneway:1,lines:[["D","G"],["E","G"]],show:["G"],mark:[["D","G",2],["B","C",3],["E","G",3]]},
+{t:"line",a:"F",b:"G",arcs:[["F","D","G",1],["G","D","F",1]]},{t:"swing",seg:["E","F"],piv:"E",to:["E","G"],keep:1}],glow:[["E","G"],["B","C"]]}})();
 const lkey=(a,b)=>[a,b].sort().join("|");
 function mkFig(id){const def=FIGS[id],g=def.given,lk={id,def,pts:JSON.parse(JSON.stringify(def.pts)),step:0,lines:{},circs:[],vis:new Set(g.pts),marks:[],won:0,drag:null,ghost:null,anim:null,auto:null,trail:[],tip:null,sw:null,ext:null,mv:null};
 for(const[a,b]of g.lines)lk.lines[lkey(a,b)]=1;for(const[a,b,n]of g.ticks||[])lk.marks.push({a,b,n,t:1});for(const[v,a,b,n]of g.arcs||[])lk.marks.push({v,a,b,n,t:1});return lk}
@@ -633,6 +656,7 @@ else if(st.t==="short"){for(const[a,b]of st.lines)L(a,b);st.show.forEach(n=>lk.v
 else if(st.t==="circ"){const o=figCirc(lk,st.c,st.p);if(st.arc){if(T===1){const a=needDeg(pt[st.c],pt[st.p]),b=needDeg(pt[st.c],pt[st.show[0]]);let d=b-a;while(d>180)d-=360;while(d<-180)d+=360;markArc(o.cov,a,d);for(let i=0;i<360;i++)if(o.cov[i])o.cov[i]=1}}else for(let i=0;i<360;i++)if(!o.cov[i])o.cov[i]=T;st.show.forEach(n=>lk.vis.add(n))}
 else if(st.t==="copy"){L(...st.to);lk.vis.add(st.to[1])}
 else if(st.t==="pretend"){pt[st.n]=pt[st.to].slice();lk.vis.add(st.n);for(const[a,b]of st.lines||[])L(a,b)}
+else if(st.t==="slide"){for(const[a,b]of st.lines||[])L(a,b);(st.show||[]).forEach(n=>lk.vis.add(n))}
 for(const[a,b,n]of st.mark||[])lk.marks.push({a,b,n,t:T});for(const[v,a,b,n]of st.arcs||[])lk.marks.push({v,a,b,n,t:T});
 if(st.collapse){const c=st.collapse;pt[c.n]=pt[c.to].slice();if(c.unmark)lk.marks=lk.marks.filter(m=>m.v||!c.unmark.includes(lkey(m.a,m.b)));if(c.merge){pt[c.merge]=pt[c.to].slice();lk.marks=lk.marks.filter(m=>m.v?![m.v,m.a,m.b].includes(c.merge):(m.a!==c.merge&&m.b!==c.merge)||(c.keep||[]).includes(lkey(m.a,m.b)));if(T===1)lk.vis.delete(c.merge);else lk.hide=c.merge}}}
 const FIGB={},FIGF={};for(const id in FIGS){FIGB[id]=mkFig(id);const f=mkFig(id);FIGS[id].steps.forEach(st=>applyStep(f,st,1));f.step=FIGS[id].steps.length;f.won=1;FIGF[id]=f}
@@ -694,6 +718,7 @@ else if(a.to.pts){g.pts=a.f.pts.map((p,i)=>[lerp(p[0],a.to.pts[i][0],u),lerp(p[1
 else{g.p=[lerp(a.f.p[0],a.to.p[0],u),lerp(a.f.p[1],a.to.p[1],u)];g.q=[lerp(a.f.q[0],a.to.q[0],u),lerp(a.f.q[1],a.to.q[1],u)]}if(u>=1){lk.anim=null;a.done()}}
 const a=lk.auto;if(a){const step=560*dt*a.dir,o=a.o,c=lk.pts[o.c];markArc(o.cov,a.ang,step);a.ang+=step;const r=a.ang*Math.PI/180;lk.tip=[c[0]+Math.cos(r)*o.r,c[1]+Math.sin(r)*o.r];lk.trail.push({p:lk.tip.slice(),t:T});
 if(o.cov.every(v=>v>0)){lk.auto=null;const st=lk.def.steps[lk.step];lk.spark=lk.spark||{};st.show.forEach(n=>lk.spark[n]=T);figDone(lk)}}}
+const linger=(lk,ms)=>{const g=lk.ghost;setTimeout(()=>{if(lk.ghost===g)lk.ghost=null},ms)};
 const snapTo=(lk,to,dur,done)=>{lk.anim={f:JSON.parse(JSON.stringify(lk.ghost)),to,t0:now(),dur,done}};
 function figDown(x,y){HELP=null;const lk=LKF;if(!lk||lk.won||lk.anim||lk.auto||lk.mv)return;const st=lk.def.steps[lk.step];if(!st)return;const pt=lk.pts,p=toLocal(x,y),{R}=lockGeo(),hit=Math.max(.08,24/R);let d=null;
 if(st.t==="line"){for(const n of[st.a,st.b])if(dist(p,pt[n])<hit*1.3){d={k:"line",from:n,to:n===st.a?st.b:st.a};lk.tip=pt[n].slice();break}}
@@ -709,7 +734,7 @@ else if(st.t==="flip"){if(dist(p,pt[st.from])<hit*1.5){d={k:"flip",start:p,f:0};
 else if(st.t==="amatch"){for(const[v,w]of[[st.v,st.to],[st.to,st.v]])if(dist(p,pt[v[0]])<hit*1.6){lk.ghost=wedgeAt(lk,v);d={k:"amatch",tgt:w,start:p,V0:pt[v[0]].slice()};lk.tip=p.slice();break}}
 else if(st.t==="spin"){const V=pt[st.v[0]];if(dist(p,V)<.38&&dist(p,V)>.02){lk.ghost=wedgeAt(lk,st.v);d={k:"spin",a0:ang2(V,p),b1:lk.ghost.a1,b2:lk.ghost.a2};lk.tip=p.slice()}}
 else if(st.t==="turn"){if(inPoly(p,st.tri.map(n=>pt[n]))){lk.ghost={t:"poly",pts:st.tri.map(n=>pt[n].slice())};d={k:"turn",a0:ang2(pt[st.piv],p),base:st.tri.map(n=>pt[n].slice())};lk.tip=p.slice()}}
-else if(st.t==="slide"){const g=lk.ghost&&lk.ghost.t==="poly"?lk.ghost:null;if(g&&inPoly(p,g.pts))d={k:"slide",last:p};else for(const[a,b]of[[st.tri,st.to],[st.to,st.tri]])if(inPoly(p,a.map(n=>pt[n]))){lk.ghost={t:"poly",pts:a.map(n=>pt[n].slice()),tgt:b.map(n=>pt[n]),pivot:null};d={k:"slide",last:p};break}if(d)lk.tip=p.slice()}
+else if(st.t==="slide"){const g=lk.ghost&&lk.ghost.t==="poly"?lk.ghost:null;if(g&&inPoly(p,g.pts))d={k:"slide",last:p};else for(const[a,b]of(st.oneway?[[st.tri,st.to]]:[[st.tri,st.to],[st.to,st.tri]]))if(inPoly(p,a.map(n=>pt[n]))){lk.ghost={t:"poly",pts:a.map(n=>pt[n].slice()),tgt:b.map(n=>pt[n]),pivot:null};d={k:"slide",last:p};break}if(d)lk.tip=p.slice()}
 if(!d)return;lk.drag=d;lk.trail.push({p:lk.tip.slice(),t:now(),brk:true})}
 function figMove(x,y){const lk=LKF;if(!lk)return;const d=lk.drag;if(!d)return;const st=lk.def.steps[lk.step],pt=lk.pts,p=toLocal(x,y);lk.tip=p;
 if(d.k==="ext"){const e=pt[st.e],to=pt[st.to],L=dist(e,to),u=U_(e,to),k=clamp((p[0]-e[0])*u[0]+(p[1]-e[1])*u[1],0,L);lk.ext.q=X_(e,u,k);lk.ext.f=k/L;lk.tip=lk.ext.q.slice()}
@@ -717,14 +742,14 @@ else if(d.k==="circ"){const c=pt[st.c],a=angDeg(c,p);let dl=a-d.prev;while(dl>18
 if(st.arc&&st.show.every(n=>covered(d.o.cov,needDeg(c,pt[n])))){lk.drag=null;lk.spark=lk.spark||{};st.show.forEach(n=>lk.spark[n]=now());figDone(lk);return}}
 else if(d.k==="copy"){const o=[p[0]-d.start[0],p[1]-d.start[1]];lk.ghost.p=[d.base[0][0]+o[0],d.base[0][1]+o[1]];lk.ghost.q=[d.base[1][0]+o[0],d.base[1][1]+o[1]]}
 else if(d.k==="swing"){const sw=lk.sw,pv=pt[sw.piv],th=wrapA(ang2(pv,p)-d.a0),tT=wrapA(ang2(pv,pt[sw.to[1]])-ang2(pv,sw.base[1]));lk.ghost={p:rot2(sw.base[0],pv,th),q:rot2(sw.base[1],pv,th)};if(Math.random()<.12)sfxTick();
-d.th=th;d.tT=tT;if(Math.abs(wrapA(th-tT))<.12){if(st.then&&sw.stage===0){sw.base=sw.to.map(n=>pt[n].slice());sw.stage=1;sw.piv=st.then.piv;sw.to=st.then.to;d.a0=ang2(pt[sw.piv],p);lk.ghost={p:sw.base[0].slice(),q:sw.base[1].slice()};sfxChime(false)}else{lk.drag=null;if(st.keep){const pv2=pt[sw.piv];lk.ghost={p:rot2(sw.base[0],pv2,tT),q:rot2(sw.base[1],pv2,tT)};setTimeout(()=>{lk.ghost=null},3200)}else lk.ghost=null;lk.sw=null;figDone(lk);return}}}
+d.th=th;d.tT=tT;if(Math.abs(wrapA(th-tT))<.12){if(st.then&&sw.stage===0){sw.base=sw.to.map(n=>pt[n].slice());sw.stage=1;sw.piv=st.then.piv;sw.to=st.then.to;d.a0=ang2(pt[sw.piv],p);lk.ghost={p:sw.base[0].slice(),q:sw.base[1].slice()};sfxChime(false)}else{lk.drag=null;if(st.keep){const pv2=pt[sw.piv];lk.ghost={p:rot2(sw.base[0],pv2,tT),q:rot2(sw.base[1],pv2,tT)};linger(lk,3200)}else lk.ghost=null;lk.sw=null;figDone(lk);return}}}
 else if(d.k==="pretend"){const a=d.from,b=pt[st.to],L=dist(a,b),u=U_(a,b),k=clamp((p[0]-a[0])*u[0]+(p[1]-a[1])*u[1],0,L);d.f=k/L;pt[st.n]=X_(a,u,k);lk.tip=pt[st.n].slice()}
 else if(d.k==="flip"){const a=pt[st.from],b=pt[st.to],L=dist(a,b),u=U_(a,b);d.f=clamp(((p[0]-d.start[0])*u[0]+(p[1]-d.start[1])*u[1])/L);lk.ghost.pts=st.tri.map(n=>{const q=pt[n],r=reflAcross(q,a,b);return[lerp(q[0],r[0],d.f),lerp(q[1],r[1],d.f)]})}
 else if(d.k==="amatch"){lk.ghost.V=[d.V0[0]+p[0]-d.start[0],d.V0[1]+p[1]-d.start[1]]}
 else if(d.k==="spin"){const V=pt[st.v[0]],th=wrapA(ang2(V,p)-d.a0),tT=wrapA(ang2(V,pt[st.to[1]])-ang2(V,pt[st.v[1]]));d.th=th;d.tT=tT;lk.ghost.a1=d.b1+th;lk.ghost.a2=d.b2+th;if(Math.random()<.12)sfxTick();
 if(Math.abs(wrapA(th-tT))<.12){lk.drag=null;snapTo(lk,wedgeAt(lk,st.to),220,()=>{lk.ghost=null;figDone(lk)});return}}
 else if(d.k==="turn"){const c=pt[st.piv],th=wrapA(ang2(c,p)-d.a0),tT=wrapA(ang2(c,pt[st.to[0]])-ang2(c,pt[st.tri[0]]));d.th=th;d.tT=tT;lk.ghost.pts=d.base.map(q=>rot2(q,c,th));if(Math.random()<.12)sfxTick();
-if(Math.abs(wrapA(th-tT))<.1){lk.drag=null;snapTo(lk,{pts:st.to.map(n=>pt[n])},220,()=>{setTimeout(()=>{lk.ghost=null},400);figDone(lk)});return}}
+if(Math.abs(wrapA(th-tT))<.1){lk.drag=null;snapTo(lk,{pts:st.to.map(n=>pt[n])},220,()=>{linger(lk,400);figDone(lk)});return}}
 else if(d.k==="slide"){const g=lk.ghost,n=g.pts.length;if(g.pivot==null){const dl=[p[0]-d.last[0],p[1]-d.last[1]];g.pts.forEach(q=>{q[0]+=dl[0];q[1]+=dl[1]});let bi=0,bd=1e9;for(let i=0;i<n;i++){const dd=dist(g.pts[i],g.tgt[i]);if(dd<bd){bd=dd;bi=i}}
 if(bd<.07){const sh=[g.tgt[bi][0]-g.pts[bi][0],g.tgt[bi][1]-g.pts[bi][1]];g.pts.forEach(q=>{q[0]+=sh[0];q[1]+=sh[1]});g.pivot=bi;sfxTick()}}
 else{const c=g.pts[g.pivot],da=wrapA(ang2(c,p)-ang2(c,d.last));if(dist(p,c)>.06)for(let i=0;i<n;i++)if(i!==g.pivot)g.pts[i]=rot2(g.pts[i],c,da);if(Math.random()<.15)sfxTick();
@@ -735,12 +760,12 @@ if(d.k==="line"){if(dist(p,pt[d.to])<hit*1.3)figDone(lk)}
 else if(d.k==="ext"){const f=lk.ext.f;lk.ext=null;if(f>.3)figDone(lk)}
 else if(d.k==="circ"){if(st.show.every(n=>covered(d.o.cov,needDeg(pt[st.c],pt[n]))))lk.auto={o:d.o,ang:d.prev,dir:d.dir||1}}
 else if(d.k==="copy"){const g=lk.ghost,t0=pt[st.to[0]],t1=pt[st.to[1]],gm=[(g.p[0]+g.q[0])/2,(g.p[1]+g.q[1])/2],tm=[(t0[0]+t1[0])/2,(t0[1]+t1[1])/2];if(dist(g.p,t0)<.2||dist(g.q,t0)<.2||dist(gm,tm)<.22)snapTo(lk,{p:pt[st.to[0]],q:pt[st.to[1]]},300,()=>{lk.ghost=null;lk.spark=lk.spark||{};lk.spark[st.to[1]]=now();figDone(lk)});else lk.ghost=null}
-else if(d.k==="swing"){lk.ghost=null;if(d.th!==undefined&&Math.abs(wrapA(d.th-d.tT))<.35){const sw=lk.sw;if(st.then&&sw.stage===0){sw.base=sw.to.map(n=>pt[n].slice());sw.stage=1;sw.piv=st.then.piv;sw.to=st.then.to;sfxChime(false)}else{if(st.keep){const pv2=pt[sw.piv];lk.ghost={p:rot2(sw.base[0],pv2,d.tT),q:rot2(sw.base[1],pv2,d.tT)};setTimeout(()=>{lk.ghost=null},3200)}lk.sw=null;figDone(lk)}}}
+else if(d.k==="swing"){lk.ghost=null;if(d.th!==undefined&&Math.abs(wrapA(d.th-d.tT))<.35){const sw=lk.sw;if(st.then&&sw.stage===0){sw.base=sw.to.map(n=>pt[n].slice());sw.stage=1;sw.piv=st.then.piv;sw.to=st.then.to;sfxChime(false)}else{if(st.keep){const pv2=pt[sw.piv];lk.ghost={p:rot2(sw.base[0],pv2,d.tT),q:rot2(sw.base[1],pv2,d.tT)};linger(lk,3200)}lk.sw=null;figDone(lk)}}}
 else if(d.k==="pretend"){if(d.f>.6){pt[st.n]=pt[st.to].slice();figDone(lk)}else pt[st.n]=d.from}
-else if(d.k==="flip"){if(d.f>.55){const a=pt[st.from],b=pt[st.to];snapTo(lk,{pts:st.tri.map(n=>reflAcross(pt[n],a,b))},250,()=>{setTimeout(()=>{lk.ghost=null},500);figDone(lk)})}else lk.ghost=null}
+else if(d.k==="flip"){if(d.f>.55){const a=pt[st.from],b=pt[st.to];snapTo(lk,{pts:st.tri.map(n=>reflAcross(pt[n],a,b))},250,()=>{linger(lk,500);figDone(lk)})}else lk.ghost=null}
 else if(d.k==="spin"){if(d.th!==undefined&&Math.abs(wrapA(d.th-d.tT))<.35)snapTo(lk,wedgeAt(lk,st.to),250,()=>{lk.ghost=null;figDone(lk)});else lk.ghost=null}
-else if(d.k==="turn"){if(d.th!==undefined&&Math.abs(wrapA(d.th-d.tT))<.35)snapTo(lk,{pts:st.to.map(n=>pt[n])},250,()=>{setTimeout(()=>{lk.ghost=null},400);figDone(lk)});else lk.ghost=null}
-else if(d.k==="amatch"){const g=lk.ghost;if(dist(g.V,pt[d.tgt[0]])<.16){const T=wedgeAt(lk,d.tgt);if(st.mirror){const m1=Math.PI-g.a1,m2=Math.PI-g.a2;snapTo(lk,{V:T.V,a1:m1,a2:m2},300,()=>{if(st.fail){sfxRattle();setTimeout(()=>{lk.ghost=null;figDone(lk)},600)}else setTimeout(()=>{figDone(lk);setTimeout(()=>{lk.ghost=null},2600)},700)})}else if(st.rot!==undefined){const rr=d.tgt===st.to?st.rot:-st.rot;snapTo(lk,{V:T.V,a1:g.a1+rr,a2:g.a2+rr},300,()=>{setTimeout(()=>{figDone(lk);setTimeout(()=>{lk.ghost=null},2600)},700)})}else if(st.fail){snapTo(lk,{V:T.V,a1:g.a1,a2:g.a2},250,()=>{sfxRattle();setTimeout(()=>{lk.ghost=null;figDone(lk)},500)})}else snapTo(lk,T,320,()=>{lk.ghost=null;figDone(lk)})}else lk.ghost=null}}
+else if(d.k==="turn"){if(d.th!==undefined&&Math.abs(wrapA(d.th-d.tT))<.35)snapTo(lk,{pts:st.to.map(n=>pt[n])},250,()=>{linger(lk,400);figDone(lk)});else lk.ghost=null}
+else if(d.k==="amatch"){const g=lk.ghost;if(dist(g.V,pt[d.tgt[0]])<.16){const T=wedgeAt(lk,d.tgt);if(st.mirror){const m1=Math.PI-g.a1,m2=Math.PI-g.a2;snapTo(lk,{V:T.V,a1:m1,a2:m2},300,()=>{if(st.fail){sfxRattle();setTimeout(()=>{lk.ghost=null;figDone(lk)},600)}else{figDone(lk);linger(lk,2600)}})}else if(st.rot!==undefined){const rr=d.tgt===st.to?st.rot:-st.rot;snapTo(lk,{V:T.V,a1:g.a1+rr,a2:g.a2+rr},300,()=>{figDone(lk);linger(lk,2600)})}else if(st.fail){snapTo(lk,{V:T.V,a1:g.a1,a2:g.a2},250,()=>{sfxRattle();setTimeout(()=>{lk.ghost=null;figDone(lk)},500)})}else snapTo(lk,T,320,()=>{lk.ghost=null;figDone(lk)})}else lk.ghost=null}}
 /* the figure on any lock plate, solved or not */
 function lockFace(id,cx,cy,r){const ok=solved(id);if(id===1)drawL1(cx,cy,r,ok?FULL:BLANK,false);else if(id===4)drawL4(cx,cy,r,ok?FULL4:BLANK4,false);else if(FIGS[id])drawFig(cx,cy,r,ok?FIGF[id]:FIGB[id],false)}
 const hasLock=id=>id===1||id===4||!!FIGS[id];
