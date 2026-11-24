@@ -65,6 +65,11 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
   - Prop 22: carry the three given lines (one, two and three ticks) end to end along DE; sweep D round F and H round G until both arcs pass the same point K; join KF and KG.
   - Prop 23: tap D and E on the arms of the angle and join them; carry CD to A along AB (Prop 2); tap the faint lines to K (Prop 22): three pairs of equal sides, and the angles at C and A get one arc each.
   - Prop 24: slide triangle ABC onto D with AB along DE; C lands at G (EG = BC). Join FG (equal base angles); swing EF round E onto EG: it falls short.
+- **Built:** Props 25–28. A pretend move can swing a point round a centre (*about*), so a side keeps its length; a contradiction can drop the lines and points the made-up figure needed (*drop*, *hide*), and every contradiction rattles as it snaps back. Moves are accepted while points are still sliding home.
+  - Prop 25: pretend the angle at A equals the angle at D by swinging C round A; the bases would then be equal (three ticks each). Match the angle at A to the angle at D: it rattles and C swings back. Then drop the angle at D into the angle at A: it fits inside.
+  - Prop 26: the two angles and the side between them are marked equal. Pretend AB is longer (drag A along the arrow); tap G where BG = DE (Prop 3); join GC; drop the angle at F onto the angle at C: it is the whole angle ACB, not GCB, so it rattles, and A slides back onto G.
+  - Prop 27: the alternate angles are marked equal. Tilt FD up round F; pull AB and FD on until they meet at G; drop angle EFG, turned, into AEF: it sits inside, yet they were equal. It rattles, FD swings back and G is gone.
+  - Prop 28: pull AB and CD on (they never meet); spin the angle EGB half a turn about G onto AGH, where it matches GHD: equal alternate angles, so the lines are parallel (Prop 27).
 - Hall doors now work. An amber door opens its lock, a solved door leads into its hall, and Back steps back through the halls you walked through. Each door's plate shows its lock's figure, cut or uncut. Amber doors without a lock yet say so.
 - Equal parts on lock plates are marked the classic way, with cut ticks and arcs, since the plates are bronze and gold only.
 - **Next:** port the site's proposition engine (the `OPS` steps and short versions) so that any proposition's figure can sit on a lock plate. The engine stays the same; only the drawing and the effects change.
@@ -144,7 +149,7 @@ Proposed rules (open to change):
    - the ten songs and the volume control;
    - the item data and the coin roll;
    - the progress save.
-2. **Locks for all 48:** Props 1–24 are done, and walking between halls works. Next: 25–28.
+2. **Locks for all 48:** Props 1–28 are done, and walking between halls works. Next: 29–32.
 3. **Greenhouses:** junctions, fountains with water sound, the blue statue shop, chests and coins, and an inventory and character screen with clothes.
 4. **Scrolls** (guided mode), more art variety for halls (different statues, paintings showing each hall's own figure), and phone testing across all 48.
 
