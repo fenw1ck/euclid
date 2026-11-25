@@ -152,7 +152,9 @@ const CASE={},CKEYS=["goal","note","pts","segs0","eq0","wedges0","polys0","dsegs
 function applyCase(){if(!P.cases){$("cases").innerHTML="";return}if(!P._base){P._base={};for(const k of CKEYS)P._base[k]=P[k]}const ci=CASE[P.id]||0,cs=P.cases[ci];for(const k of CKEYS)P[k]=cs[k]!==undefined?cs[k]:P._base[k];
 $("cases").innerHTML=P.cases.map((c,i)=>`<button class="chip ${i===ci?"on":""}" data-case="${i}">${c.lab}</button>`).join("")}
 function mentioned(){const t=[P.goal||"",...(P.steps||[]).map(s=>s[0]+" "+(s[2]||"")),String(P.phases||""),P.winTxt||""].join(" ");return new Set(t.match(/[A-Z]′*/g)||[])}
-const unlab=id=>(W&&W.labAs&&W.labAs[id])?false:(P.noLab||[]).includes(id)||HELP.has(id)||(P._ment&&!P._ment.has(id));
+/* a point at the end of a line marked equal always gets its letter, so every equal line can be named (rule set 24 Nov 2026) */
+const onEq=id=>!!W&&((W.eq||[]).some(e=>(e.s||[]).some(k=>ends(k).includes(id)))||[...(W.pinkSegs||[])].some(k=>ends(k).includes(id)));
+const unlab=id=>(W&&W.labAs&&W.labAs[id])?false:(P.noLab||[]).includes(id)||(!onEq(id)&&(HELP.has(id)||(P._ment&&!P._ment.has(id))));
 function usedProps(){const s=new Set(),scan=o=>{for(const op of o.ops||[])if(op[0]==="use")s.add(op[1]);const t=[o.goal||"",...(o.steps||[]).map(x=>x[0]+" "+(x[2]||"")),String(o.phases||"")].join(" ");for(const m of t.matchAll(/Prop(?:osition)?s?\s+((?:\d+(?:,\s*|\s+and\s+)?)+)/g))for(const n of m[1].match(/\d+/g))s.add(+n)};scan(P._base||P);for(const c of P.cases||[])scan(c);s.delete(P.id);return s}
 function load(id){cur=ALL.findIndex(p=>p.id===id);P=ALL[cur];W=null;HELP=new Set();FULLSET=new Set();$("slower").style.display=P.kind==="play"?"":"none";applyCase();P._ment=P.kind==="play"?mentioned():null;fresh();
 $("ttl").textContent=`Book I, Proposition ${P.id}: ${P.t}`;$("stmt").textContent=P.stmt;$("gives").textContent=P.gives;
