@@ -35,7 +35,7 @@ SHORT = {"midp", "par", "ang", "cpy", "cut", "bis", "perp", "pgram", "apl", "sq"
 SLIDE = {4: (5, [], 1), 8: (2, [], 1)}
 
 COUNT = """async ([id,c])=>{CASE[id]=c;load(id);const kind=P.kind,ops=[];
-  if(kind==='play')for(const o of OPS)if(!auto(o))ops.push({t:o.t,prop:o.prop||null,k:o.t==='line'?sk(o.a,o.b):null,n:o.t==='hollow'?o.gems.length:1});
+  if(kind==='play')for(const o of OPS)if(!auto(o))ops.push({t:o.t,prop:o.prop||null,k:o.t==='line'?sk(o.a,o.b):null,n:o.t==='hollow'?o.gems.length:o.t==='stretch'?(o.pairs.every(([a,b])=>a[0]===b[0])?1:2):1});
   await solveAll();for(let k=0;k<300&&!W.won;k++)await new Promise(r=>setTimeout(r,20));
   const left=ops.filter(o=>!(o.t==='line'&&W.covered&&W.covered.has(o.k)));
   return{kind,name:P.t,win:P.winTxt||'',ops:left,frames:kind==='play'?P.phases(W).length:null,won:W.won}}"""
@@ -46,7 +46,7 @@ def classify(ops):
         if o["t"] == "hollow":
             user += o["n"]  # one drag per gem
         elif o["t"] == "stretch":
-            user += 2  # drag the angle over, then stretch it
+            user += o["n"]  # drag the angle over (unless it shares the corner), then stretch it
         elif o["t"] in HANDS_ON:
             user += 1
         elif o["t"] in SHORT:
