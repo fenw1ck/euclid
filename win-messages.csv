@@ -1,50 +1,50 @@
-Prop,Name,Win message,User steps,Engine steps,Taps,Watched frames,Hands-on share,Engine work
-1.1,Construct an equilateral triangle,We made an equilateral triangle!,7,3,0,3,70%,3 watched frames
-1.2,Place a line equal to a given line at a point,Now we can move a line anywhere we want.,10,2,1,1,83%,tap a triangle; 1 watched frame
-1.3,Cut off a line equal to a shorter one,We learned how to shorten a line to equal an existing line.,11,2,1,1,85%,tap a triangle; 1 watched frame
-1.4,Two sides and the angle between them,Two sides and their shared angle are all we need to know these triangles are equal.,5,1,0,1,83%,1 watched frame
-1.5,Base angles of an isosceles triangle,The base angles of an isosceles triangle are equal!,9,3,2,1,75%,choose a point ×2; 1 watched frame
-1.6,Equal angles mean equal sides,Equal angles mean equal sides!,14,2,1,1,88%,tap a triangle; 1 watched frame
-1.7,Two triangles cannot share a base and sides,Only one point fits two given sides!,5,1,0,1,83%,1 watched frame
-1.8,Three equal sides make equal triangles,Three equal sides: the angles match too!,2,1,0,1,67%,1 watched frame
-1.9,Bisect an angle,The angle has been cut into equal parts!,5,5,2,3,50%,choose a point; tap a triangle; 3 watched frames
-1.10,Bisect a line,Found the middle of the line!,3,5,2,3,38%,tap a triangle; Prop 9; 3 watched frames
-1.11,Draw a perpendicular at a point on a line,We can drop a perpendicular from anywhere!,4,5,2,3,44%,choose a point; tap a triangle; 3 watched frames
-1.12,Draw a perpendicular from a point off a line,Dropped a perpendicular from the point to the line!,5,5,3,2,50%,choose a point; tap a triangle; Prop 9; 2 watched frames
-1.13,Angles on a straight line,Angles along a straight line make two right angles!,7,2,1,1,78%,Prop 11; 1 watched frame
-1.14,Two angles that make a straight line,Angles that make two right angles lie on one straight line!,5,2,1,1,71%,Prop 11; 1 watched frame
-1.15,Vertical angles are equal,"When two lines cross, opposite angles are equal!",4,6,5,1,40%,tap a line ×2; tap an angle ×3; 1 watched frame
-1.16,The outside angle is bigger,The outside angle is bigger than either inside opposite angle!,7,7,1,6,50%,Prop 10; 6 watched frames
-1.17,Two angles of a triangle are less than two right angles,Any two angles of a triangle make less than two right angles!,6,1,0,1,86%,1 watched frame
-1.18,The greater side has the greater angle opposite it,The longer side faces the bigger angle!,5,1,0,1,83%,1 watched frame
-1.19,The greater angle has the greater side opposite it,The bigger angle faces the longer side!,2,2,0,2,50%,2 watched frames
-1.20,Two sides together are longer than the third,Two sides of a triangle are always longer than the third!,7,1,0,1,88%,1 watched frame
-1.21,Two lines meeting inside a triangle,"A shorter way round, but a wider angle!",6,1,0,1,86%,1 watched frame
-1.22,Triangle from three given lines,We can build a triangle from any three lengths!,4,6,3,3,40%,Prop 3 ×3; 3 watched frames
-1.23,Copy an angle onto a line,Now we can copy any angle onto any line!,5,7,5,2,42%,choose a point ×2; Prop 3; Prop 2 ×2; 2 watched frames
-1.24,Hinge: a bigger angle gives a bigger base,A wider angle between equal sides gives a longer base!,5,1,0,1,83%,1 watched frame
-1.25,Converse of the hinge,A longer base means a wider angle!,2,1,0,1,67%,1 watched frame
-1.26 case 1,Two angles and a side,Two angles and a side fix the triangle!,3,2,0,2,60%,2 watched frames
-1.26 case 2,Two angles and a side,Two angles and a side fix the triangle!,2,6,0,6,25%,6 watched frames
-1.27,Equal alternate angles mean parallel lines,Equal alternate angles: the lines never meet!,5,2,0,2,71%,2 watched frames
-1.28,More tests for parallel lines,Matching angles mean parallel lines!,8,1,0,1,89%,1 watched frame
-1.29,Parallel lines make equal angles,Parallel lines make equal angles!,7,4,0,4,64%,4 watched frames
-1.30,Parallel to the same line means parallel to each other,"Parallel to the same line, parallel to each other!",3,3,2,1,50%,choose a point ×2; 1 watched frame
-1.31,Draw a parallel through a point,A parallel line through any point!,2,4,2,2,33%,choose a point; Prop 23; 2 watched frames
-1.32,Angles of a triangle add to two right angles,The angles of a triangle make two right angles!,6,2,1,1,75%,Prop 31; 1 watched frame
-1.33,Joining the ends of equal parallel lines,Equal and parallel on both sides!,4,2,0,2,67%,2 watched frames
-1.34,Opposite sides and angles of a parallelogram,"Opposite sides and angles match, and the diagonal halves it!",3,2,0,2,60%,2 watched frames
-1.35,"Same base, same parallels: equal parallelograms","Same base, same parallels, same area!",3,6,0,6,33%,6 watched frames
-1.36,"Equal bases, same parallels","Equal bases, same height, same area!",4,1,0,1,80%,1 watched frame
-1.37,Triangles on the same base between parallels,Slide the top along a parallel: the area stays the same!,3,3,2,1,50%,Prop 31 ×2; 1 watched frame
-1.38,Triangles on equal bases between parallels,"Equal bases, same height: equal triangles!",3,3,2,1,50%,Prop 31 ×2; 1 watched frame
-1.39,Equal triangles on one base lie between parallels,Equal triangles on one base lie between parallels!,4,4,1,3,50%,Prop 31; 3 watched frames
-1.40,Equal triangles on equal bases lie between parallels,Equal triangles on equal bases lie between parallels!,4,4,1,3,50%,Prop 31; 3 watched frames
-1.41,A parallelogram is double a triangle,A parallelogram is double the triangle on its base!,3,1,0,1,75%,1 watched frame
-1.42,Make a parallelogram equal to a triangle,A triangle reshaped into a parallelogram with any angle!,7,5,4,1,58%,Prop 10; Prop 23; Prop 31 ×2; 1 watched frame
-1.43,Complements of a parallelogram,The complements are equal!,5,6,3,3,45%,choose a point; Prop 31 ×2; 3 watched frames
-1.44,Apply a parallelogram to a line,Any area can be laid along any line!,8,8,3,5,50%,Prop 42; Prop 31 ×2; 5 watched frames
-1.45,A parallelogram equal to any straight-sided figure,Any straight-sided figure can become a parallelogram!,2,9,2,7,18%,Prop 42; Prop 44; 7 watched frames
-1.46,A square on a line,A square on any line!,0,8,4,4,0%,Prop 11; Prop 3; Prop 31 ×2; 4 watched frames
-1.47,The Pythagorean theorem,The square on the long side equals the other two squares!,8,7,4,3,53%,Prop 46 ×3; Prop 31; 3 watched frames
-1.48,Converse of the Pythagorean theorem,Squares that add up mean a right angle!,1,8,2,6,11%,Prop 11; Prop 3; 6 watched frames
+Prop,Name,Win message,User steps,Engine steps,Taps,Watched frames,Hands-on share,Engine work,Tools
+1.1,Construct an equilateral triangle,We made an equilateral triangle!,7,3,0,3,70%,3 watched frames,circ line
+1.2,Place a line equal to a given line at a point,Now we can move a line anywhere we want.,10,2,1,1,83%,tap a triangle; 1 watched frame,circ ext line rot tri
+1.3,Cut off a line equal to a shorter one,We learned how to shorten a line to equal an existing line.,11,2,1,1,85%,tap a triangle; 1 watched frame,circ ext line rot tri
+1.4,Two sides and the angle between them,Two sides and their shared angle are all we need to know these triangles are equal.,5,1,0,1,83%,1 watched frame,slide
+1.5,Base angles of an isosceles triangle,The base angles of an isosceles triangle are equal!,9,3,2,1,75%,choose a point ×2; 1 watched frame,amatch circ ext flip line place
+1.6,Equal angles mean equal sides,Equal angles mean equal sides!,14,2,1,1,88%,tap a triangle; 1 watched frame,circ ext line push rot tri wrong
+1.7,Two triangles cannot share a base and sides,Only one point fits two given sides!,5,1,0,1,83%,1 watched frame,line pretend straighten stretch
+1.8,Three equal sides make equal triangles,Three equal sides: the angles match too!,2,1,0,1,67%,1 watched frame,slide
+1.9,Bisect an angle,The angle has been cut into equal parts!,5,5,2,3,50%,choose a point; tap a triangle; 3 watched frames,circ line place tri
+1.10,Bisect a line,Found the middle of the line!,3,5,2,3,38%,tap a triangle; Prop 9; 3 watched frames,bis circ line tri
+1.11,Draw a perpendicular at a point on a line,We can drop a perpendicular from anywhere!,4,5,2,3,44%,choose a point; tap a triangle; 3 watched frames,circ line place tri
+1.12,Draw a perpendicular from a point off a line,Dropped a perpendicular from the point to the line!,5,5,3,2,50%,choose a point; tap a triangle; Prop 9; 2 watched frames,bis circ line place tri
+1.13,Angles on a straight line,Angles along a straight line make two right angles!,7,2,1,1,78%,Prop 11; 1 watched frame,hollow perp wcmp
+1.14,Two angles that make a straight line,Angles that make two right angles lie on one straight line!,5,2,1,1,71%,Prop 11; 1 watched frame,ext hollow perp raise stretch
+1.15,Vertical angles are equal,"When two lines cross, opposite angles are equal!",8,1,0,1,89%,1 watched frame,ext hollow line spinw
+1.16,The outside angle is bigger,The outside angle is bigger than either inside opposite angle!,7,7,1,6,50%,Prop 10; 6 watched frames,circ ext line midp turn
+1.17,Two angles of a triangle are less than two right angles,Any two angles of a triangle make less than two right angles!,6,1,0,1,86%,1 watched frame,ext gemin hollow
+1.18,The greater side has the greater angle opposite it,The longer side faces the bigger angle!,5,1,0,1,83%,1 watched frame,circ gemin line
+1.19,The greater angle has the greater side opposite it,The bigger angle faces the longer side!,3,1,0,1,75%,1 watched frame,gemin home wrong
+1.20,Two sides together are longer than the third,Two sides of a triangle are always longer than the third!,7,1,0,1,88%,1 watched frame,circ ext gemin line string
+1.21,Two lines meeting inside a triangle,"A shorter way round, but a wider angle!",6,1,0,1,86%,1 watched frame,ext gemin string
+1.22,Triangle from three given lines,We can build a triangle from any three lengths!,4,6,3,3,40%,Prop 3 ×3; 3 watched frames,circ cut line
+1.23,Copy an angle onto a line,Now we can copy any angle onto any line!,5,7,5,2,42%,choose a point ×2; Prop 3; Prop 2 ×2; 2 watched frames,circ cpy cut line place
+1.24,Hinge: a bigger angle gives a bigger base,A wider angle between equal sides gives a longer base!,5,1,0,1,83%,1 watched frame,gemin lay line string
+1.25,Converse of the hinge,A longer base means a wider angle!,2,1,0,1,67%,1 watched frame,straighten wrong
+1.26 case 1,Two angles and a side,Two angles and a side fix the triangle!,4,1,0,1,80%,1 watched frame,home lay stretch wrong
+1.26 case 2,Two angles and a side,Two angles and a side fix the triangle!,5,1,0,1,83%,1 watched frame,home lay stretch wrong
+1.27,Equal alternate angles mean parallel lines,Equal alternate angles: the lines never meet!,6,1,0,1,86%,1 watched frame,ext home stretch wrong
+1.28,More tests for parallel lines,Matching angles mean parallel lines!,8,1,0,1,89%,1 watched frame,ext gemin hollow spinw
+1.29,Parallel lines make equal angles,Parallel lines make equal angles!,12,1,0,1,92%,1 watched frame,ext gemin hollow home spinw wrong
+1.30,Parallel to the same line means parallel to each other,"Parallel to the same line, parallel to each other!",3,3,2,1,50%,choose a point ×2; 1 watched frame,gemin line place
+1.31,Draw a parallel through a point,A parallel line through any point!,2,4,2,2,33%,choose a point; Prop 23; 2 watched frames,ang ext line place
+1.32,Angles of a triangle add to two right angles,The angles of a triangle make two right angles!,6,2,1,1,75%,Prop 31; 1 watched frame,ext gemin hollow par
+1.33,Joining the ends of equal parallel lines,Equal and parallel on both sides!,4,2,0,2,67%,2 watched frames,gemin line
+1.34,Opposite sides and angles of a parallelogram,"Opposite sides and angles match, and the diagonal halves it!",3,2,0,2,60%,2 watched frames,gemin line
+1.35,"Same base, same parallels: equal parallelograms","Same base, same parallels, same area!",5,1,0,1,83%,1 watched frame,lay line piece
+1.36,"Equal bases, same parallels","Equal bases, same height, same area!",4,1,0,1,80%,1 watched frame,line morph
+1.37,Triangles on the same base between parallels,Slide the top along a parallel: the area stays the same!,3,3,2,1,50%,Prop 31 ×2; 1 watched frame,morph par spin
+1.38,Triangles on equal bases between parallels,"Equal bases, same height: equal triangles!",3,3,2,1,50%,Prop 31 ×2; 1 watched frame,morph par spin
+1.39,Equal triangles on one base lie between parallels,Equal triangles on one base lie between parallels!,6,2,1,1,75%,Prop 31; 1 watched frame,home line morph par piece wrong
+1.40,Equal triangles on equal bases lie between parallels,Equal triangles on equal bases lie between parallels!,6,2,1,1,75%,Prop 31; 1 watched frame,home line morph par piece wrong
+1.41,A parallelogram is double a triangle,A parallelogram is double the triangle on its base!,3,1,0,1,75%,1 watched frame,line morph spin
+1.42,Make a parallelogram equal to a triangle,A triangle reshaped into a parallelogram with any angle!,7,5,4,1,58%,Prop 10; Prop 23; Prop 31 ×2; 1 watched frame,ang line midp morph par spin
+1.43,Complements of a parallelogram,The complements are equal!,7,4,3,1,64%,choose a point; Prop 31 ×2; 1 watched frame,line par piece place spin
+1.44,Apply a parallelogram to a line,Any area can be laid along any line!,8,8,3,5,50%,Prop 42; Prop 31 ×2; 5 watched frames,ext lay line par pgram
+1.45,A parallelogram equal to any straight-sided figure,Any straight-sided figure can become a parallelogram!,2,9,2,7,18%,Prop 42; Prop 44; 7 watched frames,apl lay line pgram
+1.46,A square on a line,A square on any line!,0,8,4,4,0%,Prop 11; Prop 3; Prop 31 ×2; 4 watched frames,cut par perp
+1.47,The Pythagorean theorem,The square on the long side equals the other two squares!,8,7,4,3,53%,Prop 46 ×3; Prop 31; 3 watched frames,line morph par spin sq
+1.48,Converse of the Pythagorean theorem,Squares that add up mean a right angle!,1,8,2,6,11%,Prop 11; Prop 3; 6 watched frames,cut line perp

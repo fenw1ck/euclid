@@ -15,6 +15,9 @@ Engine steps:   everything else the learner sits through = Taps + Watched frames
   Watched frames: frames of the proof animation, which the learner only watches.
 Hands-on share: User steps / (User steps + Engine steps). Low numbers show where work is needed.
 Engine work:    what the taps and frames are, to plan which ones become moves.
+Tools:          every move type the proof uses (its op names in proofs.js, space-separated), so the
+                proofs that use a tool are easy to find. tools-index.csv lists, for each tool,
+                whether it is hands-on or a tap and every proof that uses it.
 Lines the engine counts as already drawn are left out. Points the engine finds by itself
 (where circles or lines cross) are instant and not counted.
 """
@@ -24,7 +27,7 @@ from playwright.async_api import async_playwright
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 HANDS_ON = {"line", "circ", "ext", "rot", "wrong", "push", "flip", "amatch", "smatch", "lift",
-            "wcmp", "spinw", "turn", "raise", "lay", "gemin", "pretend", "straighten", "stretch", "morph", "spin", "string"}
+            "wcmp", "spinw", "turn", "raise", "lay", "gemin", "pretend", "straighten", "stretch", "morph", "spin", "string", "piece", "home"}
 TAP_NAMES = {"place": "choose a point", "tri": "tap a triangle", "tapseg": "tap a line",
              "rmark": "tap an angle", "wmark": "tap an angle", "tapang": "tap an angle"}
 SHORT = {"midp", "par", "ang", "cpy", "cut", "bis", "perp", "pgram", "apl", "sq"}  # index.html's MAC: tap a short version
@@ -73,7 +76,8 @@ async def main():
         pg = await b.new_page(viewport={"width": 800, "height": 900})
         await pg.add_init_script("window.FASTMODE=1;localStorage.clear()")
         await pg.goto((ROOT / "index.html").as_uri())
-        rows = [["Prop", "Name", "Win message", "User steps", "Engine steps", "Taps", "Watched frames", "Hands-on share", "Engine work"]]
+        rows = [["Prop", "Name", "Win message", "User steps", "Engine steps", "Taps", "Watched frames", "Hands-on share", "Engine work", "Tools"]]
+        uses = {}
         for i in range(1, 49):
             n = await pg.evaluate("id=>{go(id);return (P.cases||[0]).length}", i)
             for c in range(n):
@@ -83,11 +87,20 @@ async def main():
                 user, taps, frames = SLIDE[i] if i in SLIDE else (*classify(r["ops"]), r["frames"])
                 engine = len(taps) + frames
                 share = f"{round(100 * user / (user + engine))}%" if user + engine else ""
-                rows.append([f"1.{i}" + (f" case {c + 1}" if n > 1 else ""), r["name"], r["win"],
-                             user, engine, len(taps), frames, share, describe(taps, frames)])
+                pid = f"1.{i}" + (f" case {c + 1}" if n > 1 else "")
+                tools = sorted({o["t"] for o in r["ops"]} | ({"slide"} if i in SLIDE else set()))
+                for tl in tools:
+                    uses.setdefault(tl, []).append(pid)
+                rows.append([pid, r["name"], r["win"], user, engine, len(taps), frames, share, describe(taps, frames), " ".join(tools)])
         await b.close()
     with open(ROOT / "win-messages.csv", "w", newline="", encoding="utf-8") as f:
         csv.writer(f).writerows(rows)
-    print("wrote win-messages.csv,", len(rows) - 1, "rows")
+    kind = lambda tl: "hands-on" if tl in HANDS_ON or tl in ("hollow", "slide") else "tap (short version)" if tl in SHORT else "tap"
+    with open(ROOT / "tools-index.csv", "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["Tool", "Kind", "Props", "Count"])
+        for tl in sorted(uses, key=lambda x: (kind(x), x)):
+            w.writerow([tl, kind(tl), " ".join(uses[tl]), len(uses[tl])])
+    print("wrote win-messages.csv,", len(rows) - 1, "rows, and tools-index.csv,", len(uses), "tools")
 
 asyncio.run(main())
