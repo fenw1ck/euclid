@@ -101,6 +101,10 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
 - **Walking:** WASD or the arrow keys, a controller (left stick or d-pad), or tap the floor where you want to go. You walk down the room and from side to side; doors and paintings still respond to taps from wherever you stand. Entering a room starts you at its entrance.
 - Glass doors lead straight into the neighbouring room again. (The top-down garden walk from 24 Nov, `enterGreen`, is no longer reached from the halls.)
 - Art: `furniture.js` (bookshelf, armchair, side table) and `plants.js` from Art-Assets.
+- **Bedroom** (built, 25 Nov 2026): a square room (about 4.4–6 m across). Its floor is always indoor (stone or wood) with a carpet. It always has one bed, or two side by side against the far wall (a bunk bed counts as one), chosen from canopy, tree of life, art deco, four-post, bunk and Japanese futon. A nightstand with drawers stands by the bed (two beds share the one between them, and the second gets its own); on it a nightlight: a cylinder, a sphere or a jar of fireflies. It may have a mobile over the bed (propeller planes, woodland creatures or space), a bookcase, an armchair and the hall's statues. Lighting comes from the hall's light style plus the nightlights. Beds and nightstands are the places to hide coins and items later.
+- **Room sizes:** rooms differ in width (corridor 2.6–3.6 m, greenhouse 3–4.6 m, library 3.2–4.8 m) and bedrooms are square. The hall layout (doors, lights, paintings, statues) is designed on a 3 m × 13 m corridor and stretched to each room's size.
+- **Indoor floors:** every room except the greenhouse has a stone or wood floor from `floors.js` (corridor stone, library wood, bedroom either), drawn row by row so it stays true in perspective, with a carpet: a runner in corridors that have one, a large carpet in the library, a rug in every bedroom.
+- Art: `floors.js` and `bedroom.js` from Art-Assets.
 
 ## 4. Treasure, coins and the statue shop
 
