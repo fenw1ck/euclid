@@ -176,6 +176,22 @@ Proposed rules (open to change):
 - Deeper halls drop rarer items.
 - The Iron and Starmetal Axes come by milestone for now (12 and 30 solved locks); once the shop exists they can be bought instead.
 
+## 4b. Game systems (built 25 Nov 2026)
+
+The rules and numbers live in **engine.js** (Art Assets; see its "Game engine" tab, which runs each part live and has an Edit button that opens a prefilled Request Builder ticket). game.html applies them. Change a number in engine.js and copy the file here.
+
+- **Time:** a game clock, 1 real second = 1 game minute (a day is 24 minutes), shown top right with ☀/☾. Growing greenhouse plants are ready 6 game hours after you first see them (this replaced "ready after your next lock").
+- **Health:** 100, shown as a bar top right. Lost to creatures, traps, falls and timed-out locks; regained from food (raw food +4, cooked +12, baked potato +14, dishes 24–42) and 2 an hour over time. At 0 you faint and wake at the front doors with 50, a tenth of your coins dropped.
+- **Keys:** M map, I / B / Tab bag, WASD / arrows walk, Space jump, C climb, F attack, E use (pick up, open, cook, talk), Esc close or back, H / ? the list of keys (also the ? button by the clock). Controller sticks still walk.
+- **Minimap:** the room from above in the corner: doors (gold when open), items, ledge, traps, the creature (red hostile, green friendly), the campfire or stove, and you with your view.
+- **Lock timers:** every unsolved lock is timed (2 minutes plus 25 seconds a proof step; the bar is at the top). Run out and the lock snaps shut (−10 health) and seals for 90 game minutes; it says how long when you try it.
+- **Ledges:** about one corridor, library or bedroom in three has a stone ledge along a wall, 0.6 m (jump onto it with Space) or 1.2 m (climb with C), usually with one of the room's items on top (out of reach from the floor). Stepping off a 1.2 m ledge costs 13 health.
+- **Traps:** pressure plates (faint slabs; spikes spring up, −12; jump over them). Path rooms (from hall 5, about one in six): bronze studs and lines on the floor; walk every line once without going back over one (an Euler trail). Backtracking fires the room's trap (flame throwers in the walls, spikes or poison fog, −15); finishing pays coins from a hidden drawer.
+- **Combat:** from hall 3, about one room in five holds a creature (harpy from hall 3, basilisk 8, minotaur 14, manticore 20, hydra 28). About a third are friendly until struck (E to look at them). Hostile ones close in and bite on a timer. Wield a knife, sword or staff (Bag → Wield; bronze, iron or starmetal; bought at the statue) and press F or tap the creature; fists do 2. Weapons wear out (perfect, damaged, broken) and can be put away again. A slain creature drops coins.
+- **Cooking:** ingredients (food that must be cooked: raw potatoes, eggplant, beans, winter squash, rhubarb, asparagus, sunflower seeds, lavender) can't be eaten raw. Cook them in a **kitchen** oven (a new room type: a cast-iron range always, and a table or an island) or in a **cauldron over the campfire** that burns in every greenhouse (buy the cauldron at the statue; each dish takes 2 firewood). Only dishes with at least one ingredient can be cooked. Cooking is a timing check per ingredient (stop the marker in the lit range: one wide range for a baked potato; three or four narrow ones for Potato Soup, Bean Stew or Ratatouille). Miss and you get a Burnt Lump.
+- **Fuel:** every strike on vines gives 1 kindling; 5 kindling count as 1 firewood. Fruit trees in greenhouses give fruit (again a day later), and with the ax they can be cut down for 3 firewood. The statue sells firewood.
+- **Shop:** now also sells the nine weapons, the cauldron and firewood.
+
 ## 5. Sound
 
 - **Music:** ten songs in a dungeon-crawl style, but bright (adventure, curiosity, fun). Drums lead (kick, snare backbeat, hats, fills on every song); the lead line is kept soft. They are composed in code from a seed: a melody, bass, pad, arpeggio and drums, with an echo like a stone room. Each song plays twice, then the next one starts.

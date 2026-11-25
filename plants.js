@@ -312,10 +312,13 @@ function drawPotato(ctx,p,x,y,w,h,stage,seed,o){o=o||{};const R=rng(seed||7),hil
    item: the produce id ("produce-<plant id>", or "potato"); cook: must be cooked before it can be eaten. A potato
    gives 3 tubers, plus 2 for each time it was hilled (up to 3 times): 3, 5, 7, 9. */
 const PART={fruit:/^(tomato|pepper|eggplant|corn|bean|pea|squash|cucumber|strawberry|raspberry|blueberry|apple|pear|peach|fig|lemon)/,root:/^(potato|carrot|beet|radish|onion|garlic)/,flower:/^(broccoli|marigold|nasturtium|sunflower|zinnia|lavender)/};
-const COOK=/^potato/; /* only the potato must be cooked for now (it has the baked art); add others with their cooked art */
+/* ingredient: must be cooked before it can be eaten (raw potato, eggplant, dry beans, winter squash, rhubarb, asparagus,
+   lavender and sunflower seeds are cooked or baked); every other food plant gives food that can be eaten as it is.
+   Not food: ornamental flowers (zinnia, French marigold) give a flower to keep or sell. */
+const COOK=/^(potato|eggplant|bean|squash_winter|rhubarb|asparagus|lavender|sunflower)/,NOTFOOD=/^(zinnia|marigold)/;
 function harvest(p,o){o=o||{};if(!p)return null;const id=p.id,part=PART.fruit.test(id)?'fruit':PART.root.test(id)?'root':PART.flower.test(id)?'flower':'leaf';
   if(/^(pothos|snake_plant|monstera|peace_lily|spider_plant)/.test(id))return null; /* houseplants: nothing to eat */
-  const potato=id==='potato',hill=Math.max(0,Math.min(3,o.hill||0));return{part,item:potato?'potato':'produce-'+id,name:p.common_name,cook:COOK.test(id),count:potato?3+2*hill:1+(o.seed||0)%3,tuber:potato}}
+  const potato=id==='potato',hill=Math.max(0,Math.min(3,o.hill||0));const food=!NOTFOOD.test(id),ing=food&&COOK.test(id);return{part,item:potato?'potato':'produce-'+id,name:p.common_name,food,ingredient:ing,cook:ing,count:potato?3+2*hill:1+(o.seed||0)%3,tuber:potato}}
 const ART=[[isTomato,(...a)=>drawTomato(...a)],[p=>/^pepper|^eggplant/.test(p.id),drawPepper],[p=>/^(basil|mint|thyme)/.test(p.id),drawMintFamily],[p=>/^(parsley|cilantro|dill)/.test(p.id),drawCarrotFamily],[p=>/^chives/.test(p.id),drawChives],[p=>p.id==='potato',drawPotato]];
 
 /* plants with their own drawing go there; the rest, and seedlings, dormant and dead plants, use the Planting Guide's drawing */
