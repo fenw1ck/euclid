@@ -94,12 +94,13 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
 - **Save.** `S.ax` (0 none, 1–3 the tier) and `S.vd` (each door's damage, 0–1). Saved games with progress get the Bronze Ax (and any upgrade they have earned) on load. Start over clears both.
 - **Art.** `vines.js`, `tools.js` and `core.js` are copied from Art-Assets (research: `research/subjects/plants/` and `research/objects/tools/`). Each door's vine is drawn once per damage step and kept; hall doors map it onto the wall in strips, like the paintings.
 
-## 3c. Greenhouses you walk through (built, 24 Nov 2026)
+## 3c. Room types, walked in the corridor's view (built, 25 Nov 2026)
 
-- A glass door between two solved halls now opens into a greenhouse instead of jumping straight to the other hall. Each pair of halls has its own garden (`GARDEN.plan` from garden.js, Art-Assets), seeded by the pair, so rooms differ in size and layout (8×16 up to 50×50 cells) and theme (herb, kitchen, fruit, flower, mixed): beds full of plants, a fountain in the bigger ones, lanterns, benches and tools.
-- Floors are wild: paths of irregular flagstone with moss in the joints, or packed dirt, with grass creeping in (`render(plan, s, {wild:true})`).
-- Walk with WASD, the arrow keys, a controller (left stick or d-pad), or tap where to go. Beds and the fountain block the way; you slide along their edges. The gate at the bottom (marked with the hall you came from) leads back; the glass door at the top (marked with the other hall) leads on. ‹ Back also returns.
-- Bridge greenhouse doors (to an unsolved lock) still open the lock directly. The statue shop will stand in these rooms later.
+- **Every hall is a room of one type**, chosen at random the first time you walk into it after solving its lock, and kept in the save (`S.rooms`). Types now: **corridor** (stone, paintings, windows), **greenhouse** (glass walls and roof with glazing bars, grass floor, a flagstone path down the middle, dirt beds of plants along both walls, grass tufts) and **library** (panelled walls lined with bookshelves, a painting every third bay, wall-to-wall red carpet with a runner, armchairs with side tables and lit lamps). Bedroom, pantry, bathroom and kitchen can follow as more types in `ROOMTYPES` / `ROOMLOOK`.
+- **One view and one set of mechanics for every room:** the corridor's perspective, doors, locks, vines, statues and lights. Rooms differ in surfaces (`roomSurfaces`) and furnishings (`roomThings`).
+- **Walking:** WASD or the arrow keys, a controller (left stick or d-pad), or tap the floor where you want to go. You walk down the room and from side to side; doors and paintings still respond to taps from wherever you stand. Entering a room starts you at its entrance.
+- Glass doors lead straight into the neighbouring room again. (The top-down garden walk from 24 Nov, `enterGreen`, is no longer reached from the halls.)
+- Art: `furniture.js` (bookshelf, armchair, side table) and `plants.js` from Art-Assets.
 
 ## 4. Treasure, coins and the statue shop
 
