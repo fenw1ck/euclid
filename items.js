@@ -133,12 +133,30 @@ D.boots=(ctx,o)=>{foot(ctx,o,.12,true);foot(ctx,o,-.08,false)};
 D.shirt=(ctx)=>{const c='#efe6d0';ctx.beginPath();ctx.moveTo(-.2,-.95);ctx.lineTo(-.45,-.8);ctx.lineTo(-.4,-.6);ctx.lineTo(-.25,-.65);ctx.lineTo(-.28,0);ctx.lineTo(.28,0);ctx.lineTo(.25,-.65);ctx.lineTo(.4,-.6);ctx.lineTo(.45,-.8);ctx.lineTo(.2,-.95);ctx.quadraticCurveTo(0,-.85,-.2,-.95);ctx.closePath();ctx.fillStyle=shade(ctx,-.4,-1,.4,0,c,.2);ctx.fill();out(ctx,c,.012);
   ctx.strokeStyle='rgba(120,100,70,.35)';ctx.lineWidth=.008;for(const x of[-.12,0,.12]){ctx.beginPath();ctx.moveTo(x*.8,-.8);ctx.lineTo(x*1.4,-.02);ctx.stroke()}ctx.strokeStyle='#2f5fb0';ctx.lineWidth=.03;ctx.beginPath();ctx.moveTo(-.28,-.06);ctx.lineTo(.28,-.06);ctx.stroke()}; /* a linen chiton with a blue border */
 D.pants=(ctx)=>{const c='#6a5a48';ctx.beginPath();ctx.moveTo(-.25,-.95);ctx.lineTo(.25,-.95);ctx.lineTo(.27,0);ctx.lineTo(.06,0);ctx.lineTo(0,-.6);ctx.lineTo(-.06,0);ctx.lineTo(-.27,0);ctx.closePath();ctx.fillStyle=shade(ctx,-.3,-1,.3,0,c,.25);ctx.fill();out(ctx,c,.012);ctx.fillStyle=darken(c,.2);ctx.fillRect(-.25,-.95,.5,.06)};
+/* potions (research/objects/items/potions/): single-use. A round-bottomed sphere flask, a short stem stopped with a cork,
+   and the fluid's colour shows its strength. Weed killer: weak (pale green), strong (green), strongest (deep green, glowing). */
+const POTION={weak:'#c3d86a',strong:'#45a84e',strongest:'#1d6b3c'};
+D.potion=(ctx,o)=>{const id=o.id||'',st=/strongest/.test(id)?'strongest':/strong/.test(id)?'strong':'weak',fl=o.fluid||POTION[st],R=.36,cy=-R-.02,lvl=o.level==null?.62:o.level;
+  if(st==='strongest'){const g=ctx.createRadialGradient(0,cy,0,0,cy,R*1.7);g.addColorStop(0,'rgba(120,255,170,.35)');g.addColorStop(1,'rgba(120,255,170,0)');ctx.fillStyle=g;ctx.fillRect(-R*1.7,cy-R*1.7,R*3.4,R*3.4)}
+  ctx.save();ctx.beginPath();ctx.arc(0,cy,R,0,TAU);ctx.clip(); /* the fluid, up to its level, with a lighter meniscus */
+  const top=cy+R-2*R*lvl;ctx.fillStyle=shade(ctx,-R,top,R,cy+R,fl,.3);ctx.fillRect(-R,top,2*R,2*R);ctx.fillStyle=lighten(fl,.3);ctx.beginPath();ctx.ellipse(0,top,R*.95,.03,0,0,TAU);ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,.45)';for(let i=0;i<5;i++){const bx=Math.sin(i*2.3+(o.seed||0))*R*.5,by=cy+R*.5-i*.07;if(by>top)ctx.beginPath(),ctx.arc(bx,by,.012+.006*(i%2),0,TAU),ctx.fill()}ctx.restore();
+  ctx.beginPath();ctx.moveTo(-.07,cy-R*.94);ctx.lineTo(-.07,cy-R-.2);ctx.lineTo(.07,cy-R-.2);ctx.lineTo(.07,cy-R*.94);ctx.fillStyle='rgba(225,240,235,.22)';ctx.fill(); /* the stem */
+  ctx.beginPath();ctx.arc(0,cy,R,0,TAU);ctx.fillStyle='rgba(225,240,235,.12)';ctx.fill();ctx.strokeStyle='rgba(60,80,80,.75)';ctx.lineWidth=.014;ctx.stroke();
+  ctx.beginPath();ctx.moveTo(-.07,cy-R*.94);ctx.lineTo(-.07,cy-R-.2);ctx.moveTo(.07,cy-R*.94);ctx.lineTo(.07,cy-R-.2);ctx.stroke();
+  ctx.beginPath();ctx.ellipse(0,cy-R-.2,.095,.025,0,0,TAU);ctx.stroke(); /* the lip */
+  const ck='#b98a52';ctx.beginPath();ctx.moveTo(-.075,cy-R-.17);ctx.lineTo(-.09,cy-R-.32);ctx.lineTo(.09,cy-R-.32);ctx.lineTo(.075,cy-R-.17);ctx.closePath();ctx.fillStyle=shade(ctx,-.09,0,.09,0,ck,.3);ctx.fill();out(ctx,ck,.01);
+  ctx.fillStyle=darken(ck,.3);for(let i=0;i<4;i++){ctx.beginPath();ctx.arc(-.05+i*.033,cy-R-.24-(i%2)*.04,.008,0,TAU);ctx.fill()} /* cork pores */
+  ctx.strokeStyle='rgba(255,255,255,.7)';ctx.lineWidth=.025;ctx.lineCap='round';ctx.beginPath();ctx.arc(0,cy,R*.78,Math.PI*1.08,Math.PI*1.38);ctx.stroke(); /* the highlight, upper left */
+  const tg='#efe3c2';ctx.strokeStyle='#8a6a3a';ctx.lineWidth=.008;ctx.beginPath();ctx.moveTo(.07,cy-R-.12);ctx.lineTo(.2,cy-R+.02);ctx.stroke(); /* the paper tag: one, two or three leaves for its strength */
+  ctx.save();ctx.translate(.24,cy-R+.08);ctx.rotate(.25);ctx.fillStyle=tg;ctx.fillRect(-.07,-.05,.14,.11);ctx.strokeRect(-.07,-.05,.14,.11);const n=st==='weak'?1:st==='strong'?2:3;ctx.fillStyle='#3a7a3a';
+  for(let i=0;i<n;i++){ctx.beginPath();ctx.ellipse(-.035*(n-1)+i*.035,0,.012,.028,.4,0,TAU);ctx.fill()}ctx.strokeStyle='#8a2a2a';ctx.lineWidth=.008;ctx.beginPath();ctx.moveTo(-.06,.045);ctx.lineTo(.06,-.04);ctx.stroke();ctx.restore()};
 D.parcel=(ctx)=>{const c='#b08a5a';ctx.fillStyle=shade(ctx,-.3,-.5,.3,0,c,.2);ctx.fillRect(-.3,-.45,.6,.45);ctx.strokeStyle='#7a2a2a';ctx.lineWidth=.03;ctx.beginPath();ctx.moveTo(0,-.45);ctx.lineTo(0,0);ctx.moveTo(-.3,-.22);ctx.lineTo(.3,-.22);ctx.stroke()};
 D.coin=(ctx,o)=>{ctx.save();ctx.translate(0,-.45);coin(ctx,0,0,.42,o);ctx.restore()};
 D.coins=(ctx,o)=>{coins(ctx,0,0,.8,o.n||5,o)};
 D.chest=(ctx,o)=>{if(window.CONTAINERS)CONTAINERS.drawChest(ctx,{},0,0,1.1,o.state==='open'?'open':'closed',o.seed||1,{fill:o.fill==null?.6:o.fill});else D.parcel(ctx,o)};
 D.ax=(ctx,o)=>{if(window.TOOLS){const t=/star/.test(o.id||'')?2:/iron/.test(o.id||'')?1:0;TOOLS.drawAx(ctx,t,-.25,0,1,.55)}};
-const ALIAS={'scroll':'scroll','boots':'boots','shirt':'shirt','pants':'pants','necklace':'necklace','sword':'sword','cape':'cape','gloves':'gloves','crown':'crown','chalice':'chalice','astrolabe':'astrolabe','compass':'compass','straightedge':'straightedge','lyre':'lyre','tile':'tile','amphora':'amphora','lamp':'lamp','ring':'ring','map':'map','bust':'bust','hourglass':'hourglass','coin':'coin','coins':'coins','chest':'chest','bronze-ax':'ax','iron-ax':'ax','starmetal-ax':'ax'};
+const ALIAS={'scroll':'scroll','potion':'potion','boots':'boots','shirt':'shirt','pants':'pants','necklace':'necklace','sword':'sword','cape':'cape','gloves':'gloves','crown':'crown','chalice':'chalice','astrolabe':'astrolabe','compass':'compass','straightedge':'straightedge','lyre':'lyre','tile':'tile','amphora':'amphora','lamp':'lamp','ring':'ring','map':'map','bust':'bust','hourglass':'hourglass','coin':'coin','coins':'coins','chest':'chest','bronze-ax':'ax','iron-ax':'ax','starmetal-ax':'ax'};
 function keyOf(key){key=String(key||'');if(D[key])return key;if(ALIAS[key])return ALIAS[key];const pre=key.split('-')[0];if(D[pre])return pre;if(ALIAS[pre])return ALIAS[pre];return null}
 function has(key){return !!keyOf(key)}
 function draw(ctx,key,x,y,size,o){o=Object.assign({},o||{},{id:key});const k=keyOf(key)||'parcel';

@@ -115,7 +115,7 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
 - **Scrolls** are single-use guides. Inside a lock, a scroll makes the light run ahead of your hand through each step, so you can follow it. This reuses the site's Solve/Step hand.
 - **Clothes** are ornamental and dress your character: necklace, sword, boots, cape, gloves, crown.
 
-### The 33 items (all in `ITEMS` in the code)
+### The 41 items (all in `ITEMS` in the code)
 
 | # | Item | Kind | Price | Description |
 |---|---|---|---|---|
@@ -129,7 +129,7 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
 | 8 | Golden Ratio Torc | necklace | 30 | A neck ring whose spirals grow by the same proportion every turn. |
 | 9 | Bronze Gnomon Blade | sword | 18 | Its blade casts a shadow that tells the hour. Ornamental, and sharp only in theory. |
 | 10 | Starmetal Sword | sword | 40 | Forged from a fallen star; its edge is a perfectly straight line. |
-| 11 | Scholar's Sandals | boots | 8 | Worn smooth by a thousand walks between the columns. |
+| 11 | Scholar's Sandals | boots | 8 | Strapped sandals: walk ×1.25. Found once, in hall 3. |
 | 12 | Greaves of the Long Stair | boots | 22 | Bronze shin guards etched with a staircase of squares. |
 | 13 | Indigo Night Cape | cape | 14 | Dyed the colour of the sky before the stars were joined. |
 | 14 | Constellation Cloak | cape | 35 | Its stitching maps the 48 stars and every line between them. |
@@ -152,6 +152,22 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
 | 31 | Bronze Ax | tool | — | Cuts back the vines on a door you may open, in ten strikes. Found by the front doors; never sold. |
 | 32 | Iron Ax | tool | 30 | A forged iron head on hickory: six strikes. |
 | 33 | Starmetal Ax | tool | 60 | Forged from a fallen star: three strikes. |
+| 34 | Wayfarer's Boots | boots | 30 | Laced hunting boots: walk ×1.5. Found once, in hall 15, after the sandals. |
+| 35 | Winged Sandals | boots | 70 | Hermes' sandals: walk ×1.8. Found once, in hall 30, after the boots. |
+| 36 | Linen Chiton | shirt | 8 | A plain linen tunic with a blue border. |
+| 37 | Wool Trousers | pants | 8 | Warm, scratchy and good for long corridors. |
+| 38 | Weed Killer (weak) | potion | 6 | Withers 4/10 of a door's vines. Kills a plant. One use. |
+| 39 | Weed Killer (strong) | potion | 14 | Withers 7/10 of a door's vines. Kills a plant. One use. |
+| 40 | Weed Killer (strongest) | potion | 28 | Withers all of a door's vines. Kills a plant. One use. |
+| 41 | Chest | container | 12 | Once emptied, carry it and set it down in any room. |
+
+### Built (25 Nov 2026): items in rooms, the bag, the wardrobe, the shop, weed killer
+- **Rooms:** every room holds 1–3 items, picked per room type (`KINDROOMS`, `ITEMROOMS`; 0 keeps a kind out, e.g. no scrolls in greenhouses, no tools anywhere). About one room in three has a chest: coins (`coinRoll`) plus one random item. An empty chest is an item: carry it, place it in another room.
+- **The bag** (Bag button, bottom left): 16 slots; coins are a count. Tap an item for its card: Use / Pour, Wear, Drop. Dropped items stay where you set them (`S.drops`).
+- **Boots:** the three speed boots never appear at random. Each is found once, tucked behind the far statue in hall 3, 15, 30, and only after you have the one before (found or bought). Worn boots multiply walking speed in halls and greenhouses.
+- **The wardrobe:** seven carved hollows above the bag (hat, cape, shirt, gloves, rings, trousers, boots), the locks' gem-and-hollow idea. Drag clothes into the hollow they fit (it glows), drag them out to take them off. Worn clothes don't use bag space.
+- **The statue shop:** one statue in each greenhouse room glows blue. It sells scrolls and the boots you don't have, buys anything (except tools) at half price, and sells back what you sold it, at full price.
+- **Weed killer** (Potion category, single use): Pour from the bag, then tap a door's vines (they wither by 0.4, 0.7 or all, the same cuts in work as the Iron and Starmetal Axes) or a greenhouse plant (it dies, `S.dead`). Tap anywhere else to put it away.
 
 Proposed rules (open to change):
 - The statue buys items at half price and sells scrolls at full price.

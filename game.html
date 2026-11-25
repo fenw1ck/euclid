@@ -124,6 +124,9 @@ const ITEMS=[
 {id:"gloves-gilded",kind:"gloves",name:"Gilded Gauntlets",price:28,desc:"The fingertips glow faintly gold, as if they remember every figure."},
 {id:"shirt-chiton",kind:"shirt",name:"Linen Chiton",price:8,desc:"A plain linen tunic with a blue border."},
 {id:"pants-wool",kind:"pants",name:"Wool Trousers",price:8,desc:"Warm, scratchy and good for long corridors."},
+{id:"potion-weak",kind:"potion",name:"Weed Killer (weak)",price:6,cut:.4,desc:"Pale green. Pour it on a door's vines to wither four tenths of them. Kills any plant it touches. One use."},
+{id:"potion-strong",kind:"potion",name:"Weed Killer (strong)",price:14,cut:.7,desc:"Green. Pour it on a door's vines to wither seven tenths of them. Kills any plant it touches. One use."},
+{id:"potion-strongest",kind:"potion",name:"Weed Killer (strongest)",price:28,cut:1,desc:"Deep green, and it glows. Withers every vine on a door. Kills any plant it touches. One use."},
 {id:"crown-laurel",kind:"crown",name:"Laurel Wreath",price:10,desc:"Given to those who prove what others only suspect."},
 {id:"crown-elements",kind:"crown",name:"Crown of the Elements",price:60,desc:"Five points for five postulates. Found only in the deepest halls."},
 {id:"chalice",kind:"treasure",name:"Silver Chalice",price:16,desc:"Its rim is a perfect circle; its stem, a perfect line."},
@@ -243,7 +246,7 @@ document.getElementById("mapb").textContent=s==="map"?"✕ Map":"Map";HELP=null;
 function fadeTo(s,ms=700,cb){if(fade)return;fade={t0:now(),ms,s,cb,sw:false}}
 function frame(){const T=now(),t=(T-sceneT0)/1000;ctx.setTransform(DPR,0,0,DPR,0,0);ctx.globalAlpha=1;ctx.globalCompositeOperation="source-over";ctx.shadowBlur=0;
 if(scene==="title")drawTitle(t);else if(scene==="intro")drawIntro(t);else if(scene==="doors")drawDoors(t);else if(scene==="lock")drawLock(t);else if(scene==="hall")drawHall(t);else if(scene==="map")drawMap(t);else if(scene==="green")drawGreen(t);
-if(scene==="doors"||scene==="hall"){drawVP();drawSwing()}
+if(scene==="doors"||scene==="hall"){drawVP();drawSwing();drawHold(now()/1000)}
 if(fade){const u=(T-fade.t0)/fade.ms;if(u>=.5&&!fade.sw){fade.sw=true;go(fade.s);fade.cb&&fade.cb()}const a=u<.5?u*2:Math.max(0,2-u*2);ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle=`rgba(0,0,0,${a})`;ctx.fillRect(0,0,W,H);if(u>=1)fade=null}
 lastT=T;requestAnimationFrame(frame)}
 
@@ -1069,7 +1072,7 @@ function shelfOnWall(pr,col,s,za,zb,seed){const HW=1.49,ya=-1.0,yb=1.1,img=SHELF
 function roomThings(RT,add,busy,pr,col,f,Zr,t){const HW=1.5,FY=1.1;
   if(RT==="greenhouse"&&window.PLANTS){const L=PLANTS.list,R=rng(hallId*53+1),ps=[0,1,2,3,4].map(()=>L[Math.floor(R()*L.length)]);
     for(let z=.8;z<12.6;z+=.55)for(const s of[-1,1]){if(busy(s,z-.3,z+.3))continue;const pl=ps[Math.floor(R()*ps.length)],x=s*(HW-.28+(R()-.5)*.1),seed=Math.floor(R()*1e5),sz=.55+R()*.35;
-      add(z,()=>{const r=Zr(z),p=pr(x,FY,r);PLANTS.drawFit(ctx,pl,p[0],p[1],sz*f/r,"mature",seed)})}}
+      add(z,()=>{const r=Zr(z),p=pr(x,FY,r),key=hallId+":"+seed,h=sz*f/r;PLANTS.drawFit(ctx,pl,p[0],p[1],h,S.dead[key]?"dead":"mature",seed);if(HOLD&&!S.dead[key])hallHits.push({kind:"plant",key,poly:[[p[0]-h*.35,p[1]-h],[p[0]+h*.35,p[1]-h],[p[0]+h*.35,p[1]],[p[0]-h*.35,p[1]]]})})}}
   if(RT==="library"&&window.FURNITURE){[[-1,5.0],[1,8.4],[-1,11.4],[1,3.2]].forEach(([s,z],i)=>{if(busy(s,z-.5,z+1.2))return;const x=s*(HW-.55);
     add(z+.75,()=>{const r=Zr(z+.75),p=pr(s*(HW-.4),FY,r);FURNITURE.sideTable(ctx,p[0],p[1],.5*f/r,hallId+i,{lamp:true,t})});
     add(z,()=>{const r=Zr(z),p=pr(x,FY,r);FURNITURE.armchair(ctx,p[0],p[1],.85*f/r,hallId*7+i,{view:"side",mirror:s>0})})})}}
@@ -1118,8 +1121,8 @@ function bedroomThings(addR,busyR,P,f,CZ,G,t){const L=bedLayout(hallId),FY=1.1,C
 const BAGSIZE=16;
 const KINDROOMS={scroll:{library:3,corridor:1,bedroom:1,greenhouse:0},necklace:{bedroom:3,library:1,corridor:1,greenhouse:0},ring:{bedroom:3,library:1,corridor:1,greenhouse:0},crown:{bedroom:2,library:1,corridor:1,greenhouse:0},
  sword:{corridor:2,bedroom:1,library:0,greenhouse:0},cape:{bedroom:3,corridor:1,library:0,greenhouse:0},gloves:{bedroom:2,corridor:1,library:1,greenhouse:1},boots:{bedroom:3,corridor:1,library:0,greenhouse:0},shirt:{bedroom:2,corridor:1,library:0,greenhouse:0},pants:{bedroom:2,corridor:1,library:0,greenhouse:0},
- treasure:{corridor:2,library:2,bedroom:1,greenhouse:1},tool:{corridor:0,library:0,bedroom:0,greenhouse:0}};
-const ITEMROOMS={map:{library:3,corridor:1,bedroom:0,greenhouse:0},astrolabe:{library:3},compass:{library:3},straightedge:{library:3},hourglass:{library:2,bedroom:2},lamp:{library:2,bedroom:2},amphora:{greenhouse:2,corridor:2},tile:{greenhouse:2},"crown-elements":{corridor:0,library:0,bedroom:0,greenhouse:0}};
+ treasure:{corridor:2,library:2,bedroom:1,greenhouse:1},potion:{greenhouse:3,corridor:1,library:1,bedroom:1},tool:{corridor:0,library:0,bedroom:0,greenhouse:0}};
+const ITEMROOMS={"potion-strongest":{greenhouse:1,corridor:.3,library:.3,bedroom:.3},map:{library:3,corridor:1,bedroom:0,greenhouse:0},astrolabe:{library:3},compass:{library:3},straightedge:{library:3},hourglass:{library:2,bedroom:2},lamp:{library:2,bedroom:2},amphora:{greenhouse:2,corridor:2},tile:{greenhouse:2},"crown-elements":{corridor:0,library:0,bedroom:0,greenhouse:0}};
 const itemById=id=>id==="chest"?{id:"chest",kind:"container",name:"Chest",price:12,desc:"Empty now. Carry it and set it down in any room."}:ITEMS.find(x=>x.id===id);
 function itemW(it,RT,n){if(it.find)return 0; /* the speed boots are one-time finds (BOOTFIND), never random */const w=(ITEMROOMS[it.id]||{})[RT];if(it.id==="crown-elements"&&n>=40&&RT!=="greenhouse")return .3;return w!=null?w:((KINDROOMS[it.kind]||{})[RT]??1)}
 function pickItem(R,RT,n){const pool=ITEMS.map(it=>[it,itemW(it,RT,n)]).filter(x=>x[1]>0),tot=pool.reduce((a,x)=>a+x[1],0);let u=R()*tot;for(const[it,w]of pool){u-=w;if(u<=0)return it.id}return pool[0][0].id}
@@ -1190,7 +1193,20 @@ const scrollFits=(id,n)=>{const r=SCROLLFOR[id];if(!r)return false;return r.leng
 function useItem(i){const id=S.inv[i],it=itemById(id);
  if(it.kind==="scroll"){if(scene!=="lock"){toast("Open one of its locks, then use it there.");return}if(!scrollFits(id,lockId)){toast("This scroll doesn't fit this lock.");return}
   S.inv.splice(i,1);save();bagClose();bagIcon();document.getElementById("help").click();toast(`${it.name}: the next step glows.`);return}
+ if(it.kind==="potion"){if(scene!=="hall"&&scene!=="doors"){toast("Take it to a door with vines, or a plant.");return}HOLD={id};bagClose();toast("Tap vines or a plant to pour it. Tap anywhere else to put it away.");return}
  toast("Nothing to use it on here.")}
+/* weed killer: Pour from the bag, then tap. On a door's vines it withers a share of them at once (weak 0.4, strong 0.7,
+   strongest all: the same cuts in work as the Iron and Starmetal Axes make), on a garden plant it kills it (S.dead).
+   Either way the flask is used up. */
+let HOLD=null;S.dead=S.dead||{};
+function pourDone(){const i=S.inv.indexOf(HOLD.id);if(i>=0)S.inv.splice(i,1);HOLD=null;save();bagIcon()}
+function pour(id,x,y,map,blocked){const it=itemById(HOLD.id);if(blocked){sfxRattle();toast("Not yet: its lock is covered.");HOLD=null;return}
+ const d0=vineDmg(id),d1=d0+it.cut>.995?1:d0+it.cut;S.vd[id]=d1;vShake[id]=now();pourDone();sfxRustle();
+ const m=VMETA[id],v=vineOf(id);if(m){const top=map(.5,0),bot=map(.5,1),wp=dist(top,bot)/m.aspect;
+  for(const l of VINES.removed(v.kind,m.aspect,vineSeed(id),d0,d1,m.lock)){const p=map(l.x,l.y/m.aspect);VP.push({leaf:v.kind,x:p[0],y:p[1],a:l.a,s:Math.max(4,l.s*wp),col:"#7a6a3a",vx:(Math.random()-.5)*40,vy:20+Math.random()*40,vr:(Math.random()-.5)*3,t0:now()+Math.random()*500,life:1.6+Math.random()*.8,ph:Math.random()*6})}}
+ toast(d1>=1?"The vines wither away.":`${it.name}: the vines wither back.`);if(d1>=1)setTimeout(()=>sfxChime(true),500)}
+function pourPlant(key){S.dead[key]=1;pourDone();sfxRustle();toast("The plant withers and dies.")}
+function drawHold(t){if(!HOLD||!window.ITEMART||(scene!=="hall"&&scene!=="doors"))return;const sz=Math.min(W,H)*.2;ctx.save();ctx.translate(W-sz*.9,H-sz*.8+Math.sin(t*2)*4);ctx.rotate(-.35);ITEMART.draw(ctx,HOLD.id,0,0,sz,{});ctx.restore()}
 function dropItem(i){if(scene!=="hall"){toast("Go into a room to set it down.");return}const id=S.inv[i];S.inv.splice(i,1);(S.drops[hallId]=S.drops[hallId]||[]).push({uid:"d"+Date.now(),id,x:clamp(CAM.x,-(CURG.RW-.6),CURG.RW-.6),z:Math.min(CURG.RL-.8,CAM.z+1.7),opened:id==="chest"?1:undefined});save();bagIcon();renderBag();toast(`Set down: ${itemById(id).name}`)}
 const itemCanvas=(sel,ids)=>document.querySelectorAll(sel).forEach((cv,i)=>{const g=cv.getContext("2d");try{ITEMART.draw(g,ids[i],48,86,72,{seed:i*7+3,state:ids[i]==="chest"?"open":undefined,fill:0})}catch(e){}});
 const coinsTxt=n=>`${n} coin${n===1?"":"s"}`;
@@ -1205,7 +1221,7 @@ function renderBag(){const box=document.getElementById("bag"),inv=S.inv;if(SHOP)
  if(typeof BAGSEL==="string"){const id=S.worn[BAGSEL];if(!id){d.innerHTML=`<p class="bn">The ${SLOTS.find(x=>x[0]===BAGSEL)[1].toLowerCase()} hollow is empty. Drag clothes from your bag into it.</p>`;return}
   const it=itemById(id);d.innerHTML=`<h3>${esc(it.name)}</h3><p class="bn">worn${it.speed?` · walking speed ×${it.speed}`:""}</p><p>${esc(it.desc)}</p><div class="bbtn"><button class="btn" id="boff">Take off</button></div>`;document.getElementById("boff").onclick=()=>unwear(BAGSEL);return}
  if(BAGSEL<0||BAGSEL>=inv.length){d.innerHTML=`<p class="bn">Tap an item to see it. Drag clothes into the hollows above to wear them.${inv.length?"":" Items lie in every room: tap one to pick it up."}</p>`;return}
- const it=itemById(inv[BAGSEL]),sl=slotOf(it);d.innerHTML=`<h3>${esc(it.name)}</h3><p class="bn">${esc(it.kind)}${it.speed?` · walking speed ×${it.speed}`:""} · sells for ${coinsTxt(Math.floor((it.price||0)/2))}</p><p>${esc(it.desc)}</p><div class="bbtn">${sl?`<button class="btn" id="bwear">Wear</button>`:""}${it.kind==="scroll"?`<button class="btn" id="buse">Use</button>`:""}${it.kind!=="tool"?`<button class="btn" id="bdrop">${it.id==="chest"?"Place it here":"Drop"}</button>`:""}</div>`;
+ const it=itemById(inv[BAGSEL]),sl=slotOf(it);d.innerHTML=`<h3>${esc(it.name)}</h3><p class="bn">${esc(it.kind)}${it.speed?` · walking speed ×${it.speed}`:""} · sells for ${coinsTxt(Math.floor((it.price||0)/2))}</p><p>${esc(it.desc)}</p><div class="bbtn">${sl?`<button class="btn" id="bwear">Wear</button>`:""}${it.kind==="scroll"||it.kind==="potion"?`<button class="btn" id="buse">${it.kind==="potion"?"Pour":"Use"}</button>`:""}${it.kind!=="tool"?`<button class="btn" id="bdrop">${it.id==="chest"?"Place it here":"Drop"}</button>`:""}</div>`;
  const bw=document.getElementById("bwear");if(bw)bw.onclick=()=>wear(BAGSEL);
  const u=document.getElementById("buse");if(u)u.onclick=()=>useItem(BAGSEL);const dr=document.getElementById("bdrop");if(dr)dr.onclick=()=>{dropItem(BAGSEL);BAGSEL=-1;renderBag()}}
 function renderShop(box){const stock=shopStock(),inv=S.inv,sell=inv.map((id,i)=>[id,i]).filter(([id])=>itemById(id).kind!=="tool");
@@ -1223,11 +1239,12 @@ function renderShop(box){const stock=shopStock(),inv=S.inv,sell=inv.map((id,i)=>
 function begin(){audioInit();document.getElementById("menu").style.display="none";go("intro")}
 cv.addEventListener("pointerdown",e=>{const x=e.clientX,y=e.clientY;audioInit();if(fade)return;
 if(scene==="title"){if(!hasProgress())begin();return}if(scene==="green")return greenTap(x,y);if(scene==="intro")return endIntro();if(scene==="map")return mapTap(x,y);
-if(scene==="doors"){if(axSpotHit(x,y))return takeAx();const D=doorLayout();if(y<D.y0||y>D.y0+D.dh||x<D.x0||x>D.x0+D.tw)return;const id=x<D.x0+D.lw?1:4;
-if(vined(id)){const ox=D.x0+(id===1?0:D.lw);return chopTap(id,x,y,(u,v)=>[ox+u*D.lw,D.y0+v*D.dh],false)}
+if(scene==="doors"){if(axSpotHit(x,y))return takeAx();const D=doorLayout();if(y<D.y0||y>D.y0+D.dh||x<D.x0||x>D.x0+D.tw){if(HOLD){HOLD=null;toast("You put the flask away.")}return}const id=x<D.x0+D.lw?1:4;
+if(vined(id)){const ox=D.x0+(id===1?0:D.lw);if(HOLD)return pour(id,x,y,(u,v)=>[ox+u*D.lw,D.y0+v*D.dh],false);return chopTap(id,x,y,(u,v)=>[ox+u*D.lw,D.y0+v*D.dh],false)}
 if(!solved(id))return openLock(id);if(doorOpenAmt(id)>=1){hallStack=[];enterHall(id)}return}
 if(scene==="lock"){cv.setPointerCapture(e.pointerId);return lockId===4?l4Down(x,y):FIGS[lockId]?figDown(x,y):lkDown(x,y)}
-if(scene==="hall"){if(BP){BP=null;return}if(PLQ){hidePlaque();return}{const hb=hallHits.find(h=>h.kind==="item"&&h.it.hidden&&inPoly([x,y],h.poly));if(hb){itemTap(hb.it);return}}for(let i=hallHits.length-1;i>=0;i--){const h=hallHits[i];if(!inPoly([x,y],h.poly))continue;if(h.kind==="item"){itemTap(h.it);return}if(h.kind==="shop"){shopOpen();return}if(h.kind==="mind"){showPlaque(h.who);return}if(h.kind==="art"){const T=now();if(artTap.id===h.id&&T-artTap.t<450){BP={id:h.id,t0:T};document.getElementById("toast").style.opacity=0;artTap={id:null,t:0};sfxChime(false)}else{artTap={id:h.id,t:T};if(!S.bpHint){S.bpHint=1;save();toast("Double-tap a painting to see its blueprint.")}}return}if(h.kind==="door"&&h.st!=="open"&&vined(h.id)){chopTap(h.id,x,y,h.map,h.st!=="amber");return}if(h.st==="amber"){if(hasLock(h.id))openLock(h.id);else{sfxChime(false);toast("This lock is still being made.")}}else if(h.st==="open")enterHall(h.id);else if(h.st==="covered"){sfxRattle();toast("Its lock is covered.")}return}hallFloorTap(x,y)}});
+if(scene==="hall"){if(BP){BP=null;return}if(PLQ){hidePlaque();return}{const hb=hallHits.find(h=>h.kind==="item"&&h.it.hidden&&inPoly([x,y],h.poly));if(hb){itemTap(hb.it);return}}
+if(HOLD){for(let i=hallHits.length-1;i>=0;i--){const h=hallHits[i];if(!inPoly([x,y],h.poly))continue;if(h.kind==="door"&&h.st!=="open"&&vined(h.id))return pour(h.id,x,y,h.map,h.st!=="amber");if(h.kind==="plant")return pourPlant(h.key)}HOLD=null;toast("You put the flask away.");return}for(let i=hallHits.length-1;i>=0;i--){const h=hallHits[i];if(!inPoly([x,y],h.poly))continue;if(h.kind==="item"){itemTap(h.it);return}if(h.kind==="shop"){shopOpen();return}if(h.kind==="mind"){showPlaque(h.who);return}if(h.kind==="art"){const T=now();if(artTap.id===h.id&&T-artTap.t<450){BP={id:h.id,t0:T};document.getElementById("toast").style.opacity=0;artTap={id:null,t:0};sfxChime(false)}else{artTap={id:h.id,t:T};if(!S.bpHint){S.bpHint=1;save();toast("Double-tap a painting to see its blueprint.")}}return}if(h.kind==="door"&&h.st!=="open"&&vined(h.id)){chopTap(h.id,x,y,h.map,h.st!=="amber");return}if(h.st==="amber"){if(hasLock(h.id))openLock(h.id);else{sfxChime(false);toast("This lock is still being made.")}}else if(h.st==="open")enterHall(h.id);else if(h.st==="covered"){sfxRattle();toast("Its lock is covered.")}return}hallFloorTap(x,y)}});
 cv.addEventListener("pointermove",e=>{if(scene==="lock")(lockId===4?l4Move:FIGS[lockId]?figMove:lkMove)(e.clientX,e.clientY);else if(e.pointerType==="mouse")axCursor(e.clientX,e.clientY)});
 cv.addEventListener("pointerup",e=>{if(scene==="lock")(lockId===4?l4Up:FIGS[lockId]?figUp:lkUp)(e.clientX,e.clientY)});
 cv.addEventListener("pointercancel",()=>{if(scene==="lock"){LK.drag=null;LK4.drag=null;if(LKF){LKF.drag=null;LKF.ghost=null;LKF.ext=null}if(LK4.ghost&&LK4.ghost.t!=="t")LK4.ghost=null}});
@@ -1238,7 +1255,7 @@ function contGame(){audioInit();hallStack=[];fadeTo("doors",800)}
 document.getElementById("cont").addEventListener("click",contGame);
 const newB=document.getElementById("newg");let newArm=-1e9;
 newB.addEventListener("click",()=>{audioInit();if(now()-newArm>3500){newArm=now();newB.textContent="Erase progress?";setTimeout(()=>newB.textContent="Start over",3500);return}
-S.solved=[];S.coins=0;S.inv=[];S.ax=0;S.vd={};S.rooms={};S.taken={};S.opened={};S.drops={};S.got={};S.worn={};S.sold=[];save();VC.clear();doorOpenT={1:null,4:null};hallStack=[];newB.textContent="Start over";begin()});
+S.solved=[];S.coins=0;S.inv=[];S.ax=0;S.vd={};S.rooms={};S.taken={};S.opened={};S.drops={};S.got={};S.worn={};S.sold=[];S.dead={};HOLD=null;save();VC.clear();doorOpenT={1:null,4:null};hallStack=[];newB.textContent="Start over";begin()});
 document.getElementById("relock").addEventListener("click",()=>{if(scene==="hall"&&hasLock(hallId))openLock(hallId)});
 document.getElementById("help").addEventListener("click",()=>{if(scene==="lock"&&EMB){lockF.contentWindow.postMessage({cmd:"step"},"*");return}if(scene==="lock")HELP={t0:now(),path:helpPath()}});
 document.getElementById("bagb").addEventListener("click",()=>{audioInit();const b=document.getElementById("bag");if(b.style.display==="block")bagClose();else bagOpen()});
