@@ -7,6 +7,7 @@
      o     seed; state (coins: 'fresh' | 'worn' | 'rusty' | 'muddy'); metal (coins: 'gold' | 'silver' | 'bronze')
    ITEMART.coin(ctx, x, y, r, o)          one coin, centred on (x, y), radius r: beaded rim, a legend round the edge, a crest
    ITEMART.coins(ctx, x, y, size, n, o)   a small heap of n coins (for chests and drops)
+   o.ribbon       scrolls: the ribbon's colour (each game scroll has its own; otherwise the seed picks one)
    ITEMART.has(key)                        true when there is a drawing for it
    Light from the upper left; outlines are a darker shade of the local colour, never black. */
 (function(){
@@ -89,12 +90,36 @@ D.bust=(ctx)=>{const c='#e6e1d8';ctx.fillStyle=shade(ctx,-.35,-1,.35,0,c,.2);ctx
 D.hourglass=(ctx)=>{const w='#6a4a2a';ctx.fillStyle=w;ctx.fillRect(-.3,-1,.6,.07);ctx.fillRect(-.3,-.07,.6,.07);ctx.fillRect(-.27,-.95,.04,.9);ctx.fillRect(.23,-.95,.04,.9);
   ctx.fillStyle='rgba(200,230,240,.35)';ctx.beginPath();ctx.moveTo(-.18,-.93);ctx.quadraticCurveTo(-.18,-.6,0,-.5);ctx.quadraticCurveTo(-.18,-.4,-.18,-.07);ctx.lineTo(.18,-.07);ctx.quadraticCurveTo(.18,-.4,0,-.5);ctx.quadraticCurveTo(.18,-.6,.18,-.93);ctx.closePath();ctx.fill();
   ctx.fillStyle='#d9b66a';ctx.beginPath();ctx.moveTo(-.12,-.75);ctx.quadraticCurveTo(0,-.6,.12,-.75);ctx.quadraticCurveTo(0,-.62,0,-.52);ctx.fill();ctx.beginPath();ctx.moveTo(-.16,-.07);ctx.lineTo(0,-.26);ctx.lineTo(.16,-.07);ctx.fill();ctx.fillRect(-.006,-.5,.012,.24)};
+/* scroll: an antiqued roll of papyrus lying on its side: fibre cross-hatching, spiral ends, foxing and darker edges,
+   tied at the middle with a ribbon (its colour varies) and a wax seal on the tie. Research: research/objects/items/scroll.md */
+const RIBBONS={'scroll-circles':'#b3262e','scroll-lines':'#2f5fb0','scroll-angles':'#2f8a4a','scroll-parallels':'#6a3a9a','scroll-areas':'#c99a2e','scroll-squares':'#1f1f26'};
+const RIBPAL=['#b3262e','#2f5fb0','#2f8a4a','#6a3a9a','#c99a2e','#1f1f26','#c0632a','#2a8a8a'];
+D.scroll=(ctx,o)=>{const R=rngMulberry((o.seed||1)*53+9),rib=o.ribbon||RIBBONS[o.id]||RIBPAL[Math.floor(R()*RIBPAL.length)],paper='#d8c08a',L=.9,rr=.15,cy=-rr;
+  /* the roll's body */
+  ctx.save();ctx.beginPath();ctx.rect(-L/2,cy-rr,L,2*rr);ctx.fillStyle=shade(ctx,0,cy-rr,0,cy+rr,paper,.35);ctx.fill();ctx.clip();
+  ctx.strokeStyle='rgba(120,90,40,.18)';ctx.lineWidth=.006;for(let i=0;i<14;i++){const y=cy-rr+i*2*rr/14;ctx.beginPath();ctx.moveTo(-L/2,y);ctx.lineTo(L/2,y);ctx.stroke()}for(let i=0;i<22;i++){const x=-L/2+i*L/22;ctx.beginPath();ctx.moveTo(x,cy-rr);ctx.lineTo(x,cy+rr);ctx.stroke()} /* the pith's cross-hatching */
+  for(let i=0;i<10;i++){ctx.fillStyle=`rgba(${110+R()*30},${70+R()*20},${30},${.12+R()*.2})`;ctx.beginPath();ctx.ellipse((R()-.5)*L,cy+(R()-.5)*1.6*rr,.02+R()*.05,.01+R()*.03,R()*3,0,TAU);ctx.fill()} /* foxing */
+  const eg=ctx.createLinearGradient(-L/2,0,L/2,0);eg.addColorStop(0,'rgba(90,60,25,.45)');eg.addColorStop(.12,'rgba(90,60,25,0)');eg.addColorStop(.88,'rgba(90,60,25,0)');eg.addColorStop(1,'rgba(90,60,25,.45)');ctx.fillStyle=eg;ctx.fillRect(-L/2,cy-rr,L,2*rr);
+  ctx.restore();
+  /* the outer sheet's loose edge along the top, a little torn */
+  ctx.strokeStyle=darken(paper,.35);ctx.lineWidth=.008;ctx.beginPath();for(let i=0;i<=16;i++){const x=-L/2+i*L/16;ctx.lineTo(x,cy-rr*.2+(i%3===1?.008:0))}ctx.stroke();
+  /* the two ends: the spiral of rolled layers */
+  for(const s of[-1,1]){const ex=s*L/2;ctx.fillStyle=lighten(paper,.1);ctx.beginPath();ctx.ellipse(ex,cy,rr*.35,rr,0,0,TAU);ctx.fill();ctx.strokeStyle=darken(paper,.3);ctx.lineWidth=.006;ctx.stroke();
+    ctx.beginPath();for(let a=0;a<6*Math.PI;a+=.2){const k=1-a/(6*Math.PI);ctx.lineTo(ex+Math.cos(a)*rr*.33*k,cy+Math.sin(a)*rr*.92*k)}ctx.stroke()}
+  ctx.strokeStyle=darken(paper,.45);ctx.lineWidth=.01;ctx.strokeRect(-L/2,cy-rr,L,2*rr);
+  /* the ribbon: a band round the roll, a bow, two tails; and the seal */
+  const rx=.05;ctx.fillStyle=shade(ctx,rx-.04,cy-rr,rx+.04,cy+rr,rib,.3);ctx.fillRect(rx-.035,cy-rr-.005,.07,2*rr+.01);
+  ctx.fillStyle=rib;for(const s of[-1,1]){ctx.beginPath();ctx.moveTo(rx,cy-rr*.2);ctx.quadraticCurveTo(rx+s*.16,cy-rr*1.3,rx+s*.13,cy+rr*.05);ctx.closePath();ctx.fill()} /* the bow's loops */
+  for(const s of[-1,1]){ctx.beginPath();ctx.moveTo(rx-.01,cy);ctx.quadraticCurveTo(rx+s*.06,cy+rr*1.2,rx+s*.12,cy+rr*1.05);ctx.lineTo(rx+s*.1,cy+rr*1.25);ctx.quadraticCurveTo(rx+s*.03,cy+rr*1.3,rx+.01,cy+.01);ctx.fill()} /* tails */
+  ctx.fillStyle=darken(rib,.25);ctx.beginPath();ctx.arc(rx,cy-rr*.05,.03,0,TAU);ctx.fill(); /* the knot */
+  ctx.fillStyle=shade(ctx,rx-.05,cy,rx+.05,cy+.1,'#8a1f1a',.3);ctx.beginPath();ctx.arc(rx+.015,cy+rr*.55,.045,0,TAU);ctx.fill();ctx.strokeStyle='rgba(255,220,200,.35)';ctx.lineWidth=.006;ctx.beginPath();ctx.moveTo(rx-.005,cy+rr*.7);ctx.lineTo(rx+.015,cy+rr*.35);ctx.lineTo(rx+.035,cy+rr*.7);ctx.closePath();ctx.stroke(); /* the wax seal, with the triangle */
+};
 D.parcel=(ctx)=>{const c='#b08a5a';ctx.fillStyle=shade(ctx,-.3,-.5,.3,0,c,.2);ctx.fillRect(-.3,-.45,.6,.45);ctx.strokeStyle='#7a2a2a';ctx.lineWidth=.03;ctx.beginPath();ctx.moveTo(0,-.45);ctx.lineTo(0,0);ctx.moveTo(-.3,-.22);ctx.lineTo(.3,-.22);ctx.stroke()};
 D.coin=(ctx,o)=>{ctx.save();ctx.translate(0,-.45);coin(ctx,0,0,.42,o);ctx.restore()};
 D.coins=(ctx,o)=>{coins(ctx,0,0,.8,o.n||5,o)};
 D.chest=(ctx,o)=>{if(window.CONTAINERS)CONTAINERS.drawChest(ctx,{},0,0,1.1,o.state==='open'?'open':'closed',o.seed||1,{fill:o.fill==null?.6:o.fill});else D.parcel(ctx,o)};
 D.ax=(ctx,o)=>{if(window.TOOLS){const t=/star/.test(o.id||'')?2:/iron/.test(o.id||'')?1:0;TOOLS.drawAx(ctx,t,-.25,0,1,.55)}};
-const ALIAS={'necklace':'necklace','sword':'sword','cape':'cape','gloves':'gloves','crown':'crown','chalice':'chalice','astrolabe':'astrolabe','compass':'compass','straightedge':'straightedge','lyre':'lyre','tile':'tile','amphora':'amphora','lamp':'lamp','ring':'ring','map':'map','bust':'bust','hourglass':'hourglass','coin':'coin','coins':'coins','chest':'chest','bronze-ax':'ax','iron-ax':'ax','starmetal-ax':'ax'};
+const ALIAS={'scroll':'scroll','necklace':'necklace','sword':'sword','cape':'cape','gloves':'gloves','crown':'crown','chalice':'chalice','astrolabe':'astrolabe','compass':'compass','straightedge':'straightedge','lyre':'lyre','tile':'tile','amphora':'amphora','lamp':'lamp','ring':'ring','map':'map','bust':'bust','hourglass':'hourglass','coin':'coin','coins':'coins','chest':'chest','bronze-ax':'ax','iron-ax':'ax','starmetal-ax':'ax'};
 function keyOf(key){key=String(key||'');if(D[key])return key;if(ALIAS[key])return ALIAS[key];const pre=key.split('-')[0];if(D[pre])return pre;if(ALIAS[pre])return ALIAS[pre];return null}
 function has(key){return !!keyOf(key)}
 function draw(ctx,key,x,y,size,o){o=Object.assign({},o||{},{id:key});const k=keyOf(key)||'parcel';
