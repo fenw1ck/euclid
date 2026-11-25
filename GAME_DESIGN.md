@@ -94,6 +94,13 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
 - **Save.** `S.ax` (0 none, 1–3 the tier) and `S.vd` (each door's damage, 0–1). Saved games with progress get the Bronze Ax (and any upgrade they have earned) on load. Start over clears both.
 - **Art.** `vines.js`, `tools.js` and `core.js` are copied from Art-Assets (research: `research/subjects/plants/` and `research/objects/tools/`). Each door's vine is drawn once per damage step and kept; hall doors map it onto the wall in strips, like the paintings.
 
+## 3c. Greenhouses you walk through (built, 24 Nov 2026)
+
+- A glass door between two solved halls now opens into a greenhouse instead of jumping straight to the other hall. Each pair of halls has its own garden (`GARDEN.plan` from garden.js, Art-Assets), seeded by the pair, so rooms differ in size and layout (8×16 up to 50×50 cells) and theme (herb, kitchen, fruit, flower, mixed): beds full of plants, a fountain in the bigger ones, lanterns, benches and tools.
+- Floors are wild: paths of irregular flagstone with moss in the joints, or packed dirt, with grass creeping in (`render(plan, s, {wild:true})`).
+- Walk with WASD, the arrow keys, a controller (left stick or d-pad), or tap where to go. Beds and the fountain block the way; you slide along their edges. The gate at the bottom (marked with the hall you came from) leads back; the glass door at the top (marked with the other hall) leads on. ‹ Back also returns.
+- Bridge greenhouse doors (to an unsolved lock) still open the lock directly. The statue shop will stand in these rooms later.
+
 ## 4. Treasure, coins and the statue shop
 
 - **Chests** are hidden in halls and greenhouses. Opening one gives 1–20 coins, weighted by the hall's proposition number *n* (`coinRoll(n)` in the code). The weights follow a bell curve centred at 1 + 19·(n−1)/47, with a spread of 1.6:
