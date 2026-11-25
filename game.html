@@ -7,6 +7,7 @@
 <style>
 html,body{margin:0;height:100%;background:#05060c;overflow:hidden;touch-action:none;color:#f3e6c4;font-family:Georgia,"Times New Roman",serif;-webkit-user-select:none;user-select:none}
 canvas{display:block;width:100vw;height:100vh;touch-action:none}
+#shop{display:none;position:fixed;z-index:8;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92vw,460px);max-height:80vh;overflow:auto;background:rgba(18,26,40,.95);border:1px solid rgba(140,180,240,.55);border-radius:14px;padding:12px 14px;color:#e8eefa;font:14px system-ui,sans-serif;box-shadow:0 0 30px rgba(90,150,255,.35)}#shop h4{margin:12px 0 6px;color:#a9c8f5}.shead{display:flex;align-items:center;gap:10px;justify-content:space-between}.srow{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:6px 0;border-top:1px solid rgba(140,180,240,.15)}.sdesc{color:#b8c4d8;font-size:12.5px}#shop .btn[disabled]{opacity:.4;cursor:default}#coins{position:fixed;top:max(10px,env(safe-area-inset-top));right:10px;z-index:5;cursor:default}
 #hud{position:fixed;top:max(10px,env(safe-area-inset-top));left:10px;display:flex;gap:6px;z-index:5}
 .btn{background:rgba(20,16,10,.55);border:1px solid rgba(230,190,110,.45);color:#f3e6c4;border-radius:10px;padding:7px 11px;font:600 14px system-ui,sans-serif;cursor:pointer;text-decoration:none;line-height:1.2}
 #music{position:fixed;right:10px;bottom:max(10px,env(safe-area-inset-bottom));z-index:5;display:flex;align-items:center;gap:6px;background:rgba(20,16,10,.62);border:1px solid rgba(230,190,110,.4);border-radius:12px;padding:5px 7px;font:13px system-ui,sans-serif}
@@ -27,12 +28,13 @@ canvas{display:block;width:100vw;height:100vh;touch-action:none}
 <div id="hud"><a class="btn" href="index.html" title="Back to Elemental Geometry">‹ Site</a><button class="btn" id="back" style="display:none" title="Step back">‹ Back</button><button class="btn" id="replay" title="Watch the opening again">↺ Intro</button><button class="btn" id="mapb" style="display:none" title="Map of the halls">Map</button><button class="btn" id="relock" style="display:none" title="Play this hall's lock again">↺ Lock</button><button class="btn" id="help" style="display:none" title="Show me the next move">?</button></div>
 <div id="menu" style="display:none"><button class="btn big" id="cont">Continue</button><button class="btn big" id="newg">Start over</button></div>
 <div id="music"><button class="btn" id="mute" title="Music on or off" aria-label="Music on or off">♪</button><select id="track" aria-label="Song"></select><button class="btn" id="nexttr" title="Next song" aria-label="Next song">⏭</button><input id="vol" type="range" min="0" max="1" step="0.01" aria-label="Music volume"></div>
-<div id="toast"></div>
+<div id="toast"></div><div id="shop"></div><div id="coins" class="btn" style="display:none"></div>
 <div id="plaque"></div>
 <iframe id="lockf" title="Lock" allowtransparency="true"></iframe><div id="cap"></div>
 <script src="proofs.js"></script>
 <script src="thumbs.js"></script>
 <script src="plants.js"></script>
+<script src="garden.js"></script>
 <script>
 "use strict";
 /* ============================================================
@@ -207,11 +209,11 @@ function pulse(x,y,base,t,c="255,176,60"){const f=(t*1.1)%1;ctx.strokeStyle=`rgb
 let scene="title",sceneT0=now(),fade=null,lastT=now();
 const hasProgress=()=>S.solved.length>0;
 function go(s){scene=s;sceneT0=now();if(s!=="lock"&&typeof EMB!=="undefined"&&EMB)hideEmbed();if(typeof BP!=="undefined"){BP=null;hidePlaque()}const show=(id,on)=>document.getElementById(id).style.display=on?"":"none";
-show("back",s==="lock"||s==="hall");show("mapb",s==="doors"||s==="hall"||s==="map");show("relock",s==="hall");show("help",s==="lock");document.getElementById("menu").style.display=s==="title"&&hasProgress()?"flex":"none";
+show("back",s==="lock"||s==="hall"||s==="greenhouse"||s==="garden");show("coins",s==="greenhouse"||s==="garden");coinsChip();document.getElementById("shop").style.display="none";show("mapb",s==="doors"||s==="hall"||s==="map");show("relock",s==="hall");show("help",s==="lock");document.getElementById("menu").style.display=s==="title"&&hasProgress()?"flex":"none";
 document.getElementById("mapb").textContent=s==="map"?"✕ Map":"Map";HELP=null}
 function fadeTo(s,ms=700,cb){if(fade)return;fade={t0:now(),ms,s,cb,sw:false}}
 function frame(){const T=now(),t=(T-sceneT0)/1000;ctx.setTransform(DPR,0,0,DPR,0,0);ctx.globalAlpha=1;ctx.globalCompositeOperation="source-over";ctx.shadowBlur=0;
-if(scene==="title")drawTitle(t);else if(scene==="intro")drawIntro(t);else if(scene==="doors")drawDoors(t);else if(scene==="lock")drawLock(t);else if(scene==="hall")drawHall(t);else if(scene==="map")drawMap(t);
+if(scene==="title")drawTitle(t);else if(scene==="intro")drawIntro(t);else if(scene==="doors")drawDoors(t);else if(scene==="lock")drawLock(t);else if(scene==="hall")drawHall(t);else if(scene==="map")drawMap(t);else if(scene==="greenhouse")drawGreenhouse(t);else if(scene==="garden")drawGarden(t);
 if(fade){const u=(T-fade.t0)/fade.ms;if(u>=.5&&!fade.sw){fade.sw=true;go(fade.s);fade.cb&&fade.cb()}const a=u<.5?u*2:Math.max(0,2-u*2);ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle=`rgba(0,0,0,${a})`;ctx.fillRect(0,0,W,H);if(u>=1)fade=null}
 lastT=T;requestAnimationFrame(frame)}
 
@@ -741,7 +743,7 @@ if(st==="amber"){ctx.save();ctx.globalCompositeOperation="lighter";const c=pr(s*
 ctx.fillStyle=st==="open"?"#0d0908":col([104,68,40],zc);poly(pts);ctx.fill();if(gh){ctx.fillStyle="rgba(120,200,140,.35)";poly(pts);ctx.fill();ctx.strokeStyle="rgba(230,255,235,.55)";ctx.lineWidth=Math.max(1,.02*f/zc);for(const zz of[.33,.66]){ctx.beginPath();ctx.moveTo(...pr(s*HW,FY,z0+zz*2*ar));ctx.lineTo(...pr(s*HW,top-.35,z0+zz*2*ar));ctx.stroke()}for(const yy of[.5,-.1]){ctx.beginPath();ctx.moveTo(...pr(s*HW,yy,z0));ctx.lineTo(...pr(s*HW,yy,z0+2*ar));ctx.stroke()}{const ps=GPICK(id);ctx.save();poly(pts);ctx.clip();ps.forEach((pl,i)=>{const zz=z0+(i+.6)/(ps.length+.2)*2*ar,b=pr(s*(HW-.02),FY,zz),k=f/zz;PLANTS.drawFit(ctx,pl,b[0],b[1],k*(.85+.3*((i*37)%3)/2),"mature",id*10+i)});ctx.restore();ctx.fillStyle="rgba(190,235,210,.16)";poly(pts);ctx.fill()}}
 if(st!=="open"&&!gh){ctx.strokeStyle=col([60,38,22],zc);ctx.lineWidth=1;for(const zz of[.24,.48,.72]){ctx.beginPath();ctx.moveTo(...pr(s*HW,FY,z0+zz*2*ar));ctx.lineTo(...pr(s*HW,top-.3,z0+zz*2*ar));ctx.stroke()}
 const c=pr(s*HW,.18,zc),r=.13*f/zc;ctx.save();ctx.translate(c[0],c[1]);ctx.scale(.55,1);drawPlate(0,0,r);if(r>9){lockFace(id,0,0,r*FK);plateLabel(id,0,0,r)}if(st==="covered")coverPlate(r);ctx.restore()}
-ctx.strokeStyle=col([150,136,116],zc);ctx.lineWidth=Math.max(2,.07*f/zc);poly(pts);ctx.stroke();hallHits.push({poly:pts,kind:"door",id,st})}
+ctx.strokeStyle=col([150,136,116],zc);ctx.lineWidth=Math.max(2,.07*f/zc);poly(pts);ctx.stroke();hallHits.push({poly:pts,kind:"door",id,st,gh})}
 /* a covered lock: the lock is still visible behind an iron cover */
 function coverPlate(r){ctx.fillStyle="rgba(40,40,44,.92)";ctx.save();ctx.rotate(.6);ctx.fillRect(-r*1.15,-r*.22,r*2.3,r*.44);ctx.rotate(-1.2);ctx.fillRect(-r*1.15,-r*.22,r*2.3,r*.44);ctx.restore();ctx.fillStyle="#55555c";circ(0,0,r*.32);ctx.fill();ctx.fillStyle="#9a9aa2";circ(-r*.06,-r*.06,r*.1);ctx.fill()}
 /* a painting on a side wall: a finished figure, drawn in narrow strips so it follows the perspective */
@@ -853,19 +855,93 @@ const ly=76,items=[["#e3b04b","solved"],["#d98a2b","ready"],["#3a3d4a","locked"]
 function mapTap(x,y){let best=null,bd=1e9;for(const h of mapHits){const d=dist([x,y],h.q);if(d<h.r*1.4&&d<bd){bd=d;best=h.id}}if(best==null)return;const st=doorState(best);
 if(st==="open"){hallStack=[best];hallId=best;fadeTo("hall",700)}else if(st==="amber"){if(hasLock(best)){openLock(best);lockFrom=mapPrev}else{sfxChime(false);toast("This lock is still being made.")}}else{sfxRattle();toast("Its lock is covered.")}}
 
+/* ---------- greenhouses and gardens ----------
+   A glass door in a hall leads into a greenhouse: glass and iron, planters of its own plants, a working fountain and
+   the blue statue shop. The far door goes on to the next hall; a gate on the right leads into its garden.
+   A garden is a plan seen from above (garden.js): 8×16 up to 50×50 cells, themed (herb, kitchen, orchard, flower or
+   mixed), with paths, beds, benches, a fountain, lanterns, trellises and tools. It always holds 1–3 lock pedestals for
+   proofs you can open next, and either a chest or an item to find. Drag to look round; the gate goes back. */
+let GHS=null,ghHits=[],GV=null;const GPLAN={},GCV={};S.gardens=S.gardens||{};
+const ghKey=(a,b)=>Math.min(a,b)*100+Math.max(a,b);
+function enterGreenhouse(from,to){GHS={from,to,key:ghKey(from,to)};fadeTo("greenhouse",800)}
+function coinsChip(){const e=document.getElementById("coins");if(e)e.textContent="◉ "+(S.coins||0)}
+function drawGreenhouse(t){const vx=W/2,vy=H*.5,f=Math.min(W,H)*.6,pr=(x,y,z)=>[vx+x*f/z,vy+y*f/z],HW=1.6,FY=1.1,CY=-1.9,ZN=.5,ZF=12,quad=(q,c)=>{ctx.fillStyle=c;poly(q);ctx.fill()};ghHits=[];const G=GHS;if(!G)return;
+ const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,"#9cc3d6");sky.addColorStop(.55,"#d9ead9");sky.addColorStop(1,"#9cbf8c");ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+ const r=rng(G.key*31+7);ctx.fillStyle="rgba(70,110,70,.45)";for(let i=0;i<22;i++){const x=r()*W,y=vy-f*.05+r()*f*.25;ctx.beginPath();ctx.ellipse(x,y,f*(.08+r()*.1),f*(.06+r()*.08),0,0,7);ctx.fill()}
+ /* terracotta floor, far to near */
+ for(let z=ZF;z>ZN;z-=.75){const z1=Math.max(ZN,z-.75);for(let i=0;i<5;i++){const xa=-HW+i*HW*2/5,xb=xa+HW*2/5;quad([pr(xa,FY,z),pr(xb,FY,z),pr(xb,FY,z1),pr(xa,FY,z1)],(i+Math.round(z/.75))%2?"#b76e4a":"#c88259")}}
+ /* glass walls and roof: pale panes on iron */
+ const pane="rgba(220,245,235,.16)";quad([pr(-HW,CY,ZF),pr(-HW,FY,ZF),pr(-HW,FY,ZN),pr(-HW,CY,ZN)],pane);quad([pr(HW,CY,ZF),pr(HW,FY,ZF),pr(HW,FY,ZN),pr(HW,CY,ZN)],pane);quad([pr(-HW,CY,ZF),pr(HW,CY,ZF),pr(HW,CY,ZN),pr(-HW,CY,ZN)],"rgba(220,245,235,.12)");quad([pr(-HW,CY,ZF),pr(HW,CY,ZF),pr(HW,FY,ZF),pr(-HW,FY,ZF)],"rgba(220,245,235,.22)");
+ ctx.strokeStyle="#2f3d33";for(let z=1;z<=ZF;z+=1){ctx.lineWidth=Math.max(1,.05*f/z);ctx.beginPath();ctx.moveTo(...pr(-HW,FY,z));ctx.lineTo(...pr(-HW,CY,z));ctx.lineTo(...pr(HW,CY,z));ctx.lineTo(...pr(HW,FY,z));ctx.stroke()}
+ ctx.lineWidth=1.2;for(const y of[.3,-.5,-1.3])for(const s of[-1,1]){ctx.beginPath();ctx.moveTo(...pr(s*HW,y,ZN));ctx.lineTo(...pr(s*HW,y,ZF));ctx.stroke()}for(const x of[-.8,0,.8]){ctx.beginPath();ctx.moveTo(...pr(x,CY,ZN));ctx.lineTo(...pr(x,CY,ZF));ctx.stroke()}
+ /* ivy on the iron */
+ for(let i=0;i<160;i++){const s=r()<.5?-1:1,z=1+r()*(ZF-1),y=CY+r()*1.2,q=pr(s*HW,y,z),k=f/z;ctx.fillStyle=`rgb(${50+r()*30},${100+r()*40},${45+r()*20})`;ctx.beginPath();ctx.ellipse(q[0],q[1],.035*k,.022*k,r()*3,0,7);ctx.fill()}
+ const obj=[],ps=GPICK(G.key);
+ /* the far door, on to the next hall */
+ obj.push({z:ZF-.01,d:()=>{const a=pr(-.5,-.85,ZF),b=pr(.5,FY,ZF),st=doorState(G.to),c=[(a[0]+b[0])/2,a[1]+(b[1]-a[1])*.38],R=(b[0]-a[0])*.32;ctx.fillStyle=st==="open"?"#1a1410":"#6a4a2c";ctx.fillRect(a[0],a[1],b[0]-a[0],b[1]-a[1]);ctx.strokeStyle="#2f3d33";ctx.lineWidth=3;ctx.strokeRect(a[0],a[1],b[0]-a[0],b[1]-a[1]);if(st==="amber")glow(c[0],c[1],R*2.2,.3+.12*Math.sin(t*3),[255,160,50]);
+  ctx.save();ctx.translate(c[0],c[1]);drawPlate(0,0,R);if(R>9){lockFace(G.to,0,0,R*FK);plateLabel(G.to,0,0,R)}if(st==="covered")coverPlate(R);ctx.restore();ghHits.push({poly:[a,[b[0],a[1]],b,[a[0],b[1]]],kind:"door",id:G.to,st})}});
+ /* planters down both walls */
+ for(let z=2.6,i=0;z<ZF-1;z+=1.7,i++)for(const s of[-1,1]){const zz=z+(s>0?.85:0);obj.push({z:zz,d:()=>{const x=s*(HW-.3),a=pr(x-.25,FY,zz),b=pr(x+.25,FY-.28,zz),k=f/zz;ctx.fillStyle="#9a5b38";ctx.fillRect(a[0],b[1],b[0]-a[0],a[1]-b[1]);ctx.fillStyle="#7a4428";ctx.fillRect(a[0],b[1],b[0]-a[0],(a[1]-b[1])*.2);const pl=ps[(i*2+(s>0))%Math.max(1,ps.length)];if(pl&&window.PLANTS)PLANTS.drawFit(ctx,pl,(a[0]+b[0])/2,b[1]+1,k*.95,"mature",G.key*7+i*2+(s>0))}})}
+ /* the fountain in the middle */
+ obj.push({z:6.5,d:()=>{const c=pr(0,FY,6.5),k=f/6.5,R=.55*k;ctx.fillStyle="#b9ad98";ctx.beginPath();ctx.ellipse(c[0],c[1],R,R*.35,0,0,7);ctx.fill();ctx.fillStyle="#4f8faa";ctx.beginPath();ctx.ellipse(c[0],c[1]-R*.03,R*.86,R*.28,0,0,7);ctx.fill();ctx.strokeStyle="rgba(255,255,255,.5)";ctx.lineWidth=1;for(let j=0;j<3;j++){const u=(t*.5+j/3)%1;ctx.globalAlpha=1-u;ctx.beginPath();ctx.ellipse(c[0],c[1],R*.86*u,R*.28*u,0,0,7);ctx.stroke()}ctx.globalAlpha=1;
+  ctx.fillStyle="#cfc4b0";ctx.fillRect(c[0]-R*.08,c[1]-R*1.1,R*.16,R*1.1);ctx.strokeStyle="rgba(210,240,255,.75)";ctx.lineWidth=Math.max(1,k*.015);for(const s of[-1,1]){ctx.beginPath();ctx.moveTo(c[0],c[1]-R*1.1);ctx.quadraticCurveTo(c[0]+s*R*.4,c[1]-R*1.6,c[0]+s*R*.7,c[1]-R*.05);ctx.stroke()}
+  for(let j=0;j<8;j++){const u=(t*1.4+j/8)%1,s=j%2?1:-1;ctx.fillStyle=`rgba(225,245,255,${1-u})`;ctx.beginPath();ctx.arc(c[0]+s*R*.7*u,c[1]-R*1.1+R*1.05*u*u,1.4,0,7);ctx.fill()}}});
+ /* the blue statue: the shop */
+ obj.push({z:9.2,d:()=>{const b=pr(-.95,FY,9.2),k=f/9.2,w=.34*k,h=.32*k;ctx.fillStyle="#8b98a6";ctx.fillRect(b[0]-w/2,b[1]-h,w,h);const top=b[1]-h,fh=1.05*k;ctx.save();ctx.globalCompositeOperation="lighter";glow(b[0],top-fh*.5,fh*.9,.22+.08*Math.sin(t*2),[90,150,255]);ctx.restore();
+  const g=ctx.createLinearGradient(b[0]-w,0,b[0]+w,0);g.addColorStop(0,"#9cc6f2");g.addColorStop(1,"#3d6ea6");ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(b[0]-w*.45,top);ctx.lineTo(b[0]-w*.22,top-fh*.78);ctx.lineTo(b[0]+w*.22,top-fh*.78);ctx.lineTo(b[0]+w*.45,top);ctx.closePath();ctx.fill();ctx.beginPath();ctx.arc(b[0],top-fh*.87,w*.16,0,7);ctx.fill();
+  for(let j=0;j<6;j++){const a=t*1.3+j*1.05,q=[b[0]+Math.cos(a)*w*.8,top-fh*.5+Math.sin(a*1.3)*fh*.45];ctx.fillStyle=`rgba(200,230,255,${.5+.5*Math.sin(t*4+j)})`;ctx.fillRect(q[0]-1,q[1]-1,2.5,2.5)}
+  ghHits.push({poly:[[b[0]-w,top-fh],[b[0]+w,top-fh],[b[0]+w,b[1]],[b[0]-w,b[1]]],kind:"shop"})}});
+ /* the gate to the garden, in the right-hand wall */
+ obj.push({z:4.6,d:()=>{const z0=4.1,z1=5.3,q=[pr(HW,FY,z0),pr(HW,-.7,z0),pr(HW,-.7,z1),pr(HW,FY,z1)];const g=ctx.createLinearGradient(q[0][0],0,q[2][0],0);g.addColorStop(0,"#6ea24f");g.addColorStop(1,"#a9d27a");ctx.fillStyle=g;poly(q);ctx.fill();ctx.strokeStyle="#262626";ctx.lineWidth=2;for(let i=1;i<6;i++){const zz=z0+(z1-z0)*i/6;ctx.beginPath();ctx.moveTo(...pr(HW,FY,zz));ctx.lineTo(...pr(HW,-.7,zz));ctx.stroke()}poly(q);ctx.stroke();
+  const m=pr(HW,-.85,(z0+z1)/2);ctx.font=`600 ${Math.max(10,f/z1*.12)}px Georgia,serif`;ctx.textAlign="center";ctx.fillStyle="#2b3b22";ctx.fillText("Garden",m[0]-6,m[1]);ghHits.push({poly:q,kind:"garden"})}});
+ obj.sort((a,b)=>b.z-a.z).forEach(o=>o.d());
+ const vg=ctx.createRadialGradient(W/2,H*.5,Math.min(W,H)*.3,W/2,H*.5,Math.max(W,H)*.8);vg.addColorStop(0,"rgba(0,0,0,0)");vg.addColorStop(1,"rgba(0,20,10,.4)");ctx.fillStyle=vg;ctx.fillRect(0,0,W,H)}
+function ghTap(x,y){for(let i=ghHits.length-1;i>=0;i--){const h=ghHits[i];if(!inPoly([x,y],h.poly))continue;
+ if(h.kind==="shop")return openShop();if(h.kind==="garden")return enterGarden();
+ if(h.kind==="door"){if(h.st==="open")return enterHall(h.id);if(h.st==="amber"){if(hasLock(h.id))return openLock(h.id);sfxChime(false);return toast("This lock is still being made.")}sfxRattle();return toast("Its lock is covered.")}}}
+/* ---- the garden ---- */
+function gardenLocks(P){const near=GHS?[GHS.from,GHS.to]:[1],d=id=>Math.min(...near.map(n=>Math.hypot(MAP.pos[id][0]-MAP.pos[n][0],MAP.pos[id][1]-MAP.pos[n][1]))),ready=IDS.filter(i=>!solved(i)&&doorState(i)==="amber"&&hasLock(i)).sort((a,b)=>d(a)-d(b)),k=1+(P.seed%3);return ready.slice(0,k)}
+function enterGarden(){const key=GHS.key,P=GPLAN[key]||(GPLAN[key]=GARDEN.plan(key*7919+13)),s0=30;if(!GCV[key])GCV[key]=GARDEN.render(P,s0);
+ const fit=Math.min((W-20)/P.w,(H-110)/P.h),z=Math.max(fit,Math.min(30,Math.min(W,H)/12));GV={key,P,cv:GCV[key],z,ox:W/2-P.gate.x*z,oy:H-70-P.gate.y*z,locks:gardenLocks(P),drag:null};gvClamp();fadeTo("garden",800)}
+function gvClamp(){const V=GV,P=V.P,gw=P.w*V.z,gh=P.h*V.z;V.ox=gw<W?(W-gw)/2:clamp(V.ox,W-gw-20,20);V.oy=gh<H-100?(H-gh)/2+20:clamp(V.oy,H-gh-60,70)}
+const gvS=(x,y)=>[GV.ox+x*GV.z,GV.oy+y*GV.z];
+function gTreasure(P){const it=ITEMS[P.seed%ITEMS.length];return{kind:P.seed%2?"chest":"item",item:it,got:!!(S.gardens[GV.key]&&S.gardens[GV.key].got)}}
+function drawGarden(t){const V=GV;if(!V)return;const P=V.P,z=V.z;ctx.fillStyle="#2e4a26";ctx.fillRect(0,0,W,H);ctx.drawImage(V.cv,V.ox,V.oy,P.w*z,P.h*z);
+ if(P.fountain){const c=gvS(P.fountain.x+.5,P.fountain.y+.5);GARDEN.fountain(ctx,c[0],c[1],z,t)}
+ for(const q of P.props)if(q.t==="lantern"){const c=gvS(q.x,q.y);GARDEN.lantern(ctx,c[0],c[1],z,t)}
+ V.locks.forEach((id,i)=>{const sp=P.spots[Math.floor(i*P.spots.length/V.locks.length)],c=gvS(sp.x,sp.y),R=z*.62;GARDEN.pedestal(ctx,c[0],c[1],z);glow(c[0],c[1],R*2,.25+.1*Math.sin(t*3),[255,160,50]);ctx.save();ctx.translate(c[0],c[1]);drawPlate(0,0,R);if(R>9){lockFace(id,0,0,R*FK);plateLabel(id,0,0,R)}ctx.restore();sp._id=id});
+ const T=gTreasure(P),tc=gvS(P.treasure.x,P.treasure.y);if(T.kind==="chest")GARDEN.chest(ctx,tc[0],tc[1],z,T.got);else if(!T.got){glow(tc[0],tc[1],z*.9,.35+.15*Math.sin(t*4),[255,230,150]);ctx.fillStyle="#e8dcc0";ctx.beginPath();ctx.ellipse(tc[0],tc[1],z*.28,z*.18,.4,0,7);ctx.fill();ctx.strokeStyle="#8a6a3a";ctx.lineWidth=1.5;ctx.stroke()}
+ const g=gvS(P.gate.x,P.gate.y);GARDEN.gate(ctx,g[0],g[1],z);
+ {const L=`${P.name} · ${P.w} × ${P.h}`;ctx.font="600 14px Georgia,serif";const tw=ctx.measureText(L).width+24;ctx.fillStyle="rgba(20,30,15,.7)";ctx.beginPath();ctx.roundRect(W/2-tw/2,52,tw,26,13);ctx.fill();ctx.fillStyle="#efe6c8";ctx.textAlign="center";ctx.fillText(L,W/2,70)}}
+function gardenTap(x,y){const V=GV,P=V.P,c=[(x-V.ox)/V.z,(y-V.oy)/V.z],near=(q,r)=>Math.hypot(c[0]-q.x,c[1]-q.y)<r;
+ for(let i=0;i<V.locks.length;i++){const sp=P.spots[Math.floor(i*P.spots.length/V.locks.length)];if(near(sp,1)){const id=V.locks[i];return openLock(id)}}
+ if(near(P.treasure,1)){const T=gTreasure(P);if(T.got)return toast(T.kind==="chest"?"The chest is empty.":"Nothing more here.");S.gardens[V.key]={got:1};if(T.kind==="chest"){const n=coinRoll(Math.max(GHS.from,GHS.to));S.coins=(S.coins||0)+n;toast(`The chest holds ${n} coin${n>1?"s":""}.`)}else{S.inv=S.inv||[];S.inv.push(T.item.id);toast(`Found: ${T.item.name}.`)}save();coinsChip();sfxChime(true);return}
+ if(near(P.gate,1.2))return fadeTo("greenhouse",700);if(P.fountain&&near({x:P.fountain.x+.5,y:P.fountain.y+.5},1.4))return toast("The water is cold and clear.")}
+/* ---- the shop: sell to the blue statue, buy scrolls and clothes ---- */
+function openShop(){const e=document.getElementById("shop"),inv=S.inv||[],it=id=>ITEMS.find(x=>x.id===id),row=(x,btn)=>`<div class="srow"><div><b>${x.name}</b><div class="sdesc">${x.desc}</div></div>${btn}</div>`;
+ const buy=ITEMS.filter(x=>x.kind==="scroll"||!inv.includes(x.id)).map(x=>row(x,`<button class="btn" data-buy="${x.id}" ${S.coins>=x.price?"":"disabled"}>${x.price} ◉</button>`)).join("");
+ const sell=inv.map((id,i)=>{const x=it(id);return x?row(x,`<button class="btn" data-sell="${i}">Sell ${Math.max(1,Math.floor(x.price/2))} ◉</button>`):""}).join("")||`<div class="sdesc">You carry nothing to sell yet.</div>`;
+ e.innerHTML=`<div class="shead"><b>The blue statue</b><span>◉ ${S.coins||0}</span><button class="btn" data-close="1">✕</button></div><h4>Buy</h4>${buy}<h4>Sell</h4>${sell}`;e.style.display="block";sfxChime(false)}
+document.getElementById("shop").addEventListener("click",ev=>{const b=ev.target.closest("button");if(!b)return;if(b.dataset.close){document.getElementById("shop").style.display="none";return}
+ if(b.dataset.buy){const x=ITEMS.find(q=>q.id===b.dataset.buy);if(!x||S.coins<x.price)return;S.coins-=x.price;S.inv=S.inv||[];S.inv.push(x.id);save();coinsChip();sfxChime(true);toast(`Bought: ${x.name}.`);return openShop()}
+ if(b.dataset.sell!==undefined){const i=+b.dataset.sell,x=ITEMS.find(q=>q.id===S.inv[i]);if(!x)return;S.inv.splice(i,1);S.coins=(S.coins||0)+Math.max(1,Math.floor(x.price/2));save();coinsChip();sfxTick();return openShop()}});
+
 /* ---------- input ---------- */
 function begin(){audioInit();document.getElementById("menu").style.display="none";go("intro")}
 cv.addEventListener("pointerdown",e=>{const x=e.clientX,y=e.clientY;audioInit();if(fade)return;
 if(scene==="title"){if(!hasProgress())begin();return}if(scene==="intro")return endIntro();if(scene==="map")return mapTap(x,y);
 if(scene==="doors"){const D=doorLayout();if(y<D.y0||y>D.y0+D.dh||x<D.x0||x>D.x0+D.tw)return;const id=x<D.x0+D.lw?1:4;
 if(!solved(id))return openLock(id);if(doorOpenAmt(id)>=1){hallStack=[];enterHall(id)}return}
+if(scene==="greenhouse"){if(document.getElementById("shop").style.display==="block")return;return ghTap(x,y)}
+if(scene==="garden"&&GV){cv.setPointerCapture(e.pointerId);GV.drag={x,y,ox:GV.ox,oy:GV.oy,moved:0};return}
 if(scene==="lock"){cv.setPointerCapture(e.pointerId);return lockId===4?l4Down(x,y):FIGS[lockId]?figDown(x,y):lkDown(x,y)}
-if(scene==="hall"){if(BP){BP=null;return}if(PLQ){hidePlaque();return}for(let i=hallHits.length-1;i>=0;i--){const h=hallHits[i];if(!inPoly([x,y],h.poly))continue;if(h.kind==="mind"){showPlaque(h.who);return}if(h.kind==="art"){const T=now();if(artTap.id===h.id&&T-artTap.t<450){BP={id:h.id,t0:T};document.getElementById("toast").style.opacity=0;artTap={id:null,t:0};sfxChime(false)}else{artTap={id:h.id,t:T};if(!S.bpHint){S.bpHint=1;save();toast("Double-tap a painting to see its blueprint.")}}return}if(h.st==="amber"){if(hasLock(h.id))openLock(h.id);else{sfxChime(false);toast("This lock is still being made.")}}else if(h.st==="open")enterHall(h.id);else if(h.st==="covered"){sfxRattle();toast("Its lock is covered.")}return}}});
-cv.addEventListener("pointermove",e=>{if(scene==="lock")(lockId===4?l4Move:FIGS[lockId]?figMove:lkMove)(e.clientX,e.clientY)});
-cv.addEventListener("pointerup",e=>{if(scene==="lock")(lockId===4?l4Up:FIGS[lockId]?figUp:lkUp)(e.clientX,e.clientY)});
+if(scene==="hall"){if(BP){BP=null;return}if(PLQ){hidePlaque();return}for(let i=hallHits.length-1;i>=0;i--){const h=hallHits[i];if(!inPoly([x,y],h.poly))continue;if(h.kind==="mind"){showPlaque(h.who);return}if(h.kind==="art"){const T=now();if(artTap.id===h.id&&T-artTap.t<450){BP={id:h.id,t0:T};document.getElementById("toast").style.opacity=0;artTap={id:null,t:0};sfxChime(false)}else{artTap={id:h.id,t:T};if(!S.bpHint){S.bpHint=1;save();toast("Double-tap a painting to see its blueprint.")}}return}if(h.gh&&h.st!=="covered"){enterGreenhouse(hallId,h.id);return}if(h.st==="amber"){if(hasLock(h.id))openLock(h.id);else{sfxChime(false);toast("This lock is still being made.")}}else if(h.st==="open")enterHall(h.id);else if(h.st==="covered"){sfxRattle();toast("Its lock is covered.")}return}}});
+cv.addEventListener("pointermove",e=>{if(scene==="garden"&&GV&&GV.drag){const d=GV.drag;d.moved=Math.max(d.moved,Math.hypot(e.clientX-d.x,e.clientY-d.y));GV.ox=d.ox+e.clientX-d.x;GV.oy=d.oy+e.clientY-d.y;gvClamp();return}if(scene==="lock")(lockId===4?l4Move:FIGS[lockId]?figMove:lkMove)(e.clientX,e.clientY)});
+cv.addEventListener("pointerup",e=>{if(scene==="garden"&&GV&&GV.drag){const d=GV.drag;GV.drag=null;if(d.moved<8)gardenTap(e.clientX,e.clientY);return}if(scene==="lock")(lockId===4?l4Up:FIGS[lockId]?figUp:lkUp)(e.clientX,e.clientY)});
 cv.addEventListener("pointercancel",()=>{if(scene==="lock"){LK.drag=null;LK4.drag=null;if(LKF){LKF.drag=null;LKF.ghost=null;LKF.ext=null}if(LK4.ghost&&LK4.ghost.t!=="t")LK4.ghost=null}});
+cv.addEventListener("wheel",e=>{if(scene!=="garden"||!GV)return;e.preventDefault();const k=e.deltaY>0?1/1.15:1.15,P=GV.P,fit=Math.min((W-20)/P.w,(H-110)/P.h),z=clamp(GV.z*k,Math.min(fit,12),48),cx=(e.clientX-GV.ox)/GV.z,cy=(e.clientY-GV.oy)/GV.z;GV.z=z;GV.ox=e.clientX-cx*z;GV.oy=e.clientY-cy*z;gvClamp()},{passive:false});
 addEventListener("keydown",e=>{if(e.target&&(e.target.tagName==="INPUT"||e.target.tagName==="SELECT"))return;audioInit();if(scene==="title"){if(!hasProgress())begin();else if(e.key==="Enter")contGame()}else if(scene==="intro")endIntro()});
-document.getElementById("back").addEventListener("click",()=>{if(scene==="lock")fadeTo(lockFrom,600);else if(scene==="hall"){hallStack.pop();if(hallStack.length){hallId=hallStack[hallStack.length-1];fadeTo("hall",600)}else fadeTo("doors",600)}});
+document.getElementById("back").addEventListener("click",()=>{if(scene==="garden")return fadeTo("greenhouse",600);if(scene==="greenhouse")return fadeTo("hall",600);if(scene==="lock")fadeTo(lockFrom,600);else if(scene==="hall"){hallStack.pop();if(hallStack.length){hallId=hallStack[hallStack.length-1];fadeTo("hall",600)}else fadeTo("doors",600)}});
 document.getElementById("replay").addEventListener("click",()=>{audioInit();fade=null;go("intro")});
 function contGame(){audioInit();hallStack=[];fadeTo("doors",800)}
 document.getElementById("cont").addEventListener("click",contGame);
