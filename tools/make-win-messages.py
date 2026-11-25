@@ -24,7 +24,7 @@ from playwright.async_api import async_playwright
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 HANDS_ON = {"line", "circ", "ext", "rot", "wrong", "push", "flip", "amatch", "smatch", "lift",
-            "wcmp", "spinw", "turn", "raise", "lay", "gemin", "pretend", "straighten", "stretch"}
+            "wcmp", "spinw", "turn", "raise", "lay", "gemin", "pretend", "straighten", "stretch", "morph", "spin", "string"}
 TAP_NAMES = {"place": "choose a point", "tri": "tap a triangle", "tapseg": "tap a line",
              "rmark": "tap an angle", "wmark": "tap an angle", "tapang": "tap an angle"}
 SHORT = {"midp", "par", "ang", "cpy", "cut", "bis", "perp", "pgram", "apl", "sq"}  # index.html's MAC: tap a short version

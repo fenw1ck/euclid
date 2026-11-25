@@ -18,12 +18,12 @@ Prop,Name,Win message,User steps,Engine steps,Taps,Watched frames,Hands-on share
 1.17,Two angles of a triangle are less than two right angles,Any two angles of a triangle make less than two right angles!,6,1,0,1,86%,1 watched frame
 1.18,The greater side has the greater angle opposite it,The longer side faces the bigger angle!,5,1,0,1,83%,1 watched frame
 1.19,The greater angle has the greater side opposite it,The bigger angle faces the longer side!,2,2,0,2,50%,2 watched frames
-1.20,Two sides together are longer than the third,Two sides of a triangle are always longer than the third!,3,4,0,4,43%,4 watched frames
-1.21,Two lines meeting inside a triangle,"A shorter way round, but a wider angle!",3,5,0,5,38%,5 watched frames
+1.20,Two sides together are longer than the third,Two sides of a triangle are always longer than the third!,7,1,0,1,88%,1 watched frame
+1.21,Two lines meeting inside a triangle,"A shorter way round, but a wider angle!",6,1,0,1,86%,1 watched frame
 1.22,Triangle from three given lines,We can build a triangle from any three lengths!,4,6,3,3,40%,Prop 3 ×3; 3 watched frames
 1.23,Copy an angle onto a line,Now we can copy any angle onto any line!,5,7,5,2,42%,choose a point ×2; Prop 3; Prop 2 ×2; 2 watched frames
-1.24,Hinge: a bigger angle gives a bigger base,A wider angle between equal sides gives a longer base!,4,1,0,1,80%,1 watched frame
-1.25,Converse of the hinge,A longer base means a wider angle!,1,3,0,3,25%,3 watched frames
+1.24,Hinge: a bigger angle gives a bigger base,A wider angle between equal sides gives a longer base!,5,1,0,1,83%,1 watched frame
+1.25,Converse of the hinge,A longer base means a wider angle!,2,1,0,1,67%,1 watched frame
 1.26 case 1,Two angles and a side,Two angles and a side fix the triangle!,3,2,0,2,60%,2 watched frames
 1.26 case 2,Two angles and a side,Two angles and a side fix the triangle!,2,6,0,6,25%,6 watched frames
 1.27,Equal alternate angles mean parallel lines,Equal alternate angles: the lines never meet!,5,2,0,2,71%,2 watched frames
@@ -35,16 +35,16 @@ Prop,Name,Win message,User steps,Engine steps,Taps,Watched frames,Hands-on share
 1.33,Joining the ends of equal parallel lines,Equal and parallel on both sides!,4,2,0,2,67%,2 watched frames
 1.34,Opposite sides and angles of a parallelogram,"Opposite sides and angles match, and the diagonal halves it!",3,2,0,2,60%,2 watched frames
 1.35,"Same base, same parallels: equal parallelograms","Same base, same parallels, same area!",3,6,0,6,33%,6 watched frames
-1.36,"Equal bases, same parallels","Equal bases, same height, same area!",2,4,0,4,33%,4 watched frames
-1.37,Triangles on the same base between parallels,Slide the top along a parallel: the area stays the same!,0,7,2,5,0%,Prop 31 ×2; 5 watched frames
-1.38,Triangles on equal bases between parallels,"Equal bases, same height: equal triangles!",0,7,2,5,0%,Prop 31 ×2; 5 watched frames
-1.39,Equal triangles on one base lie between parallels,Equal triangles on one base lie between parallels!,3,6,1,5,33%,Prop 31; 5 watched frames
-1.40,Equal triangles on equal bases lie between parallels,Equal triangles on equal bases lie between parallels!,3,6,1,5,33%,Prop 31; 5 watched frames
-1.41,A parallelogram is double a triangle,A parallelogram is double the triangle on its base!,1,4,0,4,20%,4 watched frames
-1.42,Make a parallelogram equal to a triangle,A triangle reshaped into a parallelogram with any angle!,4,8,4,4,33%,Prop 10; Prop 23; Prop 31 ×2; 4 watched frames
-1.43,Complements of a parallelogram,The complements are equal!,2,9,3,6,18%,choose a point; Prop 31 ×2; 6 watched frames
+1.36,"Equal bases, same parallels","Equal bases, same height, same area!",4,1,0,1,80%,1 watched frame
+1.37,Triangles on the same base between parallels,Slide the top along a parallel: the area stays the same!,3,3,2,1,50%,Prop 31 ×2; 1 watched frame
+1.38,Triangles on equal bases between parallels,"Equal bases, same height: equal triangles!",3,3,2,1,50%,Prop 31 ×2; 1 watched frame
+1.39,Equal triangles on one base lie between parallels,Equal triangles on one base lie between parallels!,4,4,1,3,50%,Prop 31; 3 watched frames
+1.40,Equal triangles on equal bases lie between parallels,Equal triangles on equal bases lie between parallels!,4,4,1,3,50%,Prop 31; 3 watched frames
+1.41,A parallelogram is double a triangle,A parallelogram is double the triangle on its base!,3,1,0,1,75%,1 watched frame
+1.42,Make a parallelogram equal to a triangle,A triangle reshaped into a parallelogram with any angle!,7,5,4,1,58%,Prop 10; Prop 23; Prop 31 ×2; 1 watched frame
+1.43,Complements of a parallelogram,The complements are equal!,5,6,3,3,45%,choose a point; Prop 31 ×2; 3 watched frames
 1.44,Apply a parallelogram to a line,Any area can be laid along any line!,8,8,3,5,50%,Prop 42; Prop 31 ×2; 5 watched frames
 1.45,A parallelogram equal to any straight-sided figure,Any straight-sided figure can become a parallelogram!,2,9,2,7,18%,Prop 42; Prop 44; 7 watched frames
 1.46,A square on a line,A square on any line!,0,8,4,4,0%,Prop 11; Prop 3; Prop 31 ×2; 4 watched frames
-1.47,The Pythagorean theorem,The square on the long side equals the other two squares!,3,13,4,9,19%,Prop 46 ×3; Prop 31; 9 watched frames
+1.47,The Pythagorean theorem,The square on the long side equals the other two squares!,8,7,4,3,53%,Prop 46 ×3; Prop 31; 3 watched frames
 1.48,Converse of the Pythagorean theorem,Squares that add up mean a right angle!,1,8,2,6,11%,Prop 11; Prop 3; 6 watched frames
