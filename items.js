@@ -114,12 +114,31 @@ D.scroll=(ctx,o)=>{const R=rngMulberry((o.seed||1)*53+9),rib=o.ribbon||RIBBONS[o
   ctx.fillStyle=darken(rib,.25);ctx.beginPath();ctx.arc(rx,cy-rr*.05,.03,0,TAU);ctx.fill(); /* the knot */
   ctx.fillStyle=shade(ctx,rx-.05,cy,rx+.05,cy+.1,'#8a1f1a',.3);ctx.beginPath();ctx.arc(rx+.015,cy+rr*.55,.045,0,TAU);ctx.fill();ctx.strokeStyle='rgba(255,220,200,.35)';ctx.lineWidth=.006;ctx.beginPath();ctx.moveTo(rx-.005,cy+rr*.7);ctx.lineTo(rx+.015,cy+rr*.35);ctx.lineTo(rx+.035,cy+rr*.7);ctx.closePath();ctx.stroke(); /* the wax seal, with the triangle */
 };
+/* clothing (research/objects/items/clothing/): boots in three speed upgrades, from the krepides (strapped sandals)
+   through the endromis (a short hunting boot) to the talaria (Hermes' winged sandals); greaves; a chiton; trousers */
+function foot(ctx,o,dx,back){const id=o.id||'',L='#8a5a32',dk=darken(L,.35);ctx.save();ctx.translate(dx,0);if(back)ctx.globalAlpha=.85;
+  if(/greaves/.test(id)){const c=METAL.bronze;ctx.beginPath();ctx.moveTo(-.12,-.05);ctx.quadraticCurveTo(-.17,-.5,-.1,-.95);ctx.lineTo(.1,-.95);ctx.quadraticCurveTo(.17,-.5,.12,-.05);ctx.closePath();ctx.fillStyle=shade(ctx,-.15,0,.15,0,c,.4);ctx.fill();out(ctx,c,.012);
+    ctx.strokeStyle=darken(c,.35);ctx.lineWidth=.01;for(let i=0;i<4;i++){const y=-.25-i*.17,w=.04+i*.025;ctx.strokeRect(-w,y,2*w,.06)}ctx.restore();return} /* etched with a staircase of squares */
+  const winged=/winged/.test(id),boot=/wayfarer/.test(id),sole=winged?METAL.gold:'#5a3a22';
+  ctx.fillStyle=sole;ctx.beginPath();ctx.moveTo(-.2,0);ctx.lineTo(.22,0);ctx.quadraticCurveTo(.27,-.02,.22,-.05);ctx.lineTo(-.2,-.05);ctx.closePath();ctx.fill(); /* the sole */
+  if(boot){ctx.beginPath();ctx.moveTo(-.18,-.05);ctx.lineTo(-.16,-.62);ctx.lineTo(.02,-.64);ctx.lineTo(.03,-.3);ctx.quadraticCurveTo(.2,-.2,.22,-.05);ctx.closePath();ctx.fillStyle=shade(ctx,-.2,-.6,.2,0,L,.3);ctx.fill();out(ctx,L,.012);
+    ctx.fillStyle=lighten(L,.15);ctx.beginPath();ctx.moveTo(-.02,-.6);ctx.lineTo(.1,-.68);ctx.lineTo(.06,-.32);ctx.closePath();ctx.fill(); /* the long tongue */
+    ctx.strokeStyle='#e6d3a8';ctx.lineWidth=.012;for(let i=0;i<5;i++){const y=-.33-i*.06;ctx.beginPath();ctx.moveTo(-.01,y);ctx.lineTo(.05,y-.03);ctx.stroke()}
+    ctx.fillStyle=darken(L,.2);ctx.fillRect(-.18,-.66,.21,.05)} /* the turned cuff */
+  else{const st=winged?METAL.gold:L;ctx.fillStyle='rgba(225,190,160,.55)';ctx.beginPath();ctx.moveTo(-.16,-.05);ctx.quadraticCurveTo(-.17,-.4,-.1,-.62);ctx.lineTo(.02,-.62);ctx.lineTo(.03,-.25);ctx.quadraticCurveTo(.2,-.15,.22,-.05);ctx.closePath();ctx.fill(); /* the foot, faintly */
+    ctx.strokeStyle=st;ctx.lineWidth=.028;ctx.lineCap='round';for(let i=0;i<5;i++){const y=-.08-i*.11;ctx.beginPath();ctx.moveTo(-.15,y);ctx.lineTo(i<2?.18-i*.08:.03,y-.07);ctx.stroke();if(i>1){ctx.beginPath();ctx.moveTo(.03,y);ctx.lineTo(-.14,y-.07);ctx.stroke()}} /* crisscrossing straps */
+    if(winged){ctx.fillStyle='#f4efe2';for(let k=0;k<4;k++){ctx.beginPath();ctx.ellipse(-.22-k*.03,-.5+k*.04,.15-.02*k,.035,-.5+k*.15,0,TAU);ctx.fill();ctx.strokeStyle='rgba(120,100,60,.85)';ctx.lineWidth=.008;ctx.stroke()}}} /* the wings at the ankle */
+  ctx.restore()}
+D.boots=(ctx,o)=>{foot(ctx,o,.12,true);foot(ctx,o,-.08,false)};
+D.shirt=(ctx)=>{const c='#efe6d0';ctx.beginPath();ctx.moveTo(-.2,-.95);ctx.lineTo(-.45,-.8);ctx.lineTo(-.4,-.6);ctx.lineTo(-.25,-.65);ctx.lineTo(-.28,0);ctx.lineTo(.28,0);ctx.lineTo(.25,-.65);ctx.lineTo(.4,-.6);ctx.lineTo(.45,-.8);ctx.lineTo(.2,-.95);ctx.quadraticCurveTo(0,-.85,-.2,-.95);ctx.closePath();ctx.fillStyle=shade(ctx,-.4,-1,.4,0,c,.2);ctx.fill();out(ctx,c,.012);
+  ctx.strokeStyle='rgba(120,100,70,.35)';ctx.lineWidth=.008;for(const x of[-.12,0,.12]){ctx.beginPath();ctx.moveTo(x*.8,-.8);ctx.lineTo(x*1.4,-.02);ctx.stroke()}ctx.strokeStyle='#2f5fb0';ctx.lineWidth=.03;ctx.beginPath();ctx.moveTo(-.28,-.06);ctx.lineTo(.28,-.06);ctx.stroke()}; /* a linen chiton with a blue border */
+D.pants=(ctx)=>{const c='#6a5a48';ctx.beginPath();ctx.moveTo(-.25,-.95);ctx.lineTo(.25,-.95);ctx.lineTo(.27,0);ctx.lineTo(.06,0);ctx.lineTo(0,-.6);ctx.lineTo(-.06,0);ctx.lineTo(-.27,0);ctx.closePath();ctx.fillStyle=shade(ctx,-.3,-1,.3,0,c,.25);ctx.fill();out(ctx,c,.012);ctx.fillStyle=darken(c,.2);ctx.fillRect(-.25,-.95,.5,.06)};
 D.parcel=(ctx)=>{const c='#b08a5a';ctx.fillStyle=shade(ctx,-.3,-.5,.3,0,c,.2);ctx.fillRect(-.3,-.45,.6,.45);ctx.strokeStyle='#7a2a2a';ctx.lineWidth=.03;ctx.beginPath();ctx.moveTo(0,-.45);ctx.lineTo(0,0);ctx.moveTo(-.3,-.22);ctx.lineTo(.3,-.22);ctx.stroke()};
 D.coin=(ctx,o)=>{ctx.save();ctx.translate(0,-.45);coin(ctx,0,0,.42,o);ctx.restore()};
 D.coins=(ctx,o)=>{coins(ctx,0,0,.8,o.n||5,o)};
 D.chest=(ctx,o)=>{if(window.CONTAINERS)CONTAINERS.drawChest(ctx,{},0,0,1.1,o.state==='open'?'open':'closed',o.seed||1,{fill:o.fill==null?.6:o.fill});else D.parcel(ctx,o)};
 D.ax=(ctx,o)=>{if(window.TOOLS){const t=/star/.test(o.id||'')?2:/iron/.test(o.id||'')?1:0;TOOLS.drawAx(ctx,t,-.25,0,1,.55)}};
-const ALIAS={'scroll':'scroll','necklace':'necklace','sword':'sword','cape':'cape','gloves':'gloves','crown':'crown','chalice':'chalice','astrolabe':'astrolabe','compass':'compass','straightedge':'straightedge','lyre':'lyre','tile':'tile','amphora':'amphora','lamp':'lamp','ring':'ring','map':'map','bust':'bust','hourglass':'hourglass','coin':'coin','coins':'coins','chest':'chest','bronze-ax':'ax','iron-ax':'ax','starmetal-ax':'ax'};
+const ALIAS={'scroll':'scroll','boots':'boots','shirt':'shirt','pants':'pants','necklace':'necklace','sword':'sword','cape':'cape','gloves':'gloves','crown':'crown','chalice':'chalice','astrolabe':'astrolabe','compass':'compass','straightedge':'straightedge','lyre':'lyre','tile':'tile','amphora':'amphora','lamp':'lamp','ring':'ring','map':'map','bust':'bust','hourglass':'hourglass','coin':'coin','coins':'coins','chest':'chest','bronze-ax':'ax','iron-ax':'ax','starmetal-ax':'ax'};
 function keyOf(key){key=String(key||'');if(D[key])return key;if(ALIAS[key])return ALIAS[key];const pre=key.split('-')[0];if(D[pre])return pre;if(ALIAS[pre])return ALIAS[pre];return null}
 function has(key){return !!keyOf(key)}
 function draw(ctx,key,x,y,size,o){o=Object.assign({},o||{},{id:key});const k=keyOf(key)||'parcel';
