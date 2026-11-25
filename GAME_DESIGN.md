@@ -82,6 +82,18 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
 - **Replay.** In any hall, ↺ Lock plays that hall's lock again without changing progress.
 - **Map.** The Map button (at the doors and in halls) shows all 48 as stars: gold solved, glowing amber ready, grey locked, with a blue ring where you are. Tap a solved star to walk into its hall, or a ready one to open its lock. Shops will be marked here once they exist.
 
+## 3b. The ax and the vines (built, 24 Nov 2026)
+
+- **Vines on every door.** Every door (the two front doors, hall doors and glass greenhouse doors) is overgrown with one of four vines, chosen by the door's number: English ivy, muscadine grape, wisteria or Virginia creeper. Each has its own leaves, bark and climbing parts (ivy rootlets, grape tendrils, creeper tendrils with sticky discs, twined wisteria trunks). Some carry flowers or fruit (ivy umbels or black berries, purple or bronze grapes, wisteria racemes or pods, creeper berries or autumn red).
+- **Only the ax cuts them, and only when the map allows.** On an amber door (everything it relies on is solved) each tap swings the ax, and the vine is cut back from the lock outward: leaves fall, chips fly, the vine shakes. When it is cut back, the next tap opens the lock. On a covered door the ax bounces off with a clang. Solved doors show their vines cut back: stubs at the frame and a heap at the foot.
+- **The ax** is a tool kept for good, shown in the slot at the bottom left (tap it for its card). The **Bronze Ax** leans by the front doors at the start of a new game; tapping the vines without it says where it is. It is upgraded to the **Iron Ax** after 12 solved locks and the **Starmetal Ax** after 30, until the statue shop sells them.
+  - Strikes to cut a door back: Bronze 10, Iron 6, Starmetal 3 (after Stardew Valley's axes: 10 hits for a tree, fewer per upgrade).
+  - A tap during a swing waits for it to finish (one tap is kept).
+- **Swing.** First person: the hands are just below the screen, the ax comes over from behind and its bit lands on the tapped spot, then bounces off. On a computer the pointer becomes the ax over vines it can cut.
+- **Map.** Ready rooms still covered in vines carry a leaf; tapping one walks you to the hall (or the front doors) where that door is.
+- **Save.** `S.ax` (0 none, 1–3 the tier) and `S.vd` (each door's damage, 0–1). Saved games with progress get the Bronze Ax (and any upgrade they have earned) on load. Start over clears both.
+- **Art.** `vines.js`, `tools.js` and `core.js` are copied from Art-Assets (research: `research/subjects/plants/` and `research/objects/tools/`). Each door's vine is drawn once per damage step and kept; hall doors map it onto the wall in strips, like the paintings.
+
 ## 4. Treasure, coins and the statue shop
 
 - **Chests** are hidden in halls and greenhouses. Opening one gives 1–20 coins, weighted by the hall's proposition number *n* (`coinRoll(n)` in the code). The weights follow a bell curve centred at 1 + 19·(n−1)/47, with a spread of 1.6:
@@ -91,7 +103,7 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
 - **Scrolls** are single-use guides. Inside a lock, a scroll makes the light run ahead of your hand through each step, so you can follow it. This reuses the site's Solve/Step hand.
 - **Clothes** are ornamental and dress your character: necklace, sword, boots, cape, gloves, crown.
 
-### The 30 items (all in `ITEMS` in the code)
+### The 33 items (all in `ITEMS` in the code)
 
 | # | Item | Kind | Price | Description |
 |---|---|---|---|---|
@@ -125,10 +137,14 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
 | 28 | Papyrus Map | treasure | 18 | A plan of the halls, though some corridors are drawn where none exist yet. |
 | 29 | Marble Bust Fragment | treasure | 30 | A bearded face, chipped at the nose. Possibly a geometer. |
 | 30 | Glass Hourglass | treasure | 22 | The sand falls in a perfect cone, every time. |
+| 31 | Bronze Ax | tool | — | Cuts back the vines on a door you may open, in ten strikes. Found by the front doors; never sold. |
+| 32 | Iron Ax | tool | 30 | A forged iron head on hickory: six strikes. |
+| 33 | Starmetal Ax | tool | 60 | Forged from a fallen star: three strikes. |
 
 Proposed rules (open to change):
 - The statue buys items at half price and sells scrolls at full price.
 - Deeper halls drop rarer items.
+- The Iron and Starmetal Axes come by milestone for now (12 and 30 solved locks); once the shop exists they can be bought instead.
 
 ## 5. Sound
 
