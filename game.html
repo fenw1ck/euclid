@@ -40,6 +40,8 @@ canvas{display:block;width:100vw;height:100vh;touch-action:none}
 <script src="vines.js"></script>
 <script src="garden.js"></script>
 <script src="furniture.js"></script>
+<script src="floors.js"></script>
+<script src="bedroom.js"></script>
 <script>
 "use strict";
 /* ============================================================
@@ -721,9 +723,9 @@ function enterHall(id){hallStack.push(id);hallId=id;CAM={x:0,z:0,target:null};fa
 let hallHits=[],hallId=1;
 /* one door for each proposition that relies on this one, nearest first, alternating walls and kept clear of the torch pillars */
 function hallSlots(n){if(n<=6)return[[-1,2.4],[1,3.3],[-1,6.4],[1,7.3],[-1,10.4],[1,10.9]].slice(0,n);const z=[2.4,3.6,4.8,6.5,7.8,9.4,10.7];return Array.from({length:n},(_,i)=>[i%2?1:-1,z[i>>1]])}
-function drawHall(t){const vx=W/2,vy=H*.47,f=Math.min(W,H)*.62,HW=1.5,FY=1.1,CY=-1.75,ZN=.4,ZF=13;
+function drawHall(t){const vx=W/2,vy=H*.47,f=Math.min(W,H)*.62,HW=1.5,FY=1.1,CY=-1.75,ZN=.4,RT0=roomType(hallId),G=CURG=roomGeo(hallId,RT0),ZF=G.RL,XS=G.RW/1.5,ZS=G.RL/13;
 /* the camera walks (WASD, arrows, a controller, or tap the floor); everything below works in depth from the camera */
-hallMove();const CZ=CAM.z,Zr=z=>z-CZ,pr=(x,y,z)=>[vx+(x-CAM.x)*f/z,vy+y*f/z],RT=roomType(hallId);
+hallMove();const CZ=CAM.z,Zr=z=>z-CZ,Zp=z=>z*ZS-CZ,pr=(x,y,z)=>[vx+(x*XS-CAM.x)*f/z,vy+y*f/z],RT=RT0,P=(xr,y,z)=>pr(xr/XS,y,z),indoor=RT!=="greenhouse";
 const fog=z=>Math.exp(-(z-1)*.15),col=(c,z,k=1)=>`rgb(${c.map(v=>Math.round(clamp(v*fog(z)*k,0,255))).join(",")})`,quad=(q,c)=>{ctx.fillStyle=c;poly(q);ctx.fill()};
 ctx.fillStyle="#07060a";ctx.fillRect(0,0,W,H);hallHits=[];const HS=Object.assign({},hallStyle(hallId),ROOMLOOK[RT]||{}),ZFr=Zr(ZF);
 /* far wall: this hall's own finished figure hangs at the end */
@@ -731,26 +733,28 @@ quad([pr(-HW,CY,ZFr),pr(HW,CY,ZFr),pr(HW,FY,ZFr),pr(-HW,FY,ZFr)],col(HS.far,ZFr)
 if(hasLock(hallId)){const a=pr(-.62,-1.25,ZFr),b=pr(.62,.05,ZFr),w=b[0]-a[0],h=b[1]-a[1];ctx.fillStyle=col([200,160,70],ZFr);ctx.fillRect(a[0]-w*.06,a[1]-h*.06,w*1.12,h*1.12);ctx.globalAlpha=Math.min(1,fog(ZFr)*1.3);ctx.drawImage(artCanvas(hallId),a[0],a[1],w,h);ctx.globalAlpha=1;hallHits.push({poly:[a,[b[0],a[1]],b,[a[0],b[1]]],kind:"art",id:hallId});glow(...pr(0,-.6,ZFr),f/ZFr*1.4,.18,[255,200,120])}
 /* floor, walls, ceiling, from far to near (slices of world depth, cut at the camera) */
 const sl=[];for(let z=ZF-1;z>=0;z--){const a=Math.max(Zr(z),ZN),b=Zr(z+1);if(b>a)sl.push([a,b,z])}
-for(const[z0,z1,zw]of sl){for(let i=0;i<4;i++){const xa=-HW+i*.75,xb=xa+.75;quad([pr(xa,FY,z0),pr(xb,FY,z0),pr(xb,FY,z1),pr(xa,FY,z1)],col((i+zw)%2?HS.fa:HS.fb,z0))}
+for(const[z0,z1,zw]of sl){if(!indoor)for(let i=0;i<4;i++){const xa=-HW+i*.75,xb=xa+.75;quad([pr(xa,FY,z0),pr(xb,FY,z0),pr(xb,FY,z1),pr(xa,FY,z1)],col((i+zw)%2?HS.fa:HS.fb,z0))}
 quad([pr(-HW,CY,z0),pr(-HW,FY,z0),pr(-HW,FY,z1),pr(-HW,CY,z1)],col(HS.wl,z0));quad([pr(HW,CY,z0),pr(HW,FY,z0),pr(HW,FY,z1),pr(HW,CY,z1)],col(HS.wr,z0));
 quad([pr(-HW,CY,z0),pr(HW,CY,z0),pr(HW,CY,z1),pr(-HW,CY,z1)],col(HS.ce,z0));
 if(RT==="corridor"){ctx.strokeStyle="rgba(0,0,0,.22)";ctx.lineWidth=1;for(let row=0,y=FY-.4;y>CY;y-=.4,row++)for(const s of[-1,1]){const zz=z0+(row%2)*.5;if(zz<z1){ctx.beginPath();ctx.moveTo(...pr(s*HW,y,zz));ctx.lineTo(...pr(s*HW,y-.4,zz));ctx.stroke()}}}}
 if(RT==="corridor"){ctx.strokeStyle="rgba(0,0,0,.25)";for(let y=FY-.4;y>CY;y-=.4)for(const s of[-1,1]){ctx.beginPath();ctx.moveTo(...pr(s*HW,y,ZN));ctx.lineTo(...pr(s*HW,y,ZFr));ctx.stroke()}
 for(let z=2;z<ZF;z++){const r=Zr(z);if(r<ZN)continue;ctx.strokeStyle=col([48,34,24],r);ctx.lineWidth=Math.max(1,.07*f/r);ctx.beginPath();ctx.moveTo(...pr(-HW,CY,r));ctx.lineTo(...pr(HW,CY,r));ctx.stroke()}}
+if(indoor)drawIndoorFloor(indoorFloor(hallId,RT,G,!!HS.rug),vx,vy,f,FY,G,CZ,ZN);
 roomSurfaces(RT,pr,col,quad,f,Zr,t);
-if(HS.rug){const rw=.42,z0=Math.max(Zr(1.3),ZN),z1=Zr(10.6);if(z1>z0){quad([pr(-rw,FY,z0),pr(rw,FY,z0),pr(rw,FY,z1),pr(-rw,FY,z1)],col(HS.rug,4));ctx.strokeStyle=col([214,180,96],4);ctx.lineWidth=Math.max(1,f*.012);poly([pr(-rw*.86,FY,z0+.15),pr(rw*.86,FY,z0+.15),pr(rw*.86,FY,z1-.15),pr(-rw*.86,FY,z1-.15)]);ctx.stroke();for(let z=1.3+.8;z<10.6-.4;z+=1.1){const r=Zr(z);if(r<ZN+.3)continue;ctx.fillStyle=col(HS.rug.map(v=>v*1.5),r);poly([pr(0,FY,r-.28),pr(rw*.45,FY,r),pr(0,FY,r+.28),pr(-rw*.45,FY,r)]);ctx.fill()}}}
+if(HS.rug&&!indoor){const rw=.42,z0=Math.max(Zr(1.3),ZN),z1=Zr(10.6);if(z1>z0){quad([pr(-rw,FY,z0),pr(rw,FY,z0),pr(rw,FY,z1),pr(-rw,FY,z1)],col(HS.rug,4));ctx.strokeStyle=col([214,180,96],4);ctx.lineWidth=Math.max(1,f*.012);poly([pr(-rw*.86,FY,z0+.15),pr(rw*.86,FY,z0+.15),pr(rw*.86,FY,z1-.15),pr(-rw*.86,FY,z1-.15)]);ctx.stroke();for(let z=1.3+.8;z<10.6-.4;z+=1.1){const r=Zr(z);if(r<ZN+.3)continue;ctx.fillStyle=col(HS.rug.map(v=>v*1.5),r);poly([pr(0,FY,r-.28),pr(rw*.45,FY,r),pr(0,FY,r+.28),pr(-rw*.45,FY,r)]);ctx.fill()}}}
 /* things along the walls, drawn far to near; anything behind the camera is left out */
-const obj=[],add=(z,d,len=.2)=>{if(Zr(z)+len>ZN+.15)obj.push({z:Zr(z),d})};const kids=hallDoors(hallId).concat(GH[hallId].filter(solved),bridges(hallId).filter(x=>!GH[hallId].includes(x))),slots=hallSlots(kids.length).map(([s0,z])=>[HS.flip?-s0:s0,z]),busy=(s,a,b)=>slots.some(([ss,z0])=>ss===s&&z0<b&&z0+.95>a);
-kids.forEach((id,i)=>{const[s,z0]=slots[i],gh=!hallDoors(hallId).includes(id);if(Zr(z0)>ZN)add(z0+.5,()=>hallDoor(pr,f,col,s,Zr(z0),id,t,gh),.5)});
+const obj=[],add=(z,d,len=.2)=>{if(Zp(z)+len>ZN+.15)obj.push({z:Zp(z),d})},addR=(z,d)=>{if(z-CZ>ZN+.1)obj.push({z:z-CZ,d})};const kids=hallDoors(hallId).concat(GH[hallId].filter(solved),bridges(hallId).filter(x=>!GH[hallId].includes(x))),slots=hallSlots(kids.length).map(([s0,z])=>[HS.flip?-s0:s0,z]),busy=(s,a,b)=>slots.some(([ss,z0])=>ss===s&&z0<b&&z0+.95>a);
+kids.forEach((id,i)=>{const[s,z0]=slots[i],gh=!hallDoors(hallId).includes(id);if(Zp(z0)>ZN)add(z0+.5,()=>hallDoor(pr,f,col,s,Zp(z0),id,t,gh),.5)});
 /* planters full of greenhouse plants stand either side of each glass door */
-kids.forEach((id,i)=>{const[s,z0]=slots[i];if(hallDoors(hallId).includes(id)||!window.PLANTS)return;const ps=GPICK(id);[[z0-.18,0],[z0+1.13,1]].forEach(([zw,j])=>add(zw,()=>{const zz=Zr(zw),x=s*(HW-.28),k=f/zz,a=pr(x-.17,FY,zz),b=pr(x+.17,FY-.2,zz);ctx.fillStyle=col([150,104,70],zz);ctx.fillRect(a[0],b[1],b[0]-a[0],a[1]-b[1]);ctx.fillStyle=col([110,74,48],zz);ctx.fillRect(a[0],b[1],b[0]-a[0],(a[1]-b[1])*.18);const pl=ps[j%ps.length];PLANTS.drawFit(ctx,pl,(a[0]+b[0])/2,b[1]+1,k*.75,"mature",id*3+j)}))});
-for(const zw of[2,6,9,12])for(const s of[-1,1])if(!busy(s,zw-.05,zw+.25))add(zw,()=>{const z=Zr(zw);if(RT!=="greenhouse"){quad([pr(s*HW,FY,z),pr(s*(HW-.14),FY,z),pr(s*(HW-.14),CY,z),pr(s*HW,CY,z)],col(RT==="library"?[96,62,38]:[140,126,108],z));quad([pr(s*(HW-.14),FY,z),pr(s*(HW-.14),FY,z+.2),pr(s*(HW-.14),CY,z+.2),pr(s*(HW-.14),CY,z)],col(RT==="library"?[80,50,30]:[118,106,90],z))}
+kids.forEach((id,i)=>{const[s,z0]=slots[i];if(hallDoors(hallId).includes(id)||!window.PLANTS)return;const ps=GPICK(id);[[z0-.18,0],[z0+1.13,1]].forEach(([zw,j])=>add(zw,()=>{const zz=Zp(zw),x=s*(HW-.28),k=f/zz,a=pr(x-.17,FY,zz),b=pr(x+.17,FY-.2,zz);ctx.fillStyle=col([150,104,70],zz);ctx.fillRect(a[0],b[1],b[0]-a[0],a[1]-b[1]);ctx.fillStyle=col([110,74,48],zz);ctx.fillRect(a[0],b[1],b[0]-a[0],(a[1]-b[1])*.18);const pl=ps[j%ps.length];PLANTS.drawFit(ctx,pl,(a[0]+b[0])/2,b[1]+1,k*.75,"mature",id*3+j)}))});
+for(const zw of[2,6,9,12])for(const s of[-1,1])if(!busy(s,zw-.05,zw+.25))add(zw,()=>{const z=Zp(zw);if(RT!=="greenhouse"){quad([pr(s*HW,FY,z),pr(s*(HW-.14),FY,z),pr(s*(HW-.14),CY,z),pr(s*HW,CY,z)],col(RT==="library"?[96,62,38]:[140,126,108],z));quad([pr(s*(HW-.14),FY,z),pr(s*(HW-.14),FY,z+.2),pr(s*(HW-.14),CY,z+.2),pr(s*(HW-.14),CY,z)],col(RT==="library"?[80,50,30]:[118,106,90],z))}
 hallLight(HS.light,pr,f,s,z,t)});
 {const free=[[-1,2.5,3.7],[1,2.9,4.1],[-1,4.4,5.6],[1,4.7,5.9],[-1,6.6,7.8],[1,6.9,8.1]].filter(([s0,a,b])=>!busy(s0,a,b)),art=hallArt(hallId,free.length);
- if(RT==="library")free.forEach(([s0,a,b],i)=>add((a+b)/2,()=>i%3===2&&art[i]?painting(pr,col,s0,Zr(a),Zr(b),art[i]):shelfOnWall(pr,col,s0,Zr(a),Zr(b),hallId*10+i),.6));
- else if(RT==="corridor")free.slice(0,art.length).forEach(([s0,a,b],i)=>add((a+b)/2,()=>HS.win&&i%2===1?hallWindow(pr,col,s0,Zr(a),Zr(b),t):painting(pr,col,s0,Zr(a),Zr(b),art[i]),.6))}
-roomThings(RT,add,busy,pr,col,f,Zr,t);
-{const m=hallMinds(hallId);if(!busy(-1,9.0,10.2))add(9.6,()=>statue(pr,f,col,-1,Zr(9.6),m[0]));if(!busy(1,9.6,10.8))add(10.2,()=>statue(pr,f,col,1,Zr(10.2),m[1]))}
+ if(RT==="library")free.forEach(([s0,a,b],i)=>add((a+b)/2,()=>Zp(a)<ZN+.05?0:i%3===2&&art[i]?painting(pr,col,s0,Zp(a),Zp(b),art[i]):shelfOnWall(pr,col,s0,Zp(a),Zp(b),hallId*10+i),.6));
+ else if(RT==="bedroom")free.slice(0,2).forEach(([s0,a,b],i)=>add((a+b)/2,()=>Zp(a)<ZN+.05?0:bedLayout(hallId).shelf&&i===0?shelfOnWall(pr,col,s0,Zp(a),Zp(b),hallId*10+i):art[i]?painting(pr,col,s0,Zp(a),Zp(b),art[i]):0,.6));
+ else if(RT==="corridor")free.slice(0,art.length).forEach(([s0,a,b],i)=>add((a+b)/2,()=>Zp(a)<ZN+.05?0:HS.win&&i%2===1?hallWindow(pr,col,s0,Zp(a),Zp(b),t):painting(pr,col,s0,Zp(a),Zp(b),art[i]),.6))}
+roomThings(RT,add,busy,pr,col,f,Zp,t);if(RT==="bedroom")bedroomThings(addR,(s0,a,b)=>slots.some(([ss,z0])=>ss===s0&&z0*ZS<b&&z0*ZS+.95>a),P,f,CZ,G,t);
+{const m=hallMinds(hallId);if(RT!=="bedroom"||bedLayout(hallId).statue)if(!busy(-1,9.0,10.2))add(9.6,()=>statue(pr,f,col,-1,Zp(9.6),m[0]));if(!busy(1,9.6,10.8))add(10.2,()=>statue(pr,f,col,1,Zp(10.2),m[1]))}
 obj.sort((a,b)=>b.z-a.z).forEach(o=>o.d());
 const vg=ctx.createRadialGradient(W/2,H*.47,Math.min(W,H)*.25,W/2,H*.47,Math.max(W,H)*.8);vg.addColorStop(0,"rgba(0,0,0,0)");vg.addColorStop(1,"rgba(0,0,0,.65)");ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);if(BP)drawBlueprint(t)}
 function hallDoor(pr,f,col,s,z0,id,t,gh){const HW=1.5,FY=1.1,top=-.5,ar=.475,zc=z0+ar,st=doorState(id),pts=[pr(s*HW,FY,z0)];
@@ -1009,19 +1013,20 @@ addEventListener("keyup",e=>KEYS.delete(e.key.toLowerCase()));addEventListener("
    corridor (stone, paintings), greenhouse (glass walls and roof, grass, a flagstone path, beds of plants along the walls)
    or library (panelled walls of bookshelves, wall-to-wall carpet, armchairs and side tables with lamps).
    All rooms share the corridor's view and its doors, and you can walk them. Art: plants.js, furniture.js (Art-Assets). */
-const ROOMTYPES=["corridor","greenhouse","library"];
+const ROOMTYPES=["corridor","greenhouse","library","bedroom"];
 const ROOMLOOK={greenhouse:{wl:[150,190,170],wr:[140,182,162],ce:[178,208,212],fa:[86,130,60],fb:[78,120,54],far:[150,186,168],rug:null,win:false},
+  bedroom:{wl:[184,166,146],wr:[176,158,138],ce:[160,146,130],fa:[120,100,80],fb:[112,94,76],far:[184,166,146],rug:null,win:false},
   library:{wl:[92,60,38],wr:[86,56,36],ce:[66,44,30],fa:[118,38,40],fb:[110,34,38],far:[92,60,38],rug:[46,52,96],win:false}};
 function roomType(n){S.rooms=S.rooms||{};if(!S.rooms[n]){S.rooms[n]=ROOMTYPES[Math.floor(Math.random()*ROOMTYPES.length)];save()}return S.rooms[n]}
 let CAM={x:0,z:0,target:null};
 function hallMove(){const dt=Math.min(.05,(now()-lastT)/1000);let ix=0,iz=0;if(KEYS.has("a")||KEYS.has("arrowleft"))ix--;if(KEYS.has("d")||KEYS.has("arrowright"))ix++;if(KEYS.has("w")||KEYS.has("arrowup"))iz++;if(KEYS.has("s")||KEYS.has("arrowdown"))iz--;
   const pads=navigator.getGamepads?[...navigator.getGamepads()].filter(Boolean):[];for(const g of pads){const ax=g.axes[0]||0,ay=g.axes[1]||0;if(Math.hypot(ax,ay)>.22){ix+=ax;iz-=ay}const b=i=>g.buttons[i]&&g.buttons[i].pressed;if(b(14))ix--;if(b(15))ix++;if(b(12))iz++;if(b(13))iz--}
   if(ix||iz)CAM.target=null;else if(CAM.target){const dx=CAM.target[0]-CAM.x,dz=CAM.target[1]-CAM.z,d=Math.hypot(dx,dz);if(d<.05)CAM.target=null;else{ix=dx/d;iz=dz/d}}
-  const m=Math.hypot(ix,iz)||1,sp=2.6*dt/Math.max(1,m);CAM.x=clamp(CAM.x+ix*sp,-.75,.75);CAM.z=clamp(CAM.z+iz*sp,0,9.6)}
+  const m=Math.hypot(ix,iz)||1,sp=2.6*dt/Math.max(1,m);CAM.x=clamp(CAM.x+ix*sp,-(CURG.RW-.75),CURG.RW-.75);CAM.z=clamp(CAM.z+iz*sp,0,Math.max(0,CURG.RL-3.4))}
 /* a tap on the floor walks you there */
-function hallFloorTap(x,y){const vy=H*.47,f=Math.min(W,H)*.62;if(y<=vy+8)return;const d=1.1*f/(y-vy),wx=CAM.x+(x-W/2)*d/f;CAM.target=[clamp(wx,-.75,.75),clamp(CAM.z+d-1.25,0,9.6)]}
+function hallFloorTap(x,y){const vy=H*.47,f=Math.min(W,H)*.62;if(y<=vy+8)return;const d=1.1*f/(y-vy),wx=CAM.x+(x-W/2)*d/f;CAM.target=[clamp(wx,-(CURG.RW-.75),CURG.RW-.75),clamp(CAM.z+d-1.25,0,Math.max(0,CURG.RL-3.4))]}
 /* floors and walls that differ by room */
-function roomSurfaces(RT,pr,col,quad,f,Zr,t){const HW=1.5,FY=1.1,CY=-1.75,ZN=.4,ZF=13,R=rng(hallId*31+5);
+function roomSurfaces(RT,pr,col,quad,f,Zr,t){const HW=1.5,FY=1.1,CY=-1.75,ZN=.4,ZF=CURG.RL,R=rng(hallId*31+5);
   if(RT==="greenhouse"){ /* glazing bars on the walls and the roof, a dirt bed along each wall, a flagstone path down the middle, grass tufts */
     for(let z=0;z<=ZF;z+=.5){const r=Zr(z);if(r<ZN)continue;ctx.strokeStyle=col([232,248,240],r,.95);ctx.lineWidth=Math.max(1,.03*f/r);ctx.beginPath();for(const s of[-1,1]){ctx.moveTo(...pr(s*HW,FY,r));ctx.lineTo(...pr(s*HW,CY,r))}ctx.moveTo(...pr(-HW,CY,r));ctx.lineTo(...pr(HW,CY,r));ctx.stroke()}
     ctx.strokeStyle="rgba(232,248,240,.6)";ctx.lineWidth=1.5;for(const y of[-.3,-1.1])for(const s of[-1,1]){ctx.beginPath();ctx.moveTo(...pr(s*HW,y,ZN));ctx.lineTo(...pr(s*HW,y,Zr(ZF)));ctx.stroke()}
@@ -1047,6 +1052,40 @@ function roomThings(RT,add,busy,pr,col,f,Zr,t){const HW=1.5,FY=1.1;
   if(RT==="library"&&window.FURNITURE){[[-1,5.0],[1,8.4],[-1,11.4],[1,3.2]].forEach(([s,z],i)=>{if(busy(s,z-.5,z+1.2))return;const x=s*(HW-.55);
     add(z+.75,()=>{const r=Zr(z+.75),p=pr(s*(HW-.4),FY,r);FURNITURE.sideTable(ctx,p[0],p[1],.5*f/r,hallId+i,{lamp:true,t})});
     add(z,()=>{const r=Zr(z),p=pr(x,FY,r);FURNITURE.armchair(ctx,p[0],p[1],.85*f/r,hallId*7+i,{view:"side",mirror:s>0})})})}}
+
+
+/* ---------- room sizes, indoor floors and bedrooms ----------
+   Rooms differ in width (and bedrooms are square): roomGeo(n) gives the half-width RW and the length RL, in metres.
+   The hall's layout (doors, lights, paintings, statues) is designed on a 3 m × 13 m corridor; drawHall stretches it
+   across (XS) and along (ZS) to fit each room. Every room that is not a greenhouse has an indoor floor from
+   floors.js (stone or wood), drawn one screen row at a time so it stays true in perspective, with a carpet on it. */
+let CURG={RW:1.5,RL:13};
+function roomGeo(n,RT){const R=rng(n*911+3);R();if(RT==="bedroom"){const RW=2.2+R()*.8;return{RW,RL:2*RW}}
+  if(RT==="greenhouse")return{RW:1.5+R()*.8,RL:13};if(RT==="library")return{RW:1.6+R()*.8,RL:13};return{RW:1.3+R()*.5,RL:13}}
+const FLOORTEX={};
+function indoorFloor(n,RT,G,hasRug){const key=n+RT+G.RW.toFixed(2);if(FLOORTEX[key])return FLOORTEX[key];const R=rng(n*313+7),ppu=40,kind=(R(),R(),0)||RT==="library"?"wood":RT==="bedroom"?(R()<.5?"stone":"wood"):"stone";
+  const c=FLOORS[kind](2*G.RW,G.RL,ppu,n*17+3);let rug=null;
+  if(RT==="bedroom")rug={x0:-G.RW*.45,x1:G.RW*.45,z0:G.RL*.28,z1:G.RL*.72};else if(RT==="library")rug={x0:-(G.RW-.6),x1:G.RW-.6,z0:.8,z1:G.RL-1.2};else if(hasRug)rug={x0:-.42,x1:.42,z0:1.3,z1:10.6};
+  if(rug)rug.c=FLOORS.carpet(rug.x1-rug.x0,rug.z1-rug.z0,ppu,n*29+5);return FLOORTEX[key]={c,ppu,rug,kind}}
+function drawIndoorFloor(F,vx,vy,f,FY,G,CZ,ZN){const tex=F.c,ppu=F.ppu,rug=F.rug,fog=d=>Math.min(1,Math.exp(-(d-1)*.15));
+  for(let y=Math.max(Math.floor(vy+FY*f/Math.max(.1,G.RL-CZ)),Math.ceil(vy+1));y<H;y+=2){const d=FY*f/(y-vy);if(d<ZN)continue;const zw=CZ+d;if(zw>G.RL||zw<0)continue;
+    const x0=vx+(-G.RW-CAM.x)*f/d,x1=vx+(G.RW-CAM.x)*f/d;ctx.drawImage(tex,0,Math.min(tex.height-1,Math.floor(zw*ppu)),tex.width,1,x0,y,x1-x0,2.6);
+    if(rug&&zw>=rug.z0&&zw<=rug.z1){const a=vx+(rug.x0-CAM.x)*f/d,b=vx+(rug.x1-CAM.x)*f/d;ctx.drawImage(rug.c,0,Math.min(rug.c.height-1,Math.floor((zw-rug.z0)*ppu)),rug.c.width,1,a,y,b-a,2.6)}
+    const fg=1-fog(d);if(fg>.01){ctx.fillStyle=`rgba(7,6,10,${fg})`;ctx.fillRect(x0,y,x1-x0,2.6)}}}
+/* a bedroom's furnishings, chosen once per room: 1 or 2 beds (a bunk bed is one), a nightstand by each,
+   maybe a mobile, a bookcase, an armchair, the statues */
+const BEDL={};
+function bedLayout(n){if(BEDL[n])return BEDL[n];const R=rng(n*577+9),p=a=>a[Math.floor(R()*a.length)];
+  return BEDL[n]={beds:R()<.5?2:1,t1:p(BEDROOM.BEDS),t2:p(BEDROOM.BEDS),light1:p(BEDROOM.LIGHTS),light2:p(BEDROOM.LIGHTS),mobile:R()<.65?p(BEDROOM.MOBILES):null,shelf:R()<.5,chair:R()<.5,statue:R()<.5,side:R()<.5?-1:1}}
+function bedroomThings(addR,busyR,P,f,CZ,G,t){const L=bedLayout(hallId),FY=1.1,CY=-1.75,ZN=.4,RL=G.RL,RW=G.RW;
+  /* the beds stand against the far wall, seen from the foot: one in the middle, or two side by side (a twin room);
+     a nightstand at the head of each (two beds share the one between them) */
+  const xs=L.beds>1?[-RW*.42,RW*.42]:[0],types=[L.t1,L.t2],zb=RL-1.55;
+  xs.forEach((x,i)=>addR(zb+i*.001,()=>{const r=zb-CZ,p=P(x,FY,r);BEDROOM.bed(ctx,p[0],p[1],f/r,types[i],hallId+i,{view:"front"})}));
+  const zn=RL-.3,nx=L.beds>1?[0]:[L.side*.86];nx.forEach((x,i)=>addR(zn,()=>{const r=zn-CZ,p=P(x,FY,r);BEDROOM.nightstand(ctx,p[0],p[1],f/r,hallId+i,{light:L.light1,t})}));
+  if(L.beds>1)addR(zn,()=>{const r=zn-CZ,p=P(xs[1]+.86*L.side,FY,r);BEDROOM.nightstand(ctx,p[0],p[1],f/r,hallId+2,{light:L.light2,t})});
+  const mi=types.slice(0,xs.length).findIndex(tp=>tp!=="bunk"&&tp!=="canopy");if(L.mobile&&mi>=0){const zm=RL-1.0;addR(zm-.01,()=>{const r=zm-CZ,p=P(xs[mi],CY,r);BEDROOM.mobile(ctx,p[0],p[1],1.3*f/r,L.mobile,hallId,t)})}
+  if(L.chair){const s=-L.side;for(let z=1.0;z<RL-2;z+=.3)if(!busyR(s,z-.5,z+.6)){addR(z,()=>{const r=z-CZ,p=P(s*(RW-.5),FY,r);FURNITURE.armchair(ctx,p[0],p[1],.85*f/r,hallId*7,{view:"side",mirror:s>0})});break}}}
 
 /* ---------- input ---------- */
 function begin(){audioInit();document.getElementById("menu").style.display="none";go("intro")}
