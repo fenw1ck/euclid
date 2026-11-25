@@ -178,3 +178,10 @@ Built (23 Nov 2026): greenhouse plants. `plants.js` brings over the plant symbol
 - a soft shadow on the ground
 
 Each greenhouse gets 3–4 plants picked at random once per game. They grow behind the glass doors, in planters either side of each glass door, and as tiny plants in the map's glasshouses.
+
+Built (24 Nov 2026): greenhouse rooms and gardens.
+- **Walking in.** A glass door in a hall now opens the greenhouse itself rather than jumping straight to the next hall. Inside are planters with that greenhouse's plants, a working fountain, the blue statue shop, the far door (with its lock plate while the proof behind it is unsolved) and a garden gate in the right-hand wall. Back returns to the hall you came from.
+- **Statue shop.** Tap the statue to buy and sell. Your coins show as a chip at the top of greenhouse and garden screens.
+- **Gardens.** Each greenhouse has its own walled garden, generated once from the greenhouse's key (`garden.js`, shared with the art-assets repo). Sizes run from 8 to 50 cells wide and 16 to 50 tall. The theme is herb, vegetable, fruit, flower or mixed. The layout has a path ring, a spine path, cross paths every 7–8 rows, beds planted at each plant's real spread, trellises for climbers, lanterns where paths cross, benches, tools, and a fountain on a paved square. Drag to look around; scroll or pinch to zoom.
+- **Locks in the garden.** One to three pedestals hold locks you can open now, picked from the ready locks nearest the greenhouse. Solving one returns you to the garden.
+- **Treasure.** Every garden hides one chest (coins from `coinRoll`) or one item. It can be taken once and is remembered in the save.
