@@ -991,6 +991,13 @@ for(const[n,r]of Object.entries(WORLD.rooms)){const id=+n;let x0=1e9,y0=1e9,x1=-
 for(const[a,b]of WORLD.ways){let done=false;for(const[x,y]of WR(a).cells){if(done)break;for(const[u,v]of WR(b).cells)if(Math.abs(x-u)+Math.abs(y-v)===1){DOORP.add(x+","+y+"|"+u+","+v);DOORP.add(u+","+v+"|"+x+","+y);done=true;break}}}
 const joined=(x,y,u,v)=>{const a=CELLR.get(x+","+y),b=CELLR.get(u+","+v);return b!=null&&(a===b||DOORP.has(x+","+y+"|"+u+","+v))};
 const wcen=id=>{const b=WBOX[id];return[(b[0]+b[2])/2,(b[1]+b[3])/2]};
+/* the rooms that will spring a trap: those whose trap is set, and the rooms next door through a doorway you have
+   already walked today (stepping back through it sets the trap there) */
+function trapRooms(here){walkDay();const s=new Set(Object.keys(S.arm).filter(k=>S.arm[k]).map(Number));if(here!=null)for(const m of WNB[here]||[]){if(S.walk.ways[Math.min(here,m)+"-"+Math.max(here,m)])s.add(m)}return s}
+/* on the corner map, a ready lock outside the window gets a pulsing gold arrow on the edge, pointing the way */
+function readyArrows(Pm,bw,bh,t){for(const id of IDS){if(doorState(id)!=="amber"||!hasLock(id))continue;const q=Pm(wcen(id));if(q[0]>4&&q[0]<bw-4&&q[1]>4&&q[1]<bh-4)continue;
+  const cx=bw/2,cy=bh/2,dx=q[0]-cx,dy=q[1]-cy,s=Math.min((bw/2-14)/Math.max(1e-6,Math.abs(dx)),(bh/2-14)/Math.max(1e-6,Math.abs(dy))),px=cx+dx*s,py=cy+dy*s,an=Math.atan2(dy,dx),p=.5+.5*Math.sin(t*4+id);
+  glow(px,py,13+5*p,.45+.3*p,[255,200,60]);ctx.save();ctx.translate(px,py);ctx.rotate(an);ctx.fillStyle=`rgba(255,196,40,${.75+.25*p})`;ctx.strokeStyle="#5a3a10";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(9,0);ctx.lineTo(-5,-7);ctx.lineTo(-2,0);ctx.lineTo(-5,7);ctx.closePath();ctx.fill();ctx.stroke();ctx.rotate(-an);ctx.fillStyle="#3a2a10";ctx.font="700 10px system-ui";ctx.textAlign="center";ctx.fillText(id,-Math.cos(an)*13,-Math.sin(an)*13+3.5);ctx.restore()}}
 /* the nearest shop (every greenhouse has the blue statue): breadth-first through the rooms you can walk now */
 function nearestShop(from){const R=reachable();if(!R.has(from))return null;const seen=new Map([[from,null]]),q=[from];while(q.length){const n=q.shift();if(n!==from&&roomType(n)==="greenhouse"){const path=[n];let k=n;while(seen.get(k)!=null){k=seen.get(k);path.unshift(k)}return path}
   for(const m of WNB[n]||[])if(R.has(m)&&!seen.has(m)){seen.set(m,n);q.push(m)}}return null}
@@ -1031,8 +1038,10 @@ function drawPlan(Pm,k,o){const t=o.t||0,ink="#3a2a1a",wall=Math.max(1,k*.12),fs
   /* the way out, to the front doors */
   {const p=Pm([WBOX[WORLD.start][0],(WBOX[WORLD.start][1]+WBOX[WORLD.start][3])/2]);ctx.fillStyle=ink;ctx.font=`italic ${fs}px Georgia,serif`;ctx.textAlign="right";ctx.fillText("front doors ⇢",p[0]-4,p[1]+4)}
   ctx.textAlign="left";return}
- /* what moves: ready rooms glow, shops shimmer, the way to the nearest shop, you are here */
- for(const id of IDS){if(!inBox(id)||doorState(id)!=="amber"||!hasLock(id))continue;const[x,y,w,h]=rectS(id);glow(x+w/2,y+h/2,Math.max(w,h)*.8,.3+.15*Math.sin(t*3+id),[255,170,60]);ctx.strokeStyle=`rgba(230,140,30,${.6+.3*Math.sin(t*3+id)})`;ctx.lineWidth=Math.max(1.5,wall*1.2);ctx.strokeRect(x-wall,y-wall,w+2*wall,h+2*wall)}
+ /* what moves: the next locks you can open pulse gold; rooms that will spring a trap pulse red; shops shimmer;
+    the way to the nearest shop; you are here */
+ for(const id of IDS){if(!inBox(id)||doorState(id)!=="amber"||!hasLock(id))continue;const[x,y,w,h]=rectS(id),p=.5+.5*Math.sin(t*4+id),g=wall+3*p;glow(x+w/2,y+h/2,Math.max(w,h)*.85+4*p,.35+.25*p,[255,200,60]);ctx.strokeStyle=`rgba(255,190,40,${.65+.35*p})`;ctx.lineWidth=Math.max(2,wall*1.4);ctx.strokeRect(x-g,y-g,w+2*g,h+2*g)}
+ for(const id of trapRooms(here)){if(!WR(id)||!inBox(id))continue;const[x,y,w,h]=rectS(id),p=.5+.5*Math.sin(t*5+id),g=wall+3*p;glow(x+w/2,y+h/2,Math.max(w,h)*.75+4*p,.25+.25*p,[230,40,30]);ctx.strokeStyle=`rgba(220,40,30,${.55+.45*p})`;ctx.lineWidth=Math.max(2,wall*1.4);ctx.strokeRect(x-g,y-g,w+2*g,h+2*g)}
  for(const[n,r]of Object.entries(WORLD.rooms)){const id=+n;if(!inBox(id)||roomType(id)!=="greenhouse"||(r.lock&&!solved(id)))continue;const[x,y,w,h]=rectS(id),m=Math.min(w,h);shopMark(x+w/2,y+h/2,Math.max(3,m*.4),t)}
  if(REVEAL&&here!=null){const path=nearestShop(here);if(path&&path.length>1){ctx.save();ctx.setLineDash([6,5]);ctx.lineDashOffset=-t*20;ctx.strokeStyle="rgba(40,110,220,.95)";ctx.lineWidth=Math.max(2,k*.4);ctx.lineCap="round";ctx.beginPath();path.forEach((id,j)=>{const q=Pm(wcen(id));j?ctx.lineTo(...q):ctx.moveTo(...q)});ctx.stroke();ctx.restore();
    const e=Pm(wcen(path[path.length-1]));ctx.fillStyle="#1d4fa0";ctx.font=`700 ${fs}px system-ui`;ctx.textAlign="center";ctx.fillText("Nearest shop",e[0],e[1]-k-4)}}
@@ -1047,11 +1056,11 @@ const planKey=()=>[S.solved.join(","),walkDay().day,Object.keys(S.walk.ways).len
 function keptCanvas(w,h,draw){const c=document.createElement("canvas");c.width=Math.round(w*DPR);c.height=Math.round(h*DPR);const g=c.getContext("2d");g.setTransform(DPR,0,0,DPR,0,0);const keep=ctx;ctx=g;try{draw()}finally{ctx=keep}return c}
 function drawMap(t){const top=128,bot=70,pad=24,k=Math.min((W-2*pad)/WORLD.w,(H-top-bot)/WORLD.h),ox=(W-k*WORLD.w)/2,oy=top+(H-top-bot-k*WORLD.h)/2,Pm=q=>[ox+q[0]*k,oy+q[1]*k],here=mapPrev==="hall"?hallId:null,fs=clamp(k*1.1,8,13),key=[W,H,DPR,here,planKey()].join("|");
  if(!MAPC||MAPC.key!==key){const hits=[];const c=keptCanvas(W,H,()=>{parchment(0,0,W,H,7);
-   ctx.fillStyle="#3a2a1a";ctx.font="italic 700 20px Georgia,serif";ctx.textAlign="center";ctx.fillText(REVEAL?"The Papyrus Map":"Plan of the Halls",W/2,top-24);ctx.font="italic 12px Georgia,serif";ctx.fillText(REVEAL?"creatures, unopened chests and the way to the nearest shop":"every proposition a room; doors open as you prove",W/2,top-9);ctx.textAlign="left";
+   ctx.fillStyle="#3a2a1a";ctx.font="italic 700 20px Georgia,serif";ctx.textAlign="center";ctx.fillText(REVEAL?"The Papyrus Map":"Plan of the Halls",W/2,top-24);ctx.font="italic 12px Georgia,serif";ctx.fillText((REVEAL?"creatures, unopened chests and the way to the nearest shop":"every proposition a room; doors open as you prove")+" · the clock stops while the map is open",W/2,top-9);ctx.textAlign="left";
    drawPlan(Pm,k,{here,fs,hits});
    const cx=W-pad-26,cy=H-bot-16;ctx.strokeStyle="#3a2a1a";ctx.fillStyle="#3a2a1a";ctx.lineWidth=1;ctx.beginPath();ctx.arc(cx,cy,16,0,7);ctx.stroke();ctx.beginPath();ctx.moveTo(cx,cy-22);ctx.lineTo(cx+5,cy);ctx.lineTo(cx,cy+22);ctx.lineTo(cx-5,cy);ctx.closePath();ctx.fill();ctx.font="10px Georgia";ctx.textAlign="center";ctx.fillText("N",cx,cy-25);ctx.textAlign="left";
    const ly=76,items=[["stone","corridor"],["wood","library"],["wood2","bedroom"],["tile","kitchen"],["grass","greenhouse"],["amber","ready"],["paper","locked"],["walked","walked today"],["trap","trap set"]];ctx.font="13px system-ui,sans-serif";let lx=14;
-   for(const[c,w]of items){if(c==="walked"){ctx.fillStyle="#d99a1a";ctx.beginPath();ctx.arc(lx+6,ly-4,4,0,7);ctx.fill()}else if(c==="trap"){ctx.strokeStyle="#c8281e";ctx.lineWidth=2;ctx.setLineDash([4,3]);ctx.strokeRect(lx,ly-10,12,12);ctx.setLineDash([])}else{ctx.fillStyle=c==="amber"?"#f0c070":planPattern(c);ctx.fillRect(lx,ly-10,12,12);ctx.strokeStyle=c==="amber"?"#e08a1e":"#3a2a1a";ctx.lineWidth=1;ctx.strokeRect(lx,ly-10,12,12)}ctx.fillStyle="#3a2a1a";ctx.fillText(w,lx+17,ly);lx+=ctx.measureText(w).width+30}});
+   for(const[c,w]of items){if(c==="walked"){ctx.fillStyle="#d99a1a";ctx.beginPath();ctx.arc(lx+6,ly-4,4,0,7);ctx.fill()}else if(c==="trap"){ctx.strokeStyle="#c8281e";ctx.lineWidth=2;ctx.setLineDash([4,3]);ctx.strokeRect(lx,ly-10,12,12);ctx.setLineDash([])}else{ctx.fillStyle=c==="amber"?"#ffd76a":planPattern(c);ctx.fillRect(lx,ly-10,12,12);ctx.strokeStyle=c==="amber"?"#e0a01e":"#3a2a1a";ctx.lineWidth=1;ctx.strokeRect(lx,ly-10,12,12)}ctx.fillStyle="#3a2a1a";ctx.fillText(w,lx+17,ly);lx+=ctx.measureText(w).width+30}});
   MAPC={c,key,hits}}
  mapHits=MAPC.hits;ctx.drawImage(MAPC.c,0,0,W,H);drawPlan(Pm,k,{anim:true,t,here,fs,label:true,player:here!=null})}
 /* the corner map while you walk: the same plan around you, with a circle where you are. Tap it (or N) for this room only. */
@@ -1059,7 +1068,7 @@ let MMBOX=null;
 function drawCornerMap(t){if(S.mini==="room")return drawMinimap();const bw=Math.min(240,W*.3),bh=Math.min(170,H*.26),x0=W-bw-12,y0=104;MMBOX=[x0,y0,bw,bh];
  const c=wcen(hallId),sc=bw/16,Pm=q=>[bw/2+(q[0]-c[0])*sc,bh/2+(q[1]-c[1])*sc],box=[c[0]-9,c[1]-7,c[0]+9,c[1]+7],key=[hallId,bw,bh,DPR,planKey()].join("|"),fs=clamp(sc*.6,8,12);
  if(!MINIC||MINIC.key!==key)MINIC={key,c:keptCanvas(bw,bh,()=>{parchment(0,0,bw,bh,hallId);drawPlan(Pm,sc,{here:hallId,fs,box})})};
- ctx.save();ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x0,y0,bw,bh,10);else ctx.rect(x0,y0,bw,bh);ctx.clip();ctx.drawImage(MINIC.c,x0,y0,bw,bh);ctx.translate(x0,y0);drawPlan(Pm,sc,{anim:true,t,here:hallId,fs,box,player:true});ctx.restore();
+ ctx.save();ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x0,y0,bw,bh,10);else ctx.rect(x0,y0,bw,bh);ctx.clip();ctx.drawImage(MINIC.c,x0,y0,bw,bh);ctx.translate(x0,y0);drawPlan(Pm,sc,{anim:true,t,here:hallId,fs,box,player:true});readyArrows(Pm,bw,bh,t);ctx.restore();
  ctx.strokeStyle="#c9a55a";ctx.lineWidth=2;ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x0,y0,bw,bh,10);else ctx.rect(x0,y0,bw,bh);ctx.stroke();ctx.fillStyle="rgba(20,14,8,.7)";ctx.fillRect(x0,y0+bh,bw,16);ctx.fillStyle="#f3e6c4";ctx.font="11px Georgia";ctx.fillText(`${hallId<100?hallId:"·"} · ${roomType(hallId)} · tap for this room`,x0+6,y0+bh+12)}
 /* the statue shop on maps: a small blue statue on a plinth in a glow (every greenhouse room has one) */
 function shopMark(x,y,r,t){ctx.save();ctx.globalCompositeOperation="lighter";const g=ctx.createRadialGradient(x,y,0,x,y,r*1.8);g.addColorStop(0,`rgba(90,160,255,${.55+.15*Math.sin(t*2)})`);g.addColorStop(1,"rgba(90,160,255,0)");ctx.fillStyle=g;ctx.fillRect(x-r*1.8,y-r*1.8,r*3.6,r*3.6);ctx.restore();
@@ -1510,7 +1519,9 @@ if(S.gv!==2){S.grow={};S.gv=2} /* growing plants used to wait for the next lock;
 const PZ=()=>CAM.z+1.25; /* where you stand: a little ahead of the camera */
 /* --- time and health --- */
 let saveT=0,HURT=0;
-function sysTick(dt){if(scene==="title"||scene==="intro"||fade)return;const m=dt*EN.clock.MIN_PER_SEC;EN.clock.tick(S,dt);EN.health.regen(S,m);saveT+=dt;if(saveT>5){saveT=0;save()}hudUpdate()}
+/* the clock (and a lock's timer) stop while you read the map or look in your bag or the shop */
+const paused=()=>scene==="map"||document.getElementById("bag").style.display==="block";
+function sysTick(dt){if(scene==="title"||scene==="intro"||fade||paused())return;const m=dt*EN.clock.MIN_PER_SEC;EN.clock.tick(S,dt);EN.health.regen(S,m);saveT+=dt;if(saveT>5){saveT=0;save()}hudUpdate()}
 function hurt(n,why){if(n<=0)return;HURT=now();sfxRattle();const out=EN.health.damage(S,n);hudUpdate();toast(`−${n} health: ${why}`);if(out)faint();save()}
 function faint(){const r=EN.health.faint(S);save();HOLD=null;BDRAG=null;bagClose();cookClose();setTimeout(()=>toast(`You faint… and wake at the front doors.${r.lost?` ${r.lost} coins are gone.`:""}`),900);hallStack=[];CAM={x:0,z:0,target:null};PLY.y=0;PLY.jt=-1;fadeTo("doors",1200)}
 /* --- the HUD: clock, health bar, fuel, wielded weapon --- */
@@ -1690,7 +1701,7 @@ function drawMinimap(){const RT=roomType(hallId),RW=CURG.RW,RL=CURG.RL,s=Math.mi
 let LT=null;
 function lockGate(id){if(solved(id))return true;if(EN.locks.cooling(S,id)){toast(`This lock has sealed itself. It opens again in ${Math.ceil(EN.locks.left(S,id))} game minutes.`);sfxRattle();return false}
  const pf=PROOF(id),steps=(pf&&pf.steps&&pf.steps.length)||(FIGS[id]&&FIGS[id].steps&&FIGS[id].steps.length)||6;LT={n:id,t0:now(),limit:EN.locks.limit(steps)};return true}
-function drawLockTimer(){if(!LT||scene!=="lock")return;if(solved(LT.n)||lockId!==LT.n){LT=null;return}const el=(now()-LT.t0)/1000,left=LT.limit-el,u=clamp(left/LT.limit,0,1);
+function drawLockTimer(){if(!LT||scene!=="lock")return;if(solved(LT.n)||lockId!==LT.n){LT=null;return}const T=now();if(paused())LT.t0+=T-(LT.seen||T);LT.seen=T;const el=(now()-LT.t0)/1000,left=LT.limit-el,u=clamp(left/LT.limit,0,1);
  ctx.fillStyle="rgba(0,0,0,.45)";ctx.fillRect(W/2-150,8,300,22);ctx.fillStyle=u<.2?"#e0402a":"#e0b040";ctx.fillRect(W/2-148,10,296*u,18);ctx.fillStyle="#fff";ctx.font="13px Georgia";ctx.textAlign="center";ctx.fillText(`${Math.floor(Math.max(0,left)/60)}:${String(Math.floor(Math.max(0,left)%60)).padStart(2,"0")} before the lock seals`,W/2,24);ctx.textAlign="left";
  if(left<=0&&!fade){const n=LT.n;LT=null;EN.locks.seal(S,n);hurt(EN.locks.DAMAGE,"the lock snapped shut on your fingers");setTimeout(()=>toast(`Out of time: lock ${n} seals for ${EN.locks.COOLDOWN_MIN} game minutes.`),1400);fadeTo(lockFrom,700)}}
 /* --- greenhouse trees: fruit to pick, then wood to cut --- */
