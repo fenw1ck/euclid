@@ -1,0 +1,37 @@
+Tool,Kind,Props,Count
+amatch,hands-on,1.5,1
+angcopy,hands-on,1.32 1.37 1.38 1.39 1.40 1.42 1.43 1.44 1.46 1.47,10
+carry,hands-on,1.22 1.23 1.46 1.48,4
+circ,hands-on,1.1 1.2 1.3 1.5 1.6 1.9 1.11 1.12 1.16 1.18 1.20 1.22 1.23,13
+drop,hands-on,1.16 1.42,2
+eqtri,hands-on,1.2 1.3 1.6 1.9 1.10 1.11 1.12 1.13 1.14 1.16 1.42 1.46 1.47 1.48,14
+ext,hands-on,1.2 1.3 1.5 1.6 1.14 1.15 1.16 1.17 1.20 1.21 1.27 1.28 1.29 1.31 1.32 1.44,16
+flip,hands-on,1.5,1
+gemin,hands-on,1.17 1.18 1.19 1.20 1.21 1.24 1.28 1.29 1.30 1.32 1.33 1.34,12
+hollow,hands-on,1.13 1.14 1.15 1.17 1.28 1.29 1.32,7
+home,hands-on,1.19 1.26 case 1 1.26 case 2 1.27 1.29 1.39 1.40,7
+lay,hands-on,1.24 1.26 case 1 1.26 case 2 1.31 1.35 1.42 1.44 1.45,8
+line,hands-on,1.1 1.2 1.3 1.5 1.6 1.7 1.9 1.10 1.11 1.12 1.13 1.14 1.15 1.16 1.18 1.20 1.22 1.23 1.24 1.30 1.31 1.32 1.33 1.34 1.35 1.36 1.37 1.38 1.39 1.40 1.41 1.42 1.43 1.44 1.45 1.46 1.47 1.48,38
+morph,hands-on,1.36 1.37 1.38 1.39 1.40 1.41 1.42 1.47,8
+piece,hands-on,1.35 1.39 1.40 1.43,4
+pretend,hands-on,1.7,1
+push,hands-on,1.6,1
+raise,hands-on,1.14,1
+rot,hands-on,1.2 1.3 1.6 1.22 1.23 1.46 1.47 1.48,8
+slide,hands-on,1.4 1.8,2
+spin,hands-on,1.37 1.38 1.41 1.42 1.43 1.47,6
+spinw,hands-on,1.15 1.28 1.29,3
+straighten,hands-on,1.7 1.25,2
+stretch,hands-on,1.7 1.14 1.26 case 1 1.26 case 2 1.27,5
+string,hands-on,1.20 1.21 1.24,3
+turn,hands-on,1.16,1
+wcmp,hands-on,1.13,1
+wrong,hands-on,1.6 1.19 1.25 1.26 case 1 1.26 case 2 1.27 1.29 1.39 1.40,9
+place,tap,1.5 1.9 1.11 1.12 1.23 1.30 1.31 1.43,8
+apl,tap (short version),1.45,1
+cpy,tap (short version),1.23,1
+cut,tap (short version),1.22,1
+par,tap (short version),1.37 1.38 1.42 1.43 1.44 1.46,6
+perp,tap (short version),1.47,1
+pgram,tap (short version),1.44 1.45,2
+sq,tap (short version),1.47,1
