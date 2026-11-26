@@ -159,6 +159,60 @@ D.potion=(ctx,o)=>{const id=o.id||'',st=/strongest/.test(id)?'strongest':/strong
   const tg='#efe3c2';ctx.strokeStyle='#8a6a3a';ctx.lineWidth=.008;ctx.beginPath();ctx.moveTo(.07,cy-R-.12);ctx.lineTo(.2,cy-R+.02);ctx.stroke(); /* the paper tag: one, two or three leaves for its strength */
   ctx.save();ctx.translate(.24,cy-R+.08);ctx.rotate(.25);ctx.fillStyle=tg;ctx.fillRect(-.07,-.05,.14,.11);ctx.strokeRect(-.07,-.05,.14,.11);const n=st==='weak'?1:st==='strong'?2:3;ctx.fillStyle='#3a7a3a';
   for(let i=0;i<n;i++){ctx.beginPath();ctx.ellipse(-.035*(n-1)+i*.035,0,.012,.028,.4,0,TAU);ctx.fill()}ctx.strokeStyle='#8a2a2a';ctx.lineWidth=.008;ctx.beginPath();ctx.moveTo(-.06,.045);ctx.lineTo(.06,-.04);ctx.stroke();ctx.restore()};
+/* health potions (research/objects/items/potions/health-potion.md): drink to heal. The same round-bottomed sphere as
+   the weed killer, but stoppered with a caduceus: a short rod rising from the cork, two snakes twined round it in
+   opposite directions with their heads facing at the top, and a pair of wings above them. Strength shows three ways:
+   the fluid (rose, red, deep crimson that glows), the caduceus metal (bronze, silver, gold) and how full the wings are.
+   ids: health-minor | health-greater | health-supreme (o.level for how full). */
+const HEAL={minor:{fl:'#e58a8a',m:'#b07a35',wing:2},greater:{fl:'#c8282e',m:'#c9ccd0',wing:3},supreme:{fl:'#7e0b22',m:'#d4a73a',wing:4}};
+function caduceus(ctx,x,y0,h,m,nw){const top=y0-h,lw=Math.max(.008,h*.05);
+  ctx.strokeStyle=darken(m,.35);ctx.lineWidth=lw*1.5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(x,y0);ctx.lineTo(x,top);ctx.stroke(); /* the rod */
+  ctx.strokeStyle=lighten(m,.35);ctx.lineWidth=lw*.6;ctx.beginPath();ctx.moveTo(x-lw*.3,y0);ctx.lineTo(x-lw*.3,top);ctx.stroke();
+  for(const s of[1,-1]){ /* two snakes, crossing three times, heads turned to face each other under the wings */
+    ctx.beginPath();for(let i=0;i<=28;i++){const u=i/28,yy=y0-u*h*.78,xx=x+s*Math.sin(u*Math.PI*3)*h*.17*(1-.25*u);i?ctx.lineTo(xx,yy):ctx.moveTo(xx,yy)}
+    ctx.strokeStyle=darken(m,.45);ctx.lineWidth=lw*1.9;ctx.stroke();ctx.strokeStyle=m;ctx.lineWidth=lw*1.2;ctx.stroke();
+    const hy=y0-h*.8;ctx.fillStyle=m;ctx.beginPath();ctx.ellipse(x+s*h*.09,hy,h*.06,h*.035,s*.3,0,TAU);ctx.fill();ctx.strokeStyle=darken(m,.45);ctx.lineWidth=lw*.5;ctx.stroke()}
+  for(const s of[1,-1]){ /* the wings: spread out and up, nw primaries each side, longest on top, like Hermes' */
+    const wy=top+h*.14;ctx.beginPath();ctx.moveTo(x,wy);ctx.quadraticCurveTo(x+s*h*.25,wy-h*.2,x+s*h*.52,wy-h*.26);ctx.quadraticCurveTo(x+s*h*.3,wy+h*.02,x,wy+h*.08);ctx.closePath();ctx.fillStyle=m;ctx.fill();ctx.strokeStyle=darken(m,.4);ctx.lineWidth=lw*.5;ctx.stroke(); /* the wing's arm */
+    for(let k=0;k<nw;k++){const u=(k+1)/(nw+1),px=x+s*h*.5*u,py=wy-h*.24*u+h*.03,L=h*(.16+.1*u);ctx.save();ctx.translate(px,py);ctx.rotate(s*(.35+.5*(1-u)));
+      ctx.beginPath();ctx.ellipse(0,L*.45,L*.13,L*.5,0,0,TAU);ctx.fillStyle=k%2?lighten(m,.25):lighten(m,.08);ctx.fill();ctx.strokeStyle=darken(m,.4);ctx.lineWidth=lw*.4;ctx.stroke();ctx.restore()}}
+  ctx.beginPath();ctx.arc(x,top,h*.055,0,TAU);ctx.fillStyle=lighten(m,.25);ctx.fill();ctx.strokeStyle=darken(m,.4);ctx.lineWidth=lw*.5;ctx.stroke()} /* the knob */
+D.health=(ctx,o)=>{ctx.save();ctx.scale(.86,.86);healthPotion(ctx,o);ctx.restore()}; /* scaled so the caduceus tip stays within the item's unit height */
+function healthPotion(ctx,o){const id=o.id||'',st=/supreme/.test(id)?'supreme':/greater/.test(id)?'greater':'minor',P=HEAL[st],fl=o.fluid||P.fl,R=.3,cy=-R-.02,lvl=o.level==null?.72:o.level;
+  if(st==='supreme'){const g=ctx.createRadialGradient(0,cy,0,0,cy,R*1.8);g.addColorStop(0,'rgba(255,120,120,.4)');g.addColorStop(1,'rgba(255,120,120,0)');ctx.fillStyle=g;ctx.fillRect(-R*1.8,cy-R*1.8,R*3.6,R*3.6)}
+  ctx.save();ctx.beginPath();ctx.arc(0,cy,R,0,TAU);ctx.clip();const top=cy+R-2*R*lvl;
+  const g=ctx.createRadialGradient(-R*.25,cy-R*.1,R*.1,0,cy,R*1.1);g.addColorStop(0,lighten(fl,.35));g.addColorStop(.6,fl);g.addColorStop(1,darken(fl,.4));ctx.fillStyle=g;ctx.fillRect(-R,top,2*R,2*R);
+  ctx.fillStyle=lighten(fl,.4);ctx.beginPath();ctx.ellipse(0,top,R*.95,.028,0,0,TAU);ctx.fill();
+  ctx.fillStyle='rgba(255,235,235,.5)';for(let i=0;i<4;i++){const bx=Math.cos(i*1.9+(o.seed||0))*R*.45,by=cy+R*.55-i*.08;if(by>top)ctx.beginPath(),ctx.arc(bx,by,.011+.005*(i%2),0,TAU),ctx.fill()}ctx.restore();
+  const nk=.065,nt=cy-R-.13;ctx.beginPath();ctx.moveTo(-nk,cy-R*.95);ctx.lineTo(-nk,nt);ctx.lineTo(nk,nt);ctx.lineTo(nk,cy-R*.95);ctx.fillStyle='rgba(225,240,235,.22)';ctx.fill(); /* the neck */
+  ctx.beginPath();ctx.arc(0,cy,R,0,TAU);ctx.fillStyle='rgba(225,240,235,.1)';ctx.fill();ctx.strokeStyle='rgba(70,60,60,.75)';ctx.lineWidth=.013;ctx.stroke();
+  ctx.beginPath();ctx.moveTo(-nk,cy-R*.95);ctx.lineTo(-nk,nt);ctx.moveTo(nk,cy-R*.95);ctx.lineTo(nk,nt);ctx.stroke();ctx.beginPath();ctx.ellipse(0,nt,.085,.022,0,0,TAU);ctx.stroke();
+  const ck='#b98a52';ctx.beginPath();ctx.moveTo(-.068,nt+.02);ctx.lineTo(-.08,nt-.08);ctx.lineTo(.08,nt-.08);ctx.lineTo(.068,nt+.02);ctx.closePath();ctx.fillStyle=shade(ctx,-.08,0,.08,0,ck,.3);ctx.fill();out(ctx,ck,.009); /* the cork */
+  caduceus(ctx,0,nt-.07,.3,P.m,P.wing);
+  ctx.strokeStyle='rgba(255,255,255,.75)';ctx.lineWidth=.024;ctx.lineCap='round';ctx.beginPath();ctx.arc(0,cy,R*.78,Math.PI*1.08,Math.PI*1.38);ctx.stroke(); /* highlight, upper left */
+  ctx.fillStyle='rgba(255,255,255,.55)';ctx.beginPath();ctx.arc(R*.38,cy+R*.42,.018,0,TAU);ctx.fill()}
+/* backpacks (research/objects/items/backpack.md): the bag's size. Front view, standing on its base. Each size up is a
+   new pack, not a recoloured one (after Stardew Valley's red Large Pack and blue Deluxe Pack): the satchel (16, worn
+   tan leather, one flap), the rucksack (24, red canvas, a front pocket and side pockets) and the expedition pack (32,
+   blue canvas on a frame, a bedroll strapped on top, two front pockets). ids: backpack-satchel|rucksack|expedition. */
+const PACKS={satchel:{c:'#9a6a3e',w:.62,h:.56,pk:0,roll:0,trim:'#6a4526'},rucksack:{c:'#b0453a',w:.66,h:.78,pk:1,roll:0,trim:'#6a4526'},expedition:{c:'#3f6a9a',w:.72,h:.95,pk:2,roll:1,trim:'#5a3a22'}};
+function buckle(ctx,x,y,s){ctx.fillStyle='#c9a24a';ctx.strokeStyle='#7a5a20';ctx.lineWidth=s*.12;ctx.beginPath();ctx.rect(x-s/2,y-s/2,s,s*.8);ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(x,y-s*.4);ctx.lineTo(x,y+s*.2);ctx.stroke()}
+function rrect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath()}
+D.backpack=(ctx,o)=>{const id=o.id||'',k=/expedition/.test(id)?'expedition':/rucksack/.test(id)?'rucksack':'satchel',P=PACKS[k],c=P.c,w=P.w,h=P.h,x0=-w/2,y0=-h,R=rngMulberry((o.seed||5)*7+1);
+  if(k==='expedition'){ctx.strokeStyle='#5a5a5a';ctx.lineWidth=.025;ctx.beginPath();ctx.moveTo(x0-.03,0);ctx.lineTo(x0-.03,y0-.12);ctx.moveTo(-x0+.03,0);ctx.lineTo(-x0+.03,y0-.12);ctx.stroke()} /* the frame */
+  if(k!=='satchel'){for(const s of[-1,1]){rrect(ctx,s<0?x0-.09:-x0-.01,y0+h*.4,.1,h*.5,.04);ctx.fillStyle=shade(ctx,-w,0,w,0,darken(c,.12),.2);ctx.fill();out(ctx,c,.01)}} /* side pockets */
+  rrect(ctx,x0,y0,w,h,k==='satchel'?.08:.14);ctx.fillStyle=shade(ctx,x0,y0,-x0,0,c,.25);ctx.fill();out(ctx,c,.014); /* the body */
+  ctx.strokeStyle='rgba(255,255,255,.12)';ctx.lineWidth=.006;for(let i=0;i<6;i++){const yy=y0+h*(.15+.13*i);ctx.beginPath();ctx.moveTo(x0+.03,yy+R()*.01);ctx.lineTo(-x0-.03,yy+R()*.01);ctx.stroke()} /* weave or grain */
+  ctx.strokeStyle=darken(c,.3);ctx.setLineDash([.02,.015]);ctx.lineWidth=.006;rrect(ctx,x0+.03,y0+.03,w-.06,h-.06,.1);ctx.stroke();ctx.setLineDash([]); /* stitching */
+  const fh=h*(k==='satchel'?.55:.38);ctx.beginPath();ctx.moveTo(x0-.005,y0+.08);ctx.quadraticCurveTo(x0,y0-.01,x0+.12,y0-.01);ctx.lineTo(-x0-.12,y0-.01);ctx.quadraticCurveTo(-x0,y0-.01,-x0+.005,y0+.08);ctx.lineTo(-x0-.03,y0+fh);ctx.quadraticCurveTo(0,y0+fh+.06,x0+.03,y0+fh);ctx.closePath();
+  ctx.fillStyle=shade(ctx,x0,y0,-x0,y0+fh,darken(c,.1),.3);ctx.fill();out(ctx,c,.012); /* the flap */
+  for(const s of(k==='satchel'?[0]:[-.17,.17])){ctx.fillStyle=P.trim;ctx.fillRect(s*w-.025,y0+fh*.55,.05,fh*.6);buckle(ctx,s*w,y0+fh+.02,.07)} /* straps and buckles */
+  if(P.pk){const n=P.pk;for(let i=0;i<n;i++){const pw=n>1?w*.38:w*.6,px=n>1?(i?.03:-pw-.03):-pw/2,py=y0+fh+.1,ph=h-fh-.16;rrect(ctx,px,py,pw,ph,.06);ctx.fillStyle=shade(ctx,px,py,px+pw,py+ph,lighten(c,.06),.25);ctx.fill();out(ctx,c,.01);
+    ctx.beginPath();ctx.moveTo(px,py+ph*.32);ctx.quadraticCurveTo(px+pw/2,py+ph*.42,px+pw,py+ph*.32);ctx.stroke();buckle(ctx,px+pw/2,py+ph*.4,.05)}} /* front pockets */
+  ctx.strokeStyle=P.trim;ctx.lineWidth=.03;ctx.beginPath();ctx.arc(0,y0,.07,Math.PI,0);ctx.stroke(); /* the carry loop */
+  if(P.roll){const ry=y0-.09,rw=w*1.05;ctx.beginPath();ctx.ellipse(0,ry,rw/2,.08,0,0,TAU);ctx.fillStyle=shade(ctx,0,ry-.08,0,ry+.08,'#6a7a4a',.3);ctx.fill();out(ctx,'#6a7a4a',.01);
+    ctx.beginPath();ctx.ellipse(rw/2-.02,ry,.025,.07,0,0,TAU);ctx.fillStyle='#4a5a32';ctx.fill();for(const s of[-.2,.2]){ctx.fillStyle=P.trim;ctx.fillRect(s*w-.015,ry-.085,.03,.17)}} /* the bedroll */
+  ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=.018;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(x0+.06,y0+h*.3);ctx.quadraticCurveTo(x0+.04,y0+h*.6,x0+.07,y0+h*.85);ctx.stroke()};
 /* food (research/objects/items/food/): the potato, raw (skin red, purple or brown, from the id "potato-red", o.skin or
    the seed) and baked (split open, steaming, with butter); must be cooked to be eaten. "produce-<plant id>" draws what any
    other plant gives at harvest, by the part harvested (PLANTS.harvest): fruit, root, flower or leaf, in the plant's colours. */
@@ -236,7 +290,7 @@ D.coin=(ctx,o)=>{ctx.save();ctx.translate(0,-.45);coin(ctx,0,0,.42,o);ctx.restor
 D.coins=(ctx,o)=>{coins(ctx,0,0,.8,o.n||5,o)};
 D.chest=(ctx,o)=>{if(window.CONTAINERS)CONTAINERS.drawChest(ctx,{},0,0,1.1,o.state==='open'?'open':'closed',o.seed||1,{fill:o.fill==null?.6:o.fill});else D.parcel(ctx,o)};
 D.ax=(ctx,o)=>{if(window.TOOLS){const t=/star/.test(o.id||'')?2:/iron/.test(o.id||'')?1:0;TOOLS.drawAx(ctx,t,-.25,0,1,.55)}};
-const ALIAS={'scroll':'scroll','weapon':'weapon','firewood':'firewood','kindling':'kindling','cauldron':'cauldron','cooked':'dish','dish':'dish','burnt':'dish','potato-soup':'dish','ratatouille':'dish','bean-stew':'dish','squash-roast':'dish','rhubarb-crumble':'dish','soil':'soil','potato':'potato','produce':'produce','potion':'potion','boots':'boots','shirt':'shirt','pants':'pants','necklace':'necklace','sword':'sword','cape':'cape','gloves':'gloves','crown':'crown','chalice':'chalice','astrolabe':'astrolabe','compass':'compass','straightedge':'straightedge','lyre':'lyre','tile':'tile','amphora':'amphora','lamp':'lamp','ring':'ring','map':'map','bust':'bust','hourglass':'hourglass','coin':'coin','coins':'coins','chest':'chest','bronze-ax':'ax','iron-ax':'ax','starmetal-ax':'ax'};
+const ALIAS={'scroll':'scroll','weapon':'weapon','firewood':'firewood','kindling':'kindling','cauldron':'cauldron','cooked':'dish','dish':'dish','burnt':'dish','potato-soup':'dish','ratatouille':'dish','bean-stew':'dish','squash-roast':'dish','rhubarb-crumble':'dish','soil':'soil','potato':'potato','produce':'produce','potion':'potion','health':'health','backpack':'backpack','boots':'boots','shirt':'shirt','pants':'pants','necklace':'necklace','sword':'sword','cape':'cape','gloves':'gloves','crown':'crown','chalice':'chalice','astrolabe':'astrolabe','compass':'compass','straightedge':'straightedge','lyre':'lyre','tile':'tile','amphora':'amphora','lamp':'lamp','ring':'ring','map':'map','bust':'bust','hourglass':'hourglass','coin':'coin','coins':'coins','chest':'chest','bronze-ax':'ax','iron-ax':'ax','starmetal-ax':'ax'};
 function keyOf(key){key=String(key||'');if(D[key])return key;if(ALIAS[key])return ALIAS[key];const pre=key.split('-')[0];if(D[pre])return pre;if(ALIAS[pre])return ALIAS[pre];return null}
 function has(key){return !!keyOf(key)}
 function draw(ctx,key,x,y,size,o){o=Object.assign({},o||{},{id:key});const k=keyOf(key)||'parcel';

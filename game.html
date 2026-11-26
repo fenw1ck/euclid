@@ -157,6 +157,11 @@ const ITEMS=[
 {id:"potion-ghost",kind:"potion",name:"Ghost Draught",price:20,ghost:60,desc:"Pale blue and cold. Drink it, and for an hour of game time every trap passes through you as if you weren't there. One use."},
 {id:"shield-bronze",kind:"shield",name:"Bronze Shield",price:25,hits:3,desc:"A round hoplite shield. Kept in your bag, it takes a trap's blow for you: three blows, then it splits."},
 {id:"potion-strongest",kind:"potion",name:"Weed Killer (strongest)",price:28,cut:1,desc:"Deep green, and it glows. Withers every vine on a door. Kills any plant it touches. One use."},
+{id:"health-minor",kind:"potion",name:"Health Potion",price:10,heal:25,desc:"Rose-pink, stoppered with a bronze caduceus. Drink it for +25 health. One use."},
+{id:"health-greater",kind:"potion",name:"Greater Health Potion",price:22,heal:50,desc:"Red, stoppered with a silver caduceus. Drink it for +50 health. One use."},
+{id:"health-supreme",kind:"potion",name:"Supreme Health Potion",price:45,heal:100,desc:"Deep crimson and glowing, stoppered with a gold caduceus. Drink it to be fully healed. One use."},
+{id:"backpack-rucksack",kind:"pack",name:"Rucksack",price:40,slots:24,desc:"Red canvas with a front pocket and side pockets. Your bag holds 24 things. Your old bag's contents move in."},
+{id:"backpack-expedition",kind:"pack",name:"Expedition Pack",price:90,slots:32,desc:"Blue canvas on a frame, a bedroll on top. Your bag holds 32 things."},
 {id:"crown-laurel",kind:"crown",name:"Laurel Wreath",price:10,desc:"Given to those who prove what others only suspect."},
 {id:"crown-elements",kind:"crown",name:"Crown of the Elements",price:60,desc:"Five points for five postulates. Found only in the deepest halls."},
 {id:"chalice",kind:"treasure",name:"Silver Chalice",price:16,desc:"Its rim is a perfect circle; its stem, a perfect line."},
@@ -168,7 +173,7 @@ const ITEMS=[
 {id:"amphora",kind:"treasure",name:"Painted Amphora",price:14,desc:"Black figures walk around it, forever drawing circles."},
 {id:"lamp",kind:"treasure",name:"Bronze Oil Lamp",price:9,desc:"Still holds a little oil. It smells of old libraries."},
 {id:"ring",kind:"treasure",name:"Signet Ring",price:24,desc:"The seal is a triangle inside a circle inside a square."},
-{id:"map",kind:"treasure",name:"Papyrus Map",price:18,desc:"A plan of the halls, though some corridors are drawn where none exist yet."},
+{id:"map",kind:"treasure",name:"Papyrus Map",price:18,use:1,desc:"A plan of the halls, though some corridors are drawn where none exist yet. Use it to see the creatures, the unopened chests and the way to the nearest shop."},
 {id:"bust",kind:"treasure",name:"Marble Bust Fragment",price:30,desc:"A bearded face, chipped at the nose. Possibly a geometer."},
 {id:"hourglass",kind:"treasure",name:"Glass Hourglass",price:22,desc:"The sand falls in a perfect cone, every time."},
 {id:"bronze-ax",kind:"tool",name:"Bronze Ax",price:0,desc:"Cuts back the vines on a door you may open, in ten strikes. Found by the front doors; never sold."},
@@ -812,7 +817,7 @@ function drawPlantS(g,pl,x,y,s,stage,seed,o){if(!(s>1))return;stage=stage||"matu
 let hallHits=[],hallId=1;
 /* one door for each proposition that relies on this one, nearest first, alternating walls and kept clear of the torch pillars */
 function hallSlots(n){if(n<=6)return[[-1,2.4],[1,3.3],[-1,6.4],[1,7.3],[-1,10.4],[1,10.9]].slice(0,n);const z=[2.4,3.6,4.8,6.5,7.8,9.4,10.7];return Array.from({length:n},(_,i)=>[i%2?1:-1,z[i>>1]])}
-function drawHall(t){const vx=W/2,vy=H*.47,f=Math.min(W,H)*.62,HW=1.5,FY=1.1,CY=-1.75,ZN=.4,RT0=roomType(hallId),G=CURG=roomGeo(hallId,RT0),ZF=G.RL,XS=G.RW/1.5,ZS=G.RL/13;
+function drawHall(t){lookStep();const[vx,vy,f]=hallCentre(),HW=1.5,FY=1.1,CY=-1.75,ZN=.4,RT0=roomType(hallId),G=CURG=roomGeo(hallId,RT0),ZF=G.RL,XS=G.RW/1.5,ZS=G.RL/13;
 /* the camera walks (WASD, arrows, a controller, or tap the floor); everything below works in depth from the camera */
 hallMove();const EY=PLY.y,CZ=CAM.z,Zr=z=>z-CZ,Zp=z=>z*ZS-CZ,pr=(x,y,z)=>[vx+(x*XS-CAM.x)*f/z,vy+(y+EY)*f/z],RT=RT0,P=(xr,y,z)=>pr(xr/XS,y,z),indoor=RT!=="greenhouse";
 const fog=z=>Math.exp(-(z-1)*.15),col=(c,z,k=1)=>`rgb(${c.map(v=>Math.round(clamp(v*fog(z)*k,0,255))).join(",")})`,quad=(q,c)=>{ctx.fillStyle=c;poly(q);ctx.fill()};
@@ -852,7 +857,7 @@ roomThings(RT,add,busy,pr,col,f,Zp,t);drawRoomItems(addR,P,f,CZ,t);if(RT==="bedr
  if(sh===2)add(11.7,()=>drawShopStatue(pr,f,col,1,Zp(11.7),t));
  if(RT!=="kitchen")if(RT!=="bedroom"||bedLayout(hallId).statue)if(!busy(-1,9.0,10.2))add(9.6,()=>sh===-1?drawShopStatue(pr,f,col,-1,Zp(9.6),t):statue(pr,f,col,-1,Zp(9.6),m[0]));if(RT!=="kitchen"&&!busy(1,9.6,10.8))add(10.2,()=>sh===1?drawShopStatue(pr,f,col,1,Zp(10.2),t):statue(pr,f,col,1,Zp(10.2),m[1]))}
 obj.sort((a,b)=>b.z-a.z).forEach(o=>o.d());
-ctx.drawImage(vignette(),0,0,W,H);if(ghostOn()){ctx.fillStyle="rgba(170,210,255,.13)";ctx.fillRect(0,0,W,H)}drawFX(P,f,CZ,t);if(!BP)drawMinimap();if(BP)drawBlueprint(t)}
+ctx.drawImage(vignette(),0,0,W,H);if(ghostOn()){ctx.fillStyle="rgba(170,210,255,.13)";ctx.fillRect(0,0,W,H)}drawFX(P,f,CZ,t);if(!BP)drawCornerMap(t);if(looking()){ctx.strokeStyle="rgba(255,255,255,.85)";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(W/2-9,H/2);ctx.lineTo(W/2-3,H/2);ctx.moveTo(W/2+3,H/2);ctx.lineTo(W/2+9,H/2);ctx.moveTo(W/2,H/2-9);ctx.lineTo(W/2,H/2-3);ctx.moveTo(W/2,H/2+3);ctx.lineTo(W/2,H/2+9);ctx.stroke()}if(!LOOKHINT&&t>1.2){LOOKHINT=true;if(!S.lookHint){S.lookHint=1;save();toast(EN.l10n.t("look_hint"))}}if(BP)drawBlueprint(t)}
 let HBG=null,VIG=null;
 function hallBG(key,draw){if(HBG&&HBG.key===key&&!HBG.low){ctx.drawImage(HBG.c,0,0,W,H);for(const h of HBG.hits)hallHits.push(h);return}
  /* while you walk the room is redrawn at a lower resolution; the moment you stop it is drawn sharp again */
@@ -962,41 +967,105 @@ function inPoly(p,q){let c=false;for(let i=0,j=q.length-1;i<q.length;j=i++){if((
 
 /* ---------- the map: every proposition as a star; tap one you can reach ---------- */
 let mapPrev="doors",mapHits=[];
-let MAPC=null;
-function mapGeo(){const top=96,bot=70,pad=24,cs=Math.min((W-2*pad)/WORLD.w,(H-top-bot)/WORLD.h),ox=(W-cs*WORLD.w)/2,oy=top+(H-top-bot-cs*WORLD.h)/2;return{cs,X:x=>ox+x*cs,Y:y=>oy+y*cs}}
-function drawMap(t){const{cs,X,Y}=mapGeo(),here=mapPrev==="hall"?hallId:null,reach=reachable();
-const box=n=>{const c=WR(n).cells;let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const[x,y]of c){x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y)}return[X(x0),Y(y0),X(x1+1),Y(y1+1)]};
-/* one lock room: a bar in its state's colour with its number, a leaf on a ready door still under vines */
-const room=id=>{const[x0,y0,x1,y1]=box(id),st=doorState(id),ok=hasLock(id),g=cs*.12;
- ctx.fillStyle=st==="open"?"#e3b04b":st==="amber"?(ok?"#d98a2b":"#7a5a35"):"#3a3d4a";ctx.fillRect(x0+g,y0+g,x1-x0-2*g,y1-y0-2*g);ctx.strokeStyle=st==="covered"?"#7d8192":"#f3e2b4";ctx.lineWidth=1.2;ctx.strokeRect(x0+g,y0+g,x1-x0-2*g,y1-y0-2*g);
- if(st==="amber"&&vined(id)&&window.VINES){const v=vineOf(id);VINES.drawLeaf(ctx,v.kind,x1-g,y0+g,2.4,cs*.8,VINES.KINDS[v.kind].leafCol)}
- ctx.fillStyle=st==="covered"?"#b4b8c6":"#1d140a";ctx.font=`700 ${Math.round(Math.min(cs*.8,(x1-x0)*.4))}px system-ui,sans-serif`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(id,(x0+x1)/2,(y0+y1)/2+.5);ctx.textBaseline="alphabetic"};
-const amb=IDS.filter(id=>doorState(id)==="amber"&&hasLock(id)),key=[W,H,DPR,S.solved.join(","),here,walkDay().day,Object.keys(S.walk.ways).length,Object.keys(S.arm).filter(k=>S.arm[k]).join("."),amb.map(id=>id+(vined(id)?"v":"")).join(",")].join("|");
-/* the plan only changes with progress, so it is drawn once and kept */
-if(!MAPC||MAPC.key!==key){const c=document.createElement("canvas");c.width=Math.round(W*DPR);c.height=Math.round(H*DPR);const g=c.getContext("2d");g.setTransform(DPR,0,0,DPR,0,0);const keep=ctx;ctx=g;mapHits=[];try{
-/* blueprint paper */
-const bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,"#1d2c44");bg.addColorStop(1,"#121b2d");ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);ctx.strokeStyle="rgba(170,200,240,.07)";ctx.lineWidth=1;ctx.beginPath();for(let x=0;x<W;x+=18){ctx.moveTo(x,0);ctx.lineTo(x,H)}for(let y=0;y<H;y+=18){ctx.moveTo(0,y);ctx.lineTo(W,y)}ctx.stroke();
-/* doorways between connecting rooms: the corridors are drawn joined */
-for(const[n,r]of Object.entries(WORLD.rooms)){if(r.lock)continue;const id=+n,on=reach.has(id),gh=r.kind==="greenhouse";
- for(const[x,y]of r.cells){ctx.fillStyle=gh?(on?"rgba(110,200,130,.85)":"rgba(90,140,100,.3)"):(on?"rgba(150,170,210,.75)":"rgba(120,140,180,.22)");ctx.fillRect(X(x)+.5,Y(y)+.5,cs-1,cs-1)}
- if(gh&&on&&window.PLANTS&&cs>=9){const[x,y]=r.cells[0],ps=GPICK(id);drawPlantS(ctx,ps[0],X(x)+cs/2,Y(y)+cs*.92,cs*.8,"mature",id)}
- if(id===here){const[x0,y0,x1,y1]=box(id);ctx.strokeStyle="#9fd0ff";ctx.lineWidth=2.5;ctx.strokeRect(x0-2,y0-2,x1-x0+4,y1-y0+4)}
- mapHits.push({id,poly:[[box(id)[0],box(id)[1]],[box(id)[2],box(id)[1]],[box(id)[2],box(id)[3]],[box(id)[0],box(id)[3]]]})}
-/* the way out, to the front doors */
-{const c=WR(WORLD.start).cells,ys=c.map(q=>q[1]),x=Math.min(...c.map(q=>q[0]));ctx.fillStyle="#c9b48a";ctx.font="12px system-ui,sans-serif";ctx.textAlign="right";ctx.fillText("front doors ⇢",X(x)-6,Y((Math.min(...ys)+Math.max(...ys)+1)/2)+4)}
-/* the Euler puzzle: doorways walked today (gold dots), rooms whose doorway trap is set (red dashes) */
-for(const k of Object.keys(S.walk.ways)){const[a,b]=k.split("-").map(Number),q=wayPos(a,b);if(!q)continue;ctx.fillStyle="#ffd27a";ctx.beginPath();ctx.arc(X(q[0]),Y(q[1]),Math.max(3,cs*.32),0,7);ctx.fill()}
-for(const k in S.arm)if(S.arm[k]&&WR(+k)){const[x0,y0,x1,y1]=box(+k);ctx.strokeStyle="#ff3b2e";ctx.lineWidth=2;ctx.setLineDash([4,3]);ctx.strokeRect(x0-1.5,y0-1.5,x1-x0+3,y1-y0+3);ctx.setLineDash([])}
-/* lock rooms */
-for(const id of IDS){room(id);const[x0,y0,x1,y1]=box(id);if(id===here){ctx.strokeStyle="#9fd0ff";ctx.lineWidth=2.5;ctx.strokeRect(x0-3,y0-3,x1-x0+6,y1-y0+6)}mapHits.push({id,poly:[[x0,y0],[x1,y0],[x1,y1],[x0,y1]]})}
-const ly=76,items=[["#e3b04b","solved"],["#d98a2b","ready"],["#3a3d4a","locked"],["rgba(150,170,210,.75)","corridor"],["rgba(110,200,130,.85)","greenhouse"],["#ffd27a","walked today"],["#ff3b2e","trap set"]];ctx.font="13px system-ui,sans-serif";ctx.textAlign="left";let lx=14;for(const[c,w]of items){ctx.fillStyle=c;ctx.fillRect(lx,ly-10,12,12);ctx.strokeStyle="#f3e2b4";ctx.lineWidth=1;ctx.strokeRect(lx,ly-10,12,12);ctx.fillStyle="#f3e2b4";ctx.fillText(w,lx+17,ly);lx+=ctx.measureText(w).width+30}
-}finally{ctx=keep}MAPC={c,key,hits:mapHits}}else mapHits=MAPC.hits;
-ctx.drawImage(MAPC.c,0,0,W,H);
-/* the ready rooms glow and pulse */
-for(const id of amb){const[x0,y0,x1,y1]=box(id),a=.5+.4*Math.sin(t*3+id);glow((x0+x1)/2,(y0+y1)/2,(x1-x0)*.9,.3+.2*Math.sin(t*3+id),[255,170,60]);ctx.strokeStyle=`rgba(255,176,60,${a})`;ctx.lineWidth=2;ctx.strokeRect(x0-3,y0-3,x1-x0+6,y1-y0+6);room(id)}}
+/* ---------- the map: a house plan of the fixed building (25 Nov 2026, on the fixed plan 26 Nov 2026) ----------
+   The building (world.js) drawn as a floor plan: every cell of every room has ink walls except where it opens into the
+   next cell of the same room or through a doorway; floors by room type (stone corridors, wooden libraries and
+   bedrooms, tiled kitchens, glass greenhouses); lock rooms you have not opened are pencil outlines. drawPlan() draws it
+   for any view, so the full map (M) and the corner minimap share it. The still parts are drawn once and kept (MAPC,
+   MINIC); only the glows, the shop path and "you are here" are drawn each frame. The Papyrus Map's Use button turns on
+   REVEAL: creatures, unopened chests and the way to the nearest shop. Today's walked doorways show as gold dots and
+   rooms whose doorway trap is set as red dashes (the Euler puzzle, section 3e). */
+const PLANLOOK={corridor:{floor:"stone"},library:{floor:"wood"},bedroom:{floor:"wood2"},kitchen:{floor:"tile"},greenhouse:{floor:"grass"},unknown:{floor:"paper"}};
+const PLANPAT={};
+function planPattern(kind){if(PLANPAT[kind])return PLANPAT[kind];const c=document.createElement("canvas"),z=c.width=c.height=24,g=c.getContext("2d");
+ if(kind==="stone"){g.fillStyle="#cfc6b4";g.fillRect(0,0,z,z);g.strokeStyle="rgba(90,75,55,.45)";g.lineWidth=1;g.strokeRect(.5,.5,12,12);g.strokeRect(12.5,.5,11,12);g.strokeRect(.5,12.5,7,11);g.strokeRect(7.5,12.5,16,11)}
+ else if(kind==="wood"||kind==="wood2"){g.fillStyle=kind==="wood"?"#b98a5a":"#c9a06e";g.fillRect(0,0,z,z);g.strokeStyle="rgba(80,50,25,.45)";for(let y=0;y<z;y+=6){g.beginPath();g.moveTo(0,y+.5);g.lineTo(z,y+.5);g.stroke();g.beginPath();const x=(y*7)%z;g.moveTo(x+.5,y);g.lineTo(x+.5,y+6);g.stroke()}}
+ else if(kind==="tile"){for(let y=0;y<4;y++)for(let x=0;x<4;x++){g.fillStyle=(x+y)%2?"#e8e2d2":"#7a8a8a";g.fillRect(x*6,y*6,6,6)}}
+ else if(kind==="grass"){g.fillStyle="#9cb87a";g.fillRect(0,0,z,z);g.strokeStyle="rgba(60,90,40,.5)";for(let i=0;i<7;i++){const x=(i*9)%z,y=(i*13)%z;g.beginPath();g.moveTo(x,y+4);g.lineTo(x+1,y);g.stroke()}g.strokeStyle="rgba(230,250,240,.55)";g.beginPath();g.moveTo(12.5,0);g.lineTo(12.5,z);g.stroke()}
+ else{g.fillStyle="#efe5cf";g.fillRect(0,0,z,z);g.strokeStyle="rgba(120,100,70,.18)";for(let i=-z;i<z;i+=5){g.beginPath();g.moveTo(i,z);g.lineTo(i+z,0);g.stroke()}}
+ return PLANPAT[kind]=ctx.createPattern(c,"repeat")}
+let REVEAL=false,MAPC=null,MINIC=null;
+/* the plan's geometry, in cells: which room each cell belongs to, each room's box, and one door per doorway */
+const CELLR=new Map(),WBOX={},DOORP=new Set();
+for(const[n,r]of Object.entries(WORLD.rooms)){const id=+n;let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const[x,y]of r.cells){CELLR.set(x+","+y,id);x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x+1);y1=Math.max(y1,y+1)}WBOX[id]=[x0,y0,x1,y1]}
+for(const[a,b]of WORLD.ways){let done=false;for(const[x,y]of WR(a).cells){if(done)break;for(const[u,v]of WR(b).cells)if(Math.abs(x-u)+Math.abs(y-v)===1){DOORP.add(x+","+y+"|"+u+","+v);DOORP.add(u+","+v+"|"+x+","+y);done=true;break}}}
+const joined=(x,y,u,v)=>{const a=CELLR.get(x+","+y),b=CELLR.get(u+","+v);return b!=null&&(a===b||DOORP.has(x+","+y+"|"+u+","+v))};
+const wcen=id=>{const b=WBOX[id];return[(b[0]+b[2])/2,(b[1]+b[3])/2]};
+/* the nearest shop (every greenhouse has the blue statue): breadth-first through the rooms you can walk now */
+function nearestShop(from){const R=reachable();if(!R.has(from))return null;const seen=new Map([[from,null]]),q=[from];while(q.length){const n=q.shift();if(n!==from&&roomType(n)==="greenhouse"){const path=[n];let k=n;while(seen.get(k)!=null){k=seen.get(k);path.unshift(k)}return path}
+  for(const m of WNB[n]||[])if(R.has(m)&&!seen.has(m)){seen.set(m,n);q.push(m)}}return null}
+/* draw the plan. Pm maps cells to the screen, k is pixels per cell. o.anim draws only what moves (glows, shop path, you are here);
+   without it, only what stays (floors, walls, rooms, plaques, walked doorways, set traps). o.box limits drawing to a cell window. */
+function drawPlan(Pm,k,o){const t=o.t||0,ink="#3a2a1a",wall=Math.max(1,k*.12),fs=o.fs,here=o.here,hits=o.hits,inBox=id=>{if(!o.box)return true;const b=WBOX[id];return b[2]>=o.box[0]&&b[0]<=o.box[2]&&b[3]>=o.box[1]&&b[1]<=o.box[3]};
+ const rectS=id=>{const b=WBOX[id],a=Pm([b[0],b[1]]),c=Pm([b[2],b[3]]);return[a[0],a[1],c[0]-a[0],c[1]-a[1]]};
+ if(!o.anim){const reach=reachable();
+  /* corridors and junctions */
+  for(const[n,r]of Object.entries(WORLD.rooms)){if(r.lock)continue;const id=+n;if(!inBox(id))continue;ctx.fillStyle=planPattern(reach.has(id)?(r.kind==="greenhouse"?"grass":"stone"):"paper");for(const[x,y]of r.cells){const a=Pm([x,y]);ctx.fillRect(a[0],a[1],k+.5,k+.5)}}
+  /* lock rooms: a floor by type once opened, a pencil outline while still locked */
+  for(const id of IDS){if(!inBox(id))continue;const st=doorState(id),[x,y,w,h]=rectS(id),RT=st==="covered"?"unknown":roomType(id),known=solved(id),cx=x+w/2,cy=y+h/2;
+   if(st==="covered"){ctx.fillStyle=planPattern("paper");ctx.fillRect(x,y,w,h)}
+   else{ctx.fillStyle=planPattern(known?PLANLOOK[RT].floor:"paper");ctx.fillRect(x,y,w,h);
+    if(known&&w>26){ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();ctx.lineWidth=1;
+     if(RT==="library"){ctx.fillStyle="#6a4a2a";ctx.fillRect(x+w*.08,y+1,w*.84,h*.12);ctx.fillRect(x+w*.08,y+h*.88-1,w*.84,h*.12)}
+     else if(RT==="bedroom"){ctx.fillStyle="#efe6d8";ctx.fillRect(x+w*.62,y+h*.3,w*.32,h*.4);ctx.fillStyle="#8a5a4a";ctx.fillRect(x+w*.62,y+h*.3,w*.32*.25,h*.4)}
+     else if(RT==="kitchen"){ctx.fillStyle="#3a3a3a";ctx.fillRect(x+w*.78,y+h*.32,w*.16,h*.36);ctx.fillStyle="#a8784a";ctx.fillRect(x+w*.25,y+h*.35,w*.3,h*.3)}
+     else if(RT==="greenhouse"){ctx.fillStyle="#4a7a3a";for(let j=0;j<6;j++){ctx.beginPath();ctx.arc(x+w*(.15+.14*j),y+h*(j%2?.2:.8),Math.max(1.5,h*.08),0,7);ctx.fill()}}
+     else if(RT==="corridor"){ctx.fillStyle="rgba(140,40,40,.55)";ctx.fillRect(x+w*.1,y+h*.4,w*.8,h*.2)}ctx.restore()}}
+   if(REVEAL&&known){const m=mobOf(id);if(m&&m.hp>0){ctx.fillStyle=m.friendly?"#3a8a3a":"#b8281e";ctx.strokeStyle="#fff";ctx.lineWidth=1;const r=Math.max(4,Math.min(w,h)*.3);ctx.beginPath();ctx.arc(x+w-r-2,y+r+2,r,0,7);ctx.fill();ctx.stroke()}
+    const ch=roomItems(id).filter(it=>it.id==="chest"&&!S.opened[it.uid]).length;if(ch){const r=Math.max(4,Math.min(w,h)*.28),bx=x+r+2,by=y+r+2;ctx.fillStyle="#8a5a2a";ctx.fillRect(bx-r,by-r*.6,2*r,r*1.3);ctx.fillStyle="#d4a73a";ctx.fillRect(bx-r,by-r*.15,2*r,r*.25)}}
+   hits&&hits.push({id,q:[cx,cy],r:Math.max(w,h)/2})}
+  /* walls: every cell side that does not open into the same room or through a doorway */
+  ctx.strokeStyle=ink;ctx.lineWidth=wall;ctx.lineCap="square";ctx.beginPath();
+  for(const[key,id]of CELLR){if(!inBox(id))continue;const[x,y]=key.split(",").map(Number);
+   for(const[dx,dy]of[[1,0],[-1,0],[0,1],[0,-1]]){if(joined(x,y,x+dx,y+dy))continue;const a=Pm([x+(dx>0?1:0)+(dy?0:0),y+(dy>0?1:0)]),b=Pm([x+(dx>0?1:dx<0?0:1),y+(dy>0?1:dy<0?0:1)]);
+    if(dx){const xx=Pm([x+(dx>0?1:0),y])[0],ya=Pm([x,y])[1];ctx.moveTo(xx,ya);ctx.lineTo(xx,ya+k)}else{const yy=Pm([x,y+(dy>0?1:0)])[1],xa=Pm([x,y])[0];ctx.moveTo(xa,yy);ctx.lineTo(xa+k,yy)}}}
+  ctx.stroke();
+  /* plaques with the numbers, and the leaf on a ready door still under vines */
+  for(const id of IDS){if(!inBox(id))continue;const st=doorState(id),[x,y,w,h]=rectS(id),cx=x+w/2,cy=y+h/2;
+   const tw=fs*(String(id).length*.62+.8);ctx.fillStyle=st==="covered"?"rgba(250,244,228,.55)":"rgba(250,244,228,.92)";ctx.fillRect(cx-tw/2,cy-fs*.62,tw,fs*1.24);ctx.strokeStyle=st==="covered"?"rgba(90,70,50,.45)":ink;ctx.lineWidth=.8;ctx.strokeRect(cx-tw/2,cy-fs*.62,tw,fs*1.24);
+   ctx.fillStyle=st==="covered"?"rgba(90,70,50,.6)":ink;ctx.font=`700 ${fs}px Georgia,serif`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(id,cx,cy+.5);ctx.textBaseline="alphabetic";
+   if(st==="amber"&&vined(id)&&window.VINES&&w>14){const v=vineOf(id);VINES.drawLeaf(ctx,v.kind,x+w-2,y+2,2.4,Math.min(w,h)*.6,VINES.KINDS[v.kind].leafCol)}}
+  /* the Euler puzzle: doorways walked today (gold dots), rooms whose doorway trap is set (red dashes) */
+  walkDay();for(const kk of Object.keys(S.walk.ways)){const[a,b]=kk.split("-").map(Number),q=wayPos(a,b);if(!q)continue;const p=Pm(q);ctx.fillStyle="#d99a1a";ctx.strokeStyle="#5a3a10";ctx.lineWidth=.8;ctx.beginPath();ctx.arc(p[0],p[1],Math.max(2.5,k*.3),0,7);ctx.fill();ctx.stroke()}
+  for(const kk in S.arm)if(S.arm[kk]&&WR(+kk)&&inBox(+kk)){const[x,y,w,h]=rectS(+kk);ctx.strokeStyle="#c8281e";ctx.lineWidth=2;ctx.setLineDash([4,3]);ctx.strokeRect(x-2,y-2,w+4,h+4);ctx.setLineDash([])}
+  /* the way out, to the front doors */
+  {const p=Pm([WBOX[WORLD.start][0],(WBOX[WORLD.start][1]+WBOX[WORLD.start][3])/2]);ctx.fillStyle=ink;ctx.font=`italic ${fs}px Georgia,serif`;ctx.textAlign="right";ctx.fillText("front doors ⇢",p[0]-4,p[1]+4)}
+  ctx.textAlign="left";return}
+ /* what moves: ready rooms glow, shops shimmer, the way to the nearest shop, you are here */
+ for(const id of IDS){if(!inBox(id)||doorState(id)!=="amber"||!hasLock(id))continue;const[x,y,w,h]=rectS(id);glow(x+w/2,y+h/2,Math.max(w,h)*.8,.3+.15*Math.sin(t*3+id),[255,170,60]);ctx.strokeStyle=`rgba(230,140,30,${.6+.3*Math.sin(t*3+id)})`;ctx.lineWidth=Math.max(1.5,wall*1.2);ctx.strokeRect(x-wall,y-wall,w+2*wall,h+2*wall)}
+ for(const[n,r]of Object.entries(WORLD.rooms)){const id=+n;if(!inBox(id)||roomType(id)!=="greenhouse"||(r.lock&&!solved(id)))continue;const[x,y,w,h]=rectS(id),m=Math.min(w,h);shopMark(x+w/2,y+h/2,Math.max(3,m*.4),t)}
+ if(REVEAL&&here!=null){const path=nearestShop(here);if(path&&path.length>1){ctx.save();ctx.setLineDash([6,5]);ctx.lineDashOffset=-t*20;ctx.strokeStyle="rgba(40,110,220,.95)";ctx.lineWidth=Math.max(2,k*.4);ctx.lineCap="round";ctx.beginPath();path.forEach((id,j)=>{const q=Pm(wcen(id));j?ctx.lineTo(...q):ctx.moveTo(...q)});ctx.stroke();ctx.restore();
+   const e=Pm(wcen(path[path.length-1]));ctx.fillStyle="#1d4fa0";ctx.font=`700 ${fs}px system-ui`;ctx.textAlign="center";ctx.fillText("Nearest shop",e[0],e[1]-k-4)}}
+ if(here!=null&&WR(here)){const[x,y,w,h]=rectS(here),cx=x+w/2,cy=y+h/2,R=Math.max(w,h)*.72+3*Math.sin(t*3);ctx.strokeStyle="rgba(30,110,220,.95)";ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.stroke();ctx.strokeStyle="rgba(30,110,220,.35)";ctx.lineWidth=6;ctx.beginPath();ctx.arc(cx,cy,R+4,0,7);ctx.stroke();
+  if(o.player&&CURG){const u=clamp(PZ()/CURG.RL,0,1),v=clamp((CAM.x+CURG.RW)/(2*CURG.RW),0,1),long=w>=h,px=long?x+w*u:x+w*v,py=long?y+h*v:y+h*u;ctx.fillStyle="#1e6edc";ctx.strokeStyle="#fff";ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(px,py,Math.max(3,fs*.32),0,7);ctx.fill();ctx.stroke()}
+  if(o.label){ctx.fillStyle="#1e5ab8";ctx.font=`700 ${fs}px system-ui`;ctx.textAlign="center";ctx.fillText(EN.l10n.t("you_are_here"),cx,y-R*.35-6)}}
+ ctx.textAlign="left"}
+function parchment(x,y,w,h,seed){ctx.fillStyle="#e9dcc0";ctx.fillRect(x,y,w,h);const R=rng(seed||3);for(let i=0;i<10;i++){const cx=x+R()*w,cy=y+R()*h,r=30+R()*120,g=ctx.createRadialGradient(cx,cy,0,cx,cy,r);g.addColorStop(0,"rgba(150,110,60,.08)");g.addColorStop(1,"rgba(150,110,60,0)");ctx.fillStyle=g;ctx.fillRect(cx-r,cy-r,2*r,2*r)}
+ const v=ctx.createRadialGradient(x+w/2,y+h/2,Math.min(w,h)*.35,x+w/2,y+h/2,Math.max(w,h)*.75);v.addColorStop(0,"rgba(90,60,30,0)");v.addColorStop(1,"rgba(90,60,30,.35)");ctx.fillStyle=v;ctx.fillRect(x,y,w,h)}
+/* what the kept pictures of the plan depend on */
+const planKey=()=>[S.solved.join(","),walkDay().day,Object.keys(S.walk.ways).length,Object.keys(S.arm).filter(k=>S.arm[k]).join("."),IDS.filter(id=>vined(id)).length,REVEAL?Math.floor(now()/2000):0].join("|");
+function keptCanvas(w,h,draw){const c=document.createElement("canvas");c.width=Math.round(w*DPR);c.height=Math.round(h*DPR);const g=c.getContext("2d");g.setTransform(DPR,0,0,DPR,0,0);const keep=ctx;ctx=g;try{draw()}finally{ctx=keep}return c}
+function drawMap(t){const top=128,bot=70,pad=24,k=Math.min((W-2*pad)/WORLD.w,(H-top-bot)/WORLD.h),ox=(W-k*WORLD.w)/2,oy=top+(H-top-bot-k*WORLD.h)/2,Pm=q=>[ox+q[0]*k,oy+q[1]*k],here=mapPrev==="hall"?hallId:null,fs=clamp(k*1.1,8,13),key=[W,H,DPR,here,planKey()].join("|");
+ if(!MAPC||MAPC.key!==key){const hits=[];const c=keptCanvas(W,H,()=>{parchment(0,0,W,H,7);
+   ctx.fillStyle="#3a2a1a";ctx.font="italic 700 20px Georgia,serif";ctx.textAlign="center";ctx.fillText(REVEAL?"The Papyrus Map":"Plan of the Halls",W/2,top-24);ctx.font="italic 12px Georgia,serif";ctx.fillText(REVEAL?"creatures, unopened chests and the way to the nearest shop":"every proposition a room; doors open as you prove",W/2,top-9);ctx.textAlign="left";
+   drawPlan(Pm,k,{here,fs,hits});
+   const cx=W-pad-26,cy=H-bot-16;ctx.strokeStyle="#3a2a1a";ctx.fillStyle="#3a2a1a";ctx.lineWidth=1;ctx.beginPath();ctx.arc(cx,cy,16,0,7);ctx.stroke();ctx.beginPath();ctx.moveTo(cx,cy-22);ctx.lineTo(cx+5,cy);ctx.lineTo(cx,cy+22);ctx.lineTo(cx-5,cy);ctx.closePath();ctx.fill();ctx.font="10px Georgia";ctx.textAlign="center";ctx.fillText("N",cx,cy-25);ctx.textAlign="left";
+   const ly=76,items=[["stone","corridor"],["wood","library"],["wood2","bedroom"],["tile","kitchen"],["grass","greenhouse"],["amber","ready"],["paper","locked"],["walked","walked today"],["trap","trap set"]];ctx.font="13px system-ui,sans-serif";let lx=14;
+   for(const[c,w]of items){if(c==="walked"){ctx.fillStyle="#d99a1a";ctx.beginPath();ctx.arc(lx+6,ly-4,4,0,7);ctx.fill()}else if(c==="trap"){ctx.strokeStyle="#c8281e";ctx.lineWidth=2;ctx.setLineDash([4,3]);ctx.strokeRect(lx,ly-10,12,12);ctx.setLineDash([])}else{ctx.fillStyle=c==="amber"?"#f0c070":planPattern(c);ctx.fillRect(lx,ly-10,12,12);ctx.strokeStyle=c==="amber"?"#e08a1e":"#3a2a1a";ctx.lineWidth=1;ctx.strokeRect(lx,ly-10,12,12)}ctx.fillStyle="#3a2a1a";ctx.fillText(w,lx+17,ly);lx+=ctx.measureText(w).width+30}});
+  MAPC={c,key,hits}}
+ mapHits=MAPC.hits;ctx.drawImage(MAPC.c,0,0,W,H);drawPlan(Pm,k,{anim:true,t,here,fs,label:true,player:here!=null})}
+/* the corner map while you walk: the same plan around you, with a circle where you are. Tap it (or N) for this room only. */
+let MMBOX=null;
+function drawCornerMap(t){if(S.mini==="room")return drawMinimap();const bw=Math.min(240,W*.3),bh=Math.min(170,H*.26),x0=W-bw-12,y0=104;MMBOX=[x0,y0,bw,bh];
+ const c=wcen(hallId),sc=bw/16,Pm=q=>[bw/2+(q[0]-c[0])*sc,bh/2+(q[1]-c[1])*sc],box=[c[0]-9,c[1]-7,c[0]+9,c[1]+7],key=[hallId,bw,bh,DPR,planKey()].join("|"),fs=clamp(sc*.6,8,12);
+ if(!MINIC||MINIC.key!==key)MINIC={key,c:keptCanvas(bw,bh,()=>{parchment(0,0,bw,bh,hallId);drawPlan(Pm,sc,{here:hallId,fs,box})})};
+ ctx.save();ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x0,y0,bw,bh,10);else ctx.rect(x0,y0,bw,bh);ctx.clip();ctx.drawImage(MINIC.c,x0,y0,bw,bh);ctx.translate(x0,y0);drawPlan(Pm,sc,{anim:true,t,here:hallId,fs,box,player:true});ctx.restore();
+ ctx.strokeStyle="#c9a55a";ctx.lineWidth=2;ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x0,y0,bw,bh,10);else ctx.rect(x0,y0,bw,bh);ctx.stroke();ctx.fillStyle="rgba(20,14,8,.7)";ctx.fillRect(x0,y0+bh,bw,16);ctx.fillStyle="#f3e6c4";ctx.font="11px Georgia";ctx.fillText(`${hallId<100?hallId:"·"} · ${roomType(hallId)} · tap for this room`,x0+6,y0+bh+12)}
+/* the statue shop on maps: a small blue statue on a plinth in a glow (every greenhouse room has one) */
+function shopMark(x,y,r,t){ctx.save();ctx.globalCompositeOperation="lighter";const g=ctx.createRadialGradient(x,y,0,x,y,r*1.8);g.addColorStop(0,`rgba(90,160,255,${.55+.15*Math.sin(t*2)})`);g.addColorStop(1,"rgba(90,160,255,0)");ctx.fillStyle=g;ctx.fillRect(x-r*1.8,y-r*1.8,r*3.6,r*3.6);ctx.restore();
+ ctx.fillStyle="#cfe4ff";ctx.strokeStyle="#2a4a80";ctx.lineWidth=Math.max(1,r*.12);ctx.beginPath();ctx.arc(x,y-r*.55,r*.28,0,7);ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(x-r*.32,y-r*.25);ctx.lineTo(x+r*.32,y-r*.25);ctx.lineTo(x+r*.24,y+r*.45);ctx.lineTo(x-r*.24,y+r*.45);ctx.closePath();ctx.fill();ctx.stroke();ctx.fillRect(x-r*.5,y+r*.45,r,r*.3);ctx.strokeRect(x-r*.5,y+r*.45,r,r*.3)}
 /* tap a room on the map: it tells you about the room. There is no jumping: you walk every doorway, which is the puzzle */
-function mapTap(x,y){const h=mapHits.slice().reverse().find(h=>inPoly([x,y],h.poly));if(!h)return;const id=h.id;sfxChime(false);
- if(isConn(id)){toast((isGreen(id)?"A greenhouse junction, with a garden.":"A corridor.")+(S.arm[id]?" A trap is set here.":""));return}
+function mapTap(x,y){let best=null,bd=1e9;for(const h of mapHits){const d=dist([x,y],h.q);if(d<h.r*1.4&&d<bd){bd=d;best=h.id}}if(best==null)return;const id=best;sfxChime(false);
  const st=doorState(id);toast(`1.${id} ${NAMES[id]||""}: `+(st==="open"?"solved.":st==="amber"?(vined(id)?"ready, under vines.":"ready. Walk there to open it."):id===48?"the last lock. It opens once every other proof is solved.":"a plate covers it until what it relies on is solved.")+(S.arm[id]?" A trap is set here.":""))}
 /* ---------- the ax and the vines ----------
    Vines grow over every door (art: vines.js, from Art-Assets). Only the ax cuts them, and only on a door whose lock
@@ -1162,12 +1231,20 @@ function roomType(n){const r=WR(n);return r&&ROOMTYPES.includes(r.kind)?r.kind:"
 /* a junction greenhouse's garden: its seed and its size, fixed in the plan */
 const gardenOf=n=>WR(n)&&WR(n).garden;
 let CAM={x:0,z:0,target:null};
+/* looking around (25 Nov 2026, ENGINE.look): L toggles look mode (pointer lock: move the mouse to turn, forward to look up,
+   a click acts on what is under the crosshair, Esc stops); holding the right mouse button looks too; so does a pad's right
+   stick. The room renderer moves its vanishing point (shearing), clamped by the engine to angles that still look right. */
+const VIEW={yaw:0,pitch:0,ty:0,tp:0};let VIEWT=0,LOOKHINT=false;
+function hallCentre(){const f=Math.min(W,H)*.62,sh=EN.look.shear(VIEW,f);return[W/2+sh[0],H*.47+sh[1],f]}
+function lookStep(){const t=now(),dt=Math.min(.05,(t-(VIEWT||t))/1000);VIEWT=t;const pads=navigator.getGamepads?[...navigator.getGamepads()].filter(Boolean):[];for(const g of pads){const rx=g.axes[2]||0,ry=g.axes[3]||0;if(Math.hypot(rx,ry)>.2)EN.look.stick(VIEW,rx,ry,dt)}EN.look.step(VIEW,dt)}
+const looking=()=>document.pointerLockElement===cv;
+function lookToggle(){if(scene!=="hall")return;if(looking())document.exitPointerLock();else{try{cv.requestPointerLock()}catch(e){}}}
 function hallMove(){const dt=Math.min(.05,(now()-lastT)/1000);let ix=0,iz=0;if(KEYS.has("a")||KEYS.has("arrowleft"))ix--;if(KEYS.has("d")||KEYS.has("arrowright"))ix++;if(KEYS.has("w")||KEYS.has("arrowup"))iz++;if(KEYS.has("s")||KEYS.has("arrowdown"))iz--;
   const pads=navigator.getGamepads?[...navigator.getGamepads()].filter(Boolean):[];for(const g of pads){const ax=g.axes[0]||0,ay=g.axes[1]||0;if(Math.hypot(ax,ay)>.22){ix+=ax;iz-=ay}const b=i=>g.buttons[i]&&g.buttons[i].pressed;if(b(14))ix--;if(b(15))ix++;if(b(12))iz++;if(b(13))iz--}
   if(ix||iz)CAM.target=null;else if(CAM.target){const dx=CAM.target[0]-CAM.x,dz=CAM.target[1]-CAM.z,d=Math.hypot(dx,dz);if(d<.05)CAM.target=null;else{ix=dx/d;iz=dz/d}}
   const m=Math.hypot(ix,iz)||1,sp=2.6*bootSpeed()*dt/Math.max(1,m);stepWithLedges(CAM.x+ix*sp,CAM.z+iz*sp,dt)}
 /* a tap on the floor walks you there */
-function hallFloorTap(x,y){const vy=H*.47,f=Math.min(W,H)*.62;if(y<=vy+8)return;const d=(1.1+PLY.y)*f/(y-vy),wx=CAM.x+(x-W/2)*d/f;CAM.target=[clamp(wx,-(CURG.RW-.75),CURG.RW-.75),clamp(CAM.z+d-1.25,0,Math.max(0,CURG.RL-3.4))]}
+function hallFloorTap(x,y){const[vx,vy,f]=hallCentre();if(y<=vy+8)return;const d=(1.1+PLY.y)*f/(y-vy),wx=CAM.x+(x-vx)*d/f;CAM.target=[clamp(wx,-(CURG.RW-.75),CURG.RW-.75),clamp(CAM.z+d-1.25,0,Math.max(0,CURG.RL-3.4))]}
 /* floors and walls that differ by room */
 function roomSurfaces(RT,pr,col,quad,f,Zr,t){const HW=1.5,FY=1.1,CY=-1.75,ZN=.4,ZF=CURG.RL,R=rng(hallId*31+5);
   if(RT==="greenhouse"){ /* glazing bars on the walls and the roof, a dirt bed along each wall, a flagstone path down the middle, grass tufts */
@@ -1192,7 +1269,7 @@ function roomThings(RT,add,busy,pr,col,f,Zr,t){const HW=1.5,FY=1.1;
   if(RT==="greenhouse"&&window.PLANTS){const L=PLANTS.list,R=rng(hallId*53+1),ps=[0,1,2,3,4].map(()=>L[Math.floor(R()*L.length)]);if(PLANTS.byId.potato&&rng(hallId*97+5)()<.5)ps[0]=PLANTS.byId.potato; /* potatoes in about half the greenhouses */
     for(let z=.8;z<12.6;z+=.55)for(const s of[-1,1]){if(busy(s,z-.3,z+.3))continue;const pl=ps[Math.floor(R()*ps.length)],x=s*(HW-.28+(R()-.5)*.1),seed=Math.floor(R()*1e5),sz=.55+R()*.35;
       add(z,()=>{const r=Zr(z),p=pr(x,FY,r),key=hallId+":"+seed,h=sz*f/r;if(S.picked[key])return; /* harvested: gone from the garden */
-        drawPlantS(ctx,pl,p[0],p[1],h,plantStage(key,seed),seed,{hill:S.hill[key]||0});hallHits.push({kind:"plant",key,pl,seed,x,z,poly:[[p[0]-h*.35,p[1]-h],[p[0]+h*.35,p[1]-h],[p[0]+h*.35,p[1]],[p[0]-h*.35,p[1]]]})})}}
+        const stg=plantStage(key,seed);drawPlantS(ctx,pl,p[0],p[1],h,stg,seed,{hill:S.hill[key]||0});if(stg==="mature")readyCue(pl,key,seed,p[0],p[1]-h*1.02,h,t);hallHits.push({kind:"plant",key,pl,seed,x,z,poly:[[p[0]-h*.35,p[1]-h],[p[0]+h*.35,p[1]-h],[p[0]+h*.35,p[1]],[p[0]-h*.35,p[1]]]})})}}
   if(RT==="library"&&window.FURNITURE){[[-1,5.0],[1,8.4],[-1,11.4],[1,3.2]].forEach(([s,z],i)=>{if(busy(s,z-.5,z+1.2))return;const x=s*(HW-.55);
     add(z+.75,()=>{const r=Zr(z+.75),p=pr(s*(HW-.4),FY,r);FURNITURE.sideTable(ctx,p[0],p[1],.5*f/r,hallId+i,{lamp:true,t})});
     add(z,()=>{const r=Zr(z),p=pr(x,FY,r);FURNITURE.armchair(ctx,p[0],p[1],.85*f/r,hallId*7+i,{view:"side",mirror:s>0})})})}}
@@ -1238,14 +1315,18 @@ function bedroomThings(addR,busyR,P,f,CZ,G,t){const L=bedLayout(hallId),FY=1.1,C
 /* ---------- items in rooms, chests, and the bag (25 Nov 2026) ----------
    Every room holds 1–3 items, chosen once per room by weights for its room type (KINDROOMS, or an item's own
    `rooms`; 0 keeps it out of a room type). About one room in three has a chest: open it for coins (coinRoll) and one
-   random item; once empty it can be picked up and placed in another room like any item. The bag holds BAGSIZE items
+   random item; once empty it can be picked up and placed in another room like any item. The bag holds bagSize() items
    (coins are a count; worn clothes don't take space). Items can be used (scrolls inside their locks), dropped where
    you stand and picked up again. Art: items.js (Art-Assets). Saved: S.taken, S.opened, S.drops. */
-const BAGSIZE=16;
+/* the bag's size comes from the backpack you carry (S.pack): the satchel you start with (16), then the Rucksack (24)
+   and the Expedition Pack (32), each bought once at the statue shop (after Stardew Valley's Large and Deluxe Packs).
+   A backpack is not a bag item: buying one swaps it in. Art: items.js backpack. */
+const PACKS=[["backpack-satchel",16],["backpack-rucksack",24],["backpack-expedition",32]];
+const bagSize=()=>(PACKS.find(p=>p[0]===S.pack)||PACKS[0])[1],nextPack=()=>PACKS[PACKS.findIndex(p=>p[0]===(S.pack||PACKS[0][0]))+1];
 const KINDROOMS={scroll:{library:3,corridor:1,bedroom:1,greenhouse:0},necklace:{bedroom:3,library:1,corridor:1,greenhouse:0},ring:{bedroom:3,library:1,corridor:1,greenhouse:0},crown:{bedroom:2,library:1,corridor:1,greenhouse:0},
  sword:{corridor:2,bedroom:1,library:0,greenhouse:0},cape:{bedroom:3,corridor:1,library:0,greenhouse:0},gloves:{bedroom:2,corridor:1,library:1,greenhouse:1},boots:{bedroom:3,corridor:1,library:0,greenhouse:0},shirt:{bedroom:2,corridor:1,library:0,greenhouse:0},pants:{bedroom:2,corridor:1,library:0,greenhouse:0},
  treasure:{corridor:2,library:2,bedroom:1,greenhouse:1},soil:{greenhouse:3,corridor:0,library:0,bedroom:0,kitchen:0},cooking:{corridor:0,library:0,bedroom:0,greenhouse:0,kitchen:0},food:{corridor:0,library:0,bedroom:0,greenhouse:0},potion:{greenhouse:3,corridor:1,library:1,bedroom:1},tool:{corridor:0,library:0,bedroom:0,greenhouse:0}};
-const ITEMROOMS={"potion-strongest":{greenhouse:1,corridor:.3,library:.3,bedroom:.3},map:{library:3,corridor:1,bedroom:0,greenhouse:0},astrolabe:{library:3},compass:{library:3},straightedge:{library:3},hourglass:{library:2,bedroom:2},lamp:{library:2,bedroom:2},amphora:{greenhouse:2,corridor:2},tile:{greenhouse:2},"crown-elements":{corridor:0,library:0,bedroom:0,greenhouse:0}};
+const ITEMROOMS={"potion-strongest":{greenhouse:1,corridor:.3,library:.3,bedroom:.3,kitchen:0},"potion-weak":{kitchen:0},"potion-strong":{kitchen:0},"health-minor":{corridor:1.5,library:1,bedroom:1.5,greenhouse:1,kitchen:1.5},"health-greater":{corridor:.7,library:.6,bedroom:.8,greenhouse:.5,kitchen:.8},"health-supreme":{corridor:.2,library:.2,bedroom:.25,greenhouse:.15,kitchen:.25},"backpack-rucksack":{corridor:0,library:0,bedroom:0,greenhouse:0,kitchen:0},"backpack-expedition":{corridor:0,library:0,bedroom:0,greenhouse:0,kitchen:0},map:{library:3,corridor:1,bedroom:0,greenhouse:0},astrolabe:{library:3},compass:{library:3},straightedge:{library:3},hourglass:{library:2,bedroom:2},lamp:{library:2,bedroom:2},amphora:{greenhouse:2,corridor:2},tile:{greenhouse:2},"crown-elements":{corridor:0,library:0,bedroom:0,greenhouse:0}};
 const itemById=id=>id==="chest"?{id:"chest",kind:"container",name:"Chest",price:12,desc:"Empty now. Carry it and set it down in any room."}:ITEMS.find(x=>x.id===id)||foodItem(id);
 /* food from the greenhouse (25 Nov 2026): harvested, not found. A raw potato must be cooked (in the Bag, in any room:
    over its lamps or torches) before it can be eaten; other produce is eaten as it is. Art: items.js potato / produce. */
@@ -1263,12 +1344,21 @@ function foodItem(id){id=String(id||"");const sk=id.match(/^potato-(red|purple|b
 function itemW(it,RT,n){if(it.find)return 0; /* the speed boots are one-time finds (BOOTFIND), never random */const w=(ITEMROOMS[it.id]||{})[RT];if(it.id==="crown-elements"&&n>=40&&RT!=="greenhouse")return .3;return w!=null?w:((KINDROOMS[it.kind]||{})[RT]??1)}
 function pickItem(R,RT,n){const pool=ITEMS.map(it=>[it,itemW(it,RT,n)]).filter(x=>x[1]>0),tot=pool.reduce((a,x)=>a+x[1],0);let u=R()*tot;for(const[it,w]of pool){u-=w;if(u<=0)return it.id}return pool[0][0].id}
 const RITEMS={};
+/* a kitchen is stocked with 3–5 Ingredients on its table or island (once per room, seeded): usually everything one
+   recipe needs, topped up with other things that must be cooked, so there is always a dish to make at the oven. */
+const KSTOCK=["potato","onion","garlic","eggplant","tomato_determinate","pepper_bell","squash_summer","squash_winter","bean_bush","bean_pole","rhubarb","strawberry","asparagus","carrot"];
+function kitchenStock(n,G){const R=rng(n*4721+13),k=3+Math.floor(R()*3),rec=EN.cook.RECIPES[Math.floor(R()*EN.cook.RECIPES.length)],out=[];
+ const pid=need=>need==="potato"?"potato-"+["red","purple","brown"][Math.floor(R()*3)]:"produce-"+(KSTOCK.find(x=>x===need||x.startsWith(need+"_"))||need);
+ for(const nd of rec.needs)if(out.length<k)out.push(pid(nd));
+ const must=KSTOCK.filter(x=>window.PLANTS&&PLANTS.byId[x]&&PLANTS.harvest(PLANTS.byId[x]).ingredient);while(out.length<k)out.push(pid(must[Math.floor(R()*must.length)]));
+ const xi=(n%2?-1:1)*G.RW*.42,zi=G.RL*.5;return out.filter(id=>itemById(id)).map((id,i)=>({uid:`${n}:k${i}`,id,x:xi+(i-(out.length-1)/2)*.16,z:zi-.12+(i%2)*.18,lift:.86,small:1}))}
 function roomItems(n){if(RITEMS[n])return RITEMS[n];const RT=roomType(n),G=roomGeo(n,RT),R=rng(n*7919+11),k=1+Math.floor(R()*3),L=[],ci=R()<.35?Math.floor(R()*k):-1; /* about one room in three has a chest */
  for(let i=0;i<k;i++){const isChest=i===ci;L.push({uid:`${n}:${i}`,id:isChest?"chest":pickItem(R,RT,lvl(n)),x:(R()*2-1)*(G.RW-.55),z:1.3+R()*Math.max(.5,G.RL-2.6)})}
+ if(RT==="kitchen")L.push(...kitchenStock(n,G));
  return RITEMS[n]=L}
 S.taken=S.taken||{};S.opened=S.opened||{};S.drops=S.drops||{};
 const bagCount=()=>S.inv.filter(id=>!(S.worn&&Object.values(S.worn).includes(id))).length;
-function addInv(id){if(bagCount()>=BAGSIZE){toast("Your bag is full. Drop or sell something first.");return false}S.inv.push(id);if((itemById(id)||{}).speed)S.got[id]=1;save();bagIcon();return true}
+function addInv(id){if(bagCount()>=bagSize()){toast("Your bag is full. Drop or sell something first.");return false}S.inv.push(id);if((itemById(id)||{}).speed)S.got[id]=1;save();bagIcon();return true}
 /* items lying in this room: the room's own (not yet taken) and anything dropped here */
 function roomFloorItems(n){return roomItems(n).filter(it=>!S.taken[it.uid]).concat(bootFind(n),S.drops[n]||[])}
 /* boots: three speed upgrades, each found once, hidden at the far end of a set hall, in order (the next only appears
@@ -1279,7 +1369,7 @@ function bootFind(n){const k=BOOTFIND.findIndex(b=>b[0]===n);if(k<0)return[];con
  const G=roomGeo(n,roomType(n));return[{uid:`${n}:boots`,id,x:(n%2?1:-1)*(G.RW-.3),z:G.RL-.55,hidden:1}]} /* tucked behind the far statue */
 const bootSpeed=()=>{const b=S.worn.boots&&itemById(S.worn.boots);return(b&&b.speed)||1};
 function drawRoomItems(addR,P,f,CZ,t){if(!window.ITEMART)return;const FY=1.1;
- for(const it of roomFloorItems(hallId)){const z=it.z;addR(z,()=>{const r=z-CZ,p=P(it.x,FY-(it.ledge||0),r),chest=it.id==="chest",h=(chest?.5:.3)*f/r,open=chest&&(S.opened[it.uid]||it.opened);
+ for(const it of roomFloorItems(hallId)){const z=it.z;addR(z,()=>{const r=z-CZ,p=P(it.x,FY-(it.ledge||0)-(it.lift||0),r),chest=it.id==="chest",h=(chest?.5:it.small?.2:.3)*f/r,open=chest&&(S.opened[it.uid]||it.opened);
    drawItemS(ctx,it.id,p[0],p[1],h,{seed:(it.uid+'').length*7+3,state:open?"open":undefined,fill:open?0:.7});
    const tw=(.5+.5*Math.sin(t*3+it.x*5))*(it.hidden?(r<3?.6:0):1);if(!open){ctx.save();ctx.globalCompositeOperation="lighter";ctx.fillStyle=`rgba(255,240,190,${.35*tw})`;ctx.beginPath();ctx.arc(p[0]+h*.25,p[1]-h*.9,Math.max(2,h*.08),0,7);ctx.fill();ctx.restore()}
    const w=Math.max(28,h*1.1);hallHits.push({kind:"item",it,poly:[[p[0]-w/2,p[1]-h*1.1],[p[0]+w/2,p[1]-h*1.1],[p[0]+w/2,p[1]+6],[p[0]-w/2,p[1]+6]]})})}}
@@ -1291,14 +1381,14 @@ function itemTap(it){if(it.ledge&&PLY.base<it.ledge-.05){toast(it.ledge>EN.moves
 function bagIcon(){const b=document.getElementById("bagb");if(!b)return;b.style.display=(scene==="doors"||scene==="hall"||scene==="map"||scene==="lock")?"":"none";document.getElementById("bagn").textContent=bagCount()||""}
 let BAGSEL=-1;
 function bagOpen(){const box=document.getElementById("bag");box.style.display="block";renderBag()}
-function bagClose(){document.getElementById("bag").style.display="none";BAGSEL=-1;SHOP=false}
+function bagClose(){const tp=document.getElementById("stip");if(tp)tp.style.display="none";document.getElementById("bag").style.display="none";BAGSEL=-1;SHOP=false}
 /* the wardrobe: seven carved hollows, one per slot (the gem-and-hollow idea from the locks). Drag clothes from the bag
    into the hollow they fit, and back out to take them off; Wear / Take off buttons do the same. Worn clothes leave the bag. */
 const SLOTS=[["hat","Hat"],["cape","Cape"],["shirt","Shirt"],["gloves","Gloves"],["rings","Rings"],["pants","Trousers"],["boots","Boots"]];
 const slotOf=it=>!it?null:it.kind==="crown"?"hat":it.id==="ring"?"rings":["boots","cape","gloves","shirt","pants"].includes(it.kind)?it.kind:null;
 function wear(i){const id=S.inv[i],sl=slotOf(itemById(id));if(!sl)return;S.inv.splice(i,1);if(S.worn[sl])S.inv.push(S.worn[sl]);S.worn[sl]=id;save();sfxChime(false);BAGSEL=-1;bagIcon();renderBag();
  const sp=itemById(id).speed;if(sp)toast(`Walking speed ×${sp}`)}
-function unwear(sl){if(!S.worn[sl])return;if(S.inv.length>=BAGSIZE){toast("Your bag is full.");return}S.inv.push(S.worn[sl]);delete S.worn[sl];save();BAGSEL=-1;bagIcon();renderBag()}
+function unwear(sl){if(!S.worn[sl])return;if(S.inv.length>=bagSize()){toast("Your bag is full.");return}S.inv.push(S.worn[sl]);delete S.worn[sl];save();BAGSEL=-1;bagIcon();renderBag()}
 let BDRAG=null;
 function bagDrag(box){
  box.onpointerdown=e=>{const el=e.target.closest(".bslot,.whol");if(!el)return;const id=el.dataset.i!=null?S.inv[+el.dataset.i]:S.worn[el.dataset.s];if(!id||!slotOf(itemById(id)))return;
@@ -1316,8 +1406,8 @@ let BDRAG_T=-1e9;
 let SHOP=false,SHOPSEL=null;
 function shopOpen(){SHOP=true;SHOPSEL=null;const box=document.getElementById("bag");box.style.display="block";sfxChime(false);renderBag()}
 const owns=id=>S.inv.includes(id)||Object.values(S.worn).includes(id);
-function shopStock(){return["firewood",...EN.combat.allWeapons(),...(owns("cauldron")?[]:["cauldron"])].concat(ITEMS.filter(it=>(it.speed||it.kind==="scroll"||it.kind==="soil"||it.ghost||it.kind==="shield")&&!(it.speed&&owns(it.id))).map(it=>it.id).concat(S.sold.filter((x,i,a)=>a.indexOf(x)===i&&!itemById(x).speed&&itemById(x).kind!=="scroll")))}
-function shopBuy(id){const it=itemById(id),p=it.price;if((S.coins||0)<p){toast(`You need ${p-(S.coins||0)} more coin${p-(S.coins||0)===1?"":"s"}.`);return}if(id==="firewood"){S.coins-=p;S.wood=(S.wood||0)+1;save();sfxChime(false);toast(`Bought a log: firewood ${S.wood}.`);hudUpdate();renderBag();return}if(!addInv(id))return;S.coins-=p;const k=S.sold.indexOf(id);if(k>=0)S.sold.splice(k,1);save();sfxChime(true);toast(`Bought: ${it.name}`);SHOPSEL=null;renderBag()}
+function shopStock(){return["health-minor","health-greater","health-supreme",...(nextPack()?[nextPack()[0]]:[]),"firewood",...EN.combat.allWeapons(),...(owns("cauldron")?[]:["cauldron"])].concat(ITEMS.filter(it=>(it.speed||it.kind==="scroll"||it.kind==="soil"||it.ghost||it.kind==="shield")&&!(it.speed&&owns(it.id))).map(it=>it.id).concat(S.sold.filter((x,i,a)=>a.indexOf(x)===i&&!itemById(x).speed&&itemById(x).kind!=="scroll")))}
+function shopBuy(id){const it=itemById(id),p=it.price;if((S.coins||0)<p){toast(`You need ${p-(S.coins||0)} more coin${p-(S.coins||0)===1?"":"s"}.`);return}if(it.kind==="pack"){S.coins-=p;S.pack=id;save();sfxChime(true);toast(`${it.name}: your bag now holds ${it.slots}.`);SHOPSEL=null;bagIcon();renderBag();return}if(id==="firewood"){S.coins-=p;S.wood=(S.wood||0)+1;save();sfxChime(false);toast(`Bought a log: firewood ${S.wood}.`);hudUpdate();renderBag();return}if(!addInv(id))return;S.coins-=p;const k=S.sold.indexOf(id);if(k>=0)S.sold.splice(k,1);save();sfxChime(true);toast(`Bought: ${it.name}`);SHOPSEL=null;renderBag()}
 function shopSell(i){const id=S.inv[i],it=itemById(id),p=Math.floor((it.price||0)/2);S.inv.splice(i,1);S.coins=(S.coins||0)+p;S.sold.push(id);save();bagIcon();sfxChime(false);toast(`Sold: ${it.name} · +${p} coin${p===1?"":"s"}`);SHOPSEL=null;renderBag()}
 function drawShopStatue(pr,f,col,s,z,t){const x=s*1.08,k=f/z;statue(pr,f,col,s,z,null);
  ctx.save();ctx.globalCompositeOperation="lighter";const c=pr(x,-.2,z),R=1.1*k,g=ctx.createRadialGradient(c[0],c[1],0,c[0],c[1],R);g.addColorStop(0,`rgba(90,160,255,${.5+.1*Math.sin(t*2)})`);g.addColorStop(1,"rgba(90,160,255,0)");ctx.fillStyle=g;ctx.fillRect(c[0]-R,c[1]-R,2*R,2*R);
@@ -1327,9 +1417,11 @@ function drawShopStatue(pr,f,col,s,z,t){const x=s*1.08,k=f/z;statue(pr,f,col,s,z
 const SCROLLFOR={"scroll-circles":[1,2,3,22],"scroll-lines":[9,10,11,12],"scroll-angles":[13,26],"scroll-parallels":[27,34],"scroll-areas":[35,45],"scroll-squares":[46,48]};
 const scrollFits=(id,n)=>{const r=SCROLLFOR[id];if(!r)return false;return r.length>2?r.includes(n):n>=r[0]&&n<=r[1]};
 function useItem(i){const id=S.inv[i],it=itemById(id);
+ if(it.id==="map"){if(scene!=="hall"&&scene!=="doors"){toast("Unroll it in a room.");return}REVEAL=true;bagClose();mapPrev=scene;sfxRustle();fadeTo("map",500);return}
  if(it.kind==="scroll"){if(scene!=="lock"){toast("Open one of its locks, then use it there.");return}if(!scrollFits(id,lockId)){toast("This scroll doesn't fit this lock.");return}
   S.inv.splice(i,1);save();bagClose();bagIcon();document.getElementById("help").click();toast(`${it.name}: the next step glows.`);return}
  if(it.ghost){S.inv.splice(i,1);S.ghost=EN.clock.now(S)+it.ghost;save();bagClose();bagIcon();sfxChime(true);toast("You drink the Ghost Draught. For an hour, no trap can touch you.");return}
+ if(it.heal){const mx=EN.health.MAX,before=EN.health.hp(S);if(before>=mx){toast("You're already at full health. Keep it for later.");return}S.inv.splice(i,1);EN.health.heal(S,it.heal);const got=Math.round(EN.health.hp(S)-before);save();bagIcon();BAGSEL=-1;renderBag();hudUpdate();sfxChime(true);toast(`You drink the ${it.name.toLowerCase()}. +${got} health.`);return}
  if(it.kind==="potion"){if(scene!=="hall"&&scene!=="doors"){toast("Take it to a door with vines, or a plant.");return}HOLD={id};bagClose();toast("Tap vines or a plant to pour it. Tap anywhere else to put it away.");return}
  if(it.kind==="soil"){if(scene!=="hall"){toast("Take it to a greenhouse with potatoes.");return}HOLD={id};bagClose();toast("Tap a growing potato to earth it up. Tap anywhere else to put the sack away.");return}
  if(it.kind==="food"){if(it.ingredient){toast("An ingredient: cook it first, in a kitchen oven or a cauldron over a greenhouse campfire.");return}S.inv.splice(i,1);EN.health.heal(S,it.hp||EN.cook.RAW_HP);save();bagIcon();BAGSEL=-1;renderBag();hudUpdate();sfxChime(false);toast(`You eat the ${it.name.toLowerCase()}. +${it.hp||EN.cook.RAW_HP} health.`);return}
@@ -1349,6 +1441,11 @@ function pour(id,x,y,map,blocked){const it=itemById(HOLD.id);if(blocked){sfxRatt
    flower or leaf) goes in the bag and the plant is gone (S.picked). Pour a Sack of Soil on a growing potato to earth
    it up (S.hill, up to 3): 3 potatoes, plus 2 for each time. Saved: S.grow, S.hill, S.picked. */
 S.grow=S.grow||{};S.hill=S.hill||{};S.picked=S.picked||{};
+/* a ripe plant shows its crop: the item it gives (items.js produce / potato) floats over it in a soft gold ring, bobbing,
+   so you can see from across the room what is ready to pick. Trees show it only while they have fruit. */
+function readyCue(pl,key,seed,x,y,h,t){if(!window.ITEMART||h<40)return; /* only plants near enough to read */const H=PLANTS.harvest(pl,{seed});if(!H||!H.food&&H.part!=="flower")return;if(EN.fuel.TREES.test(pl.id)&&S.fruit[key]&&EN.clock.now(S)-S.fruit[key]<=EN.clock.DAY)return;
+ const id=pl.id==="potato"?"potato-"+PLANTS.potatoSkin(seed):H.item,r=clamp(h*.16,7,26),yy=y-r*.6+Math.sin(t*2.2+seed)*r*.15;ctx.save();ctx.globalCompositeOperation="lighter";const g=ctx.createRadialGradient(x,yy,0,x,yy,r*1.5);g.addColorStop(0,"rgba(255,226,140,.45)");g.addColorStop(1,"rgba(255,226,140,0)");ctx.fillStyle=g;ctx.fillRect(x-r*1.5,yy-r*1.5,r*3,r*3);ctx.restore();
+ ctx.strokeStyle=`rgba(255,226,140,${.55+.25*Math.sin(t*3+seed)})`;ctx.lineWidth=Math.max(1,r*.08);ctx.beginPath();ctx.arc(x,yy,r,0,7);ctx.stroke();ITEMART.draw(ctx,id,x,yy+r*.62,r*1.3,{seed})}
 function plantStage(key,seed){if(S.dead[key])return"dead";if(rng(seed*13+1)()>=.27)return"mature";
  if(S.grow[key]==null){S.grow[key]=EN.clock.now(S);save()}return EN.clock.grown(S,S.grow[key])?"mature":"young"} /* ready ENGINE.clock.GROW_HOURS game hours after first seen */
 function plantTap(h){const P=h.pl,st=plantStage(h.key,h.seed),pot=P.id==="potato",hill=S.hill[h.key]||0;if(st!=="dead"&&EN.fuel.TREES.test(P.id)){treeTap(h);return}
@@ -1356,7 +1453,7 @@ function plantTap(h){const P=h.pl,st=plantStage(h.key,h.seed),pot=P.id==="potato
  if(st==="young"){toast(pot?`A growing potato${hill?` (earthed up ${hill}×)`:""}. Pour soil on it for a bigger harvest; it's ready in a few game hours.`:`The ${P.common_name.toLowerCase()} is still growing. It's ready after your next lock.`);return}
  const H=PLANTS.harvest(P,{hill,seed:h.seed});if(!H){toast(`The ${P.common_name.toLowerCase()} has nothing to harvest.`);return}
  const skin=pot?PLANTS.potatoSkin(h.seed):"",id=pot?"potato-"+skin:H.item;let got=0;
- for(let k=0;k<H.count;k++){if(bagCount()>=BAGSIZE){(S.drops[hallId]=S.drops[hallId]||[]).push({uid:"d"+Date.now()+k,id,x:h.x*(CURG.RW/1.5)*.85,z:h.z*(CURG.RL/13)});continue}S.inv.push(id);got++}
+ for(let k=0;k<H.count;k++){if(bagCount()>=bagSize()){(S.drops[hallId]=S.drops[hallId]||[]).push({uid:"d"+Date.now()+k,id,x:h.x*(CURG.RW/1.5)*.85,z:h.z*(CURG.RL/13)});continue}S.inv.push(id);got++}
  S.picked[h.key]=1;save();bagIcon();sfxChime(true);const nm=itemById(id).name;
  toast(`Harvested: ${H.count} × ${nm}${got<H.count?` (${H.count-got} left on the floor: bag full)`:""}`)}
 function pourSoil(h){if(h.pl.id!=="potato"){toast("Only potatoes want earthing up.");HOLD=null;return}const st=plantStage(h.key,h.seed),n=S.hill[h.key]||0;
@@ -1369,10 +1466,11 @@ function drawHold(t){if(!HOLD||!window.ITEMART||(scene!=="hall"&&scene!=="doors"
 function dropItem(i){if(scene!=="hall"){toast("Go into a room to set it down.");return}const id=S.inv[i];S.inv.splice(i,1);(S.drops[hallId]=S.drops[hallId]||[]).push({uid:"d"+Date.now(),id,x:clamp(CAM.x,-(CURG.RW-.6),CURG.RW-.6),z:Math.min(CURG.RL-.8,CAM.z+1.7),opened:id==="chest"?1:undefined});save();bagIcon();renderBag();toast(`Set down: ${itemById(id).name}`);stripDrop(hallId)}
 const itemCanvas=(sel,ids)=>document.querySelectorAll(sel).forEach((cv,i)=>{const g=cv.getContext("2d"),it=itemById(ids[i])||{};try{ITEMART.draw(g,ids[i],48,86,72,{seed:i*7+3,state:ids[i]==="chest"?"open":it.kind==="weapon"?EN.combat.wear(it.left,it.dur):undefined,fill:0})}catch(e){}});
 const coinsTxt=n=>`${n} coin${n===1?"":"s"}`;
+const itemHp=it=>it.heal||(it.kind==="food"&&!it.ingredient?(it.hp||EN.cook.RAW_HP):0);
 function renderBag(){const box=document.getElementById("bag"),inv=S.inv;if(SHOP)return renderShop(box);
- box.innerHTML=`<div class="bh"><b>Bag</b><span>${bagCount()} / ${BAGSIZE} · ${coinsTxt(S.coins||0)} · firewood ${S.wood||0}, kindling ${S.kindling||0}</span><button class="btn" id="bagx">✕</button></div><p class="bn">In hand: ${S.wield?`${esc(itemById(S.wield.id).name)}, ${S.wield.left} of ${itemById(S.wield.id).dur} uses left <button class="btn" id="bunw">Put away</button>`:"nothing (fists). Wield a knife, sword or staff from the bag."}</p>
+ box.innerHTML=`<div class="bh"><b>Bag</b><span>${bagCount()} / ${bagSize()} · ${coinsTxt(S.coins||0)} · firewood ${S.wood||0}, kindling ${S.kindling||0}</span><button class="btn" id="bagx">✕</button></div><p class="bn">In hand: ${S.wield?`${esc(itemById(S.wield.id).name)}, ${S.wield.left} of ${itemById(S.wield.id).dur} uses left <button class="btn" id="bunw">Put away</button>`:"nothing (fists). Wield a knife, sword or staff from the bag."}</p>
  <div class="ward">${SLOTS.map(([k,nm])=>`<button class="whol w-${k}${S.worn[k]?" on":""}" data-s="${k}" aria-label="${nm}">${S.worn[k]?`<canvas width="96" height="96"></canvas>`:""}<i>${nm}</i></button>`).join("")}</div>
- <div class="bgrid">${Array.from({length:BAGSIZE},(_,i)=>`<button class="bslot${i===BAGSEL?" sel":""}" data-i="${i}" ${i<inv.length?"":"disabled"}>${i<inv.length?`<canvas width="96" height="96"></canvas>`:""}</button>`).join("")}</div><div class="bdet" id="bdet"></div>`;
+ <div class="bgrid">${Array.from({length:bagSize()},(_,i)=>`<button class="bslot${i===BAGSEL?" sel":""}" data-i="${i}" ${i<inv.length?"":"disabled"}>${i<inv.length?`<canvas width="96" height="96"></canvas>`:""}</button>`).join("")}</div><div class="bdet" id="bdet"></div>`;
  itemCanvas("#bag .bslot canvas",inv);itemCanvas("#bag .whol canvas",SLOTS.map(x=>S.worn[x[0]]).filter(Boolean));bagDrag(box);
  box.querySelectorAll(".bslot").forEach(b=>b.onclick=()=>{if(now()-BDRAG_T<300)return;BAGSEL=+b.dataset.i;renderBag()});
  box.querySelectorAll(".whol").forEach(b=>b.onclick=()=>{if(now()-BDRAG_T<300)return;BAGSEL=b.dataset.s;renderBag()});document.getElementById("bagx").onclick=bagClose;
@@ -1380,18 +1478,26 @@ function renderBag(){const box=document.getElementById("bag"),inv=S.inv;if(SHOP)
  if(typeof BAGSEL==="string"){const id=S.worn[BAGSEL];if(!id){d.innerHTML=`<p class="bn">The ${SLOTS.find(x=>x[0]===BAGSEL)[1].toLowerCase()} hollow is empty. Drag clothes from your bag into it.</p>`;return}
   const it=itemById(id);d.innerHTML=`<h3>${esc(it.name)}</h3><p class="bn">worn${it.speed?` · walking speed ×${it.speed}`:""}</p><p>${esc(it.desc)}</p><div class="bbtn"><button class="btn" id="boff">Take off</button></div>`;document.getElementById("boff").onclick=()=>unwear(BAGSEL);return}
  if(BAGSEL<0||BAGSEL>=inv.length){d.innerHTML=`<p class="bn">Tap an item to see it. Drag clothes into the hollows above to wear them.${inv.length?"":" Items lie in every room: tap one to pick it up."}</p>`;return}
- const it=itemById(inv[BAGSEL]),sl=slotOf(it);d.innerHTML=`<h3>${esc(it.name)}</h3><p class="bn">${esc(it.kind)}${it.speed?` · walking speed ×${it.speed}`:""} · sells for ${coinsTxt(Math.floor((it.price||0)/2))}</p><p>${esc(it.desc)}</p><div class="bbtn">${sl?`<button class="btn" id="bwear">Wear</button>`:""}${it.kind==="scroll"||it.kind==="potion"||it.kind==="soil"||(it.kind==="food"&&!it.ingredient)?`<button class="btn" id="buse">${it.kind==="potion"||it.kind==="soil"?"Pour":it.kind==="food"?"Eat":"Use"}</button>`:""}${it.kind==="weapon"?`<button class="btn" id="bwield">Wield</button>`:""}${it.kind!=="tool"?`<button class="btn" id="bdrop">${it.id==="chest"?"Place it here":"Drop"}</button>`:""}</div>`;
+ const it=itemById(inv[BAGSEL]),sl=slotOf(it);d.innerHTML=`<h3>${esc(it.name)}</h3><p class="bn">${esc(it.heal?"health potion":it.kind)}${it.speed?` · walking speed ×${it.speed}`:""}${itemHp(it)?` · +${itemHp(it)} health`:""} · sells for ${coinsTxt(Math.floor((it.price||0)/2))}</p><p>${esc(it.desc)}</p><div class="bbtn">${sl?`<button class="btn" id="bwear">Wear</button>`:""}${it.use||it.kind==="scroll"||it.kind==="potion"||it.kind==="soil"||(it.kind==="food"&&!it.ingredient)?`<button class="btn" id="buse">${it.heal?"Drink":it.kind==="potion"||it.kind==="soil"?"Pour":it.kind==="food"?"Eat":"Use"}</button>`:""}${it.kind==="weapon"?`<button class="btn" id="bwield">Wield</button>`:""}${it.kind!=="tool"?`<button class="btn" id="bdrop">${it.id==="chest"?"Place it here":"Drop"}</button>`:""}</div>`;
  const bun=document.getElementById("bunw");if(bun)bun.onclick=unwield;const bw=document.getElementById("bwear");if(bw)bw.onclick=()=>wear(BAGSEL);const bwi=document.getElementById("bwield");if(bwi)bwi.onclick=()=>wieldItem(BAGSEL);
  const u=document.getElementById("buse");if(u)u.onclick=()=>useItem(BAGSEL);const dr=document.getElementById("bdrop");if(dr)dr.onclick=()=>{dropItem(BAGSEL);BAGSEL=-1;renderBag()}}
+/* hover (or tap) an item in the shop: its name, price and what it does, in a tip by the pointer (25 Nov 2026) */
+function useLine(it){if(!it)return"";const bits=[];if(it.heal)bits.push(`Drink: +${it.heal>=100?"all":it.heal} health`);else if(it.kind==="food"&&!it.ingredient)bits.push(`Eat: +${it.hp||EN.cook.RAW_HP} health`);else if(it.ingredient)bits.push("Ingredient: cook it first");
+ if(it.slots)bits.push(`Bag holds ${it.slots}`);if(it.speed)bits.push(`Walk ×${it.speed}`);if(it.cut)bits.push(`Withers ${it.cut>=1?"all":Math.round(it.cut*10)+"/10"} of a door's vines`);if(it.kind==="weapon")bits.push(it.desc);if(it.kind==="scroll")bits.push("Use inside a lock it fits: the next step glows");
+ if(it.id==="map")bits.push("Use: shows creatures, chests, the nearest shop");if(it.kind==="treasure"&&!it.use)bits.push("Treasure: sell it");if(slotOf(it))bits.push(`Wear it (${slotOf(it)})`);return bits.join(" · ")||it.desc}
+function shopTip(box,list){let tip=document.getElementById("stip");if(!tip){tip=document.createElement("div");tip.id="stip";tip.style.cssText="position:fixed;z-index:60;pointer-events:none;max-width:260px;background:rgba(24,18,12,.94);color:#f3e6c4;border:1px solid #c9a55a;border-radius:8px;padding:7px 10px;font:13px/1.35 Georgia,serif;display:none";document.body.appendChild(tip)}
+ box.querySelectorAll("[data-b],[data-s]").forEach(b=>{const id=b.dataset.b!=null?list.buy[+b.dataset.b]:list.sell[+b.dataset.s],it=itemById(id),price=b.dataset.b!=null?it.price:Math.floor((it.price||0)/2);b.title=`${it.name}: ${useLine(it)}`;
+  b.onpointerenter=e=>{tip.innerHTML=`<b>${esc(it.name)}</b> · ${coinsTxt(price)}${b.dataset.s!=null?" (sells for)":""}<br>${esc(useLine(it))}`;tip.style.display="block";b.onpointermove(e)};
+  b.onpointermove=e=>{const r=tip.getBoundingClientRect();tip.style.left=Math.min(innerWidth-r.width-8,e.clientX+14)+"px";tip.style.top=Math.max(8,e.clientY-r.height-12)+"px"};b.onpointerleave=()=>tip.style.display="none"})}
 function renderShop(box){const stock=shopStock(),inv=S.inv,sell=inv.map((id,i)=>[id,i]).filter(([id])=>itemById(id).kind!=="tool");
  box.innerHTML=`<div class="bh"><b>The blue statue</b><span>${coinsTxt(S.coins||0)}</span><button class="btn" id="bagx">✕</button></div>
  <p class="bn">Buy</p><div class="bgrid">${stock.map((id,i)=>`<button class="bslot${SHOPSEL&&SHOPSEL.b===i?" sel":""}" data-b="${i}"><canvas width="96" height="96"></canvas><em>${itemById(id).price}</em></button>`).join("")}</div>
  <p class="bn" style="margin-top:10px">Sell (half price)</p><div class="bgrid">${sell.length?sell.map(([id],j)=>`<button class="bslot${SHOPSEL&&SHOPSEL.s===j?" sel":""}" data-s="${j}"><canvas width="96" height="96"></canvas><em>${Math.floor((itemById(id).price||0)/2)}</em></button>`).join(""):`<span class="bn">Your bag is empty.</span>`}</div><div class="bdet" id="bdet"></div>`;
- itemCanvas("#bag [data-b] canvas",stock);itemCanvas("#bag [data-s] canvas",sell.map(x=>x[0]));document.getElementById("bagx").onclick=bagClose;
+ itemCanvas("#bag [data-b] canvas",stock);itemCanvas("#bag [data-s] canvas",sell.map(x=>x[0]));shopTip(box,{buy:stock,sell:sell.map(x=>x[0])});document.getElementById("bagx").onclick=bagClose;
  box.onpointerdown=box.onpointermove=box.onpointerup=box.onpointercancel=null;
  box.querySelectorAll("[data-b]").forEach(b=>b.onclick=()=>{SHOPSEL={b:+b.dataset.b};renderBag()});box.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{SHOPSEL={s:+b.dataset.s};renderBag()});
- const d=document.getElementById("bdet");if(!SHOPSEL){d.innerHTML=`<p class="bn">The statue glows blue. It sells boots, scrolls, weapons, a cauldron and firewood, buys anything at half price, and will sell back what you sold it.</p>`;return}
- if(SHOPSEL.b!=null){const id=stock[SHOPSEL.b],it=itemById(id);d.innerHTML=`<h3>${esc(it.name)}</h3><p class="bn">${coinsTxt(it.price)}${it.speed?` · walking speed ×${it.speed}`:""}${S.sold.includes(id)?" · you sold this":""}</p><p>${esc(it.desc)}</p><div class="bbtn"><button class="btn" id="bbuy">Buy</button></div>`;document.getElementById("bbuy").onclick=()=>shopBuy(id)}
+ const d=document.getElementById("bdet");if(!SHOPSEL){d.innerHTML=`<p class="bn">The statue glows blue. It always sells health potions, and the next size of backpack; also boots, scrolls, weapons, a cauldron and firewood. It buys anything at half price, and will sell back what you sold it.</p>`;return}
+ if(SHOPSEL.b!=null){const id=stock[SHOPSEL.b],it=itemById(id);d.innerHTML=`<h3>${esc(it.name)}</h3><p class="bn">${coinsTxt(it.price)}${it.speed?` · walking speed ×${it.speed}`:""}${S.sold.includes(id)?" · you sold this":""}</p><p><b>${esc(useLine(it))}</b></p><p>${esc(it.desc)}</p><div class="bbtn"><button class="btn" id="bbuy">Buy</button></div>`;document.getElementById("bbuy").onclick=()=>shopBuy(id)}
  else{const[id,i]=sell[SHOPSEL.s],it=itemById(id);d.innerHTML=`<h3>${esc(it.name)}</h3><p class="bn">sells for ${coinsTxt(Math.floor((it.price||0)/2))}</p><p>${esc(it.desc)}</p><div class="bbtn"><button class="btn" id="bsell">Sell</button></div>`;document.getElementById("bsell").onclick=()=>shopSell(i)}}
 
 /* ---------- game systems (25 Nov 2026): time, health, HUD and minimap, keys, lock timers, ledges, traps, combat,
@@ -1420,6 +1526,8 @@ addEventListener("keydown",e=>{if(e.target&&(e.target.tagName==="INPUT"||e.targe
  if(COOK&&COOK.run&&!COOK.run.res&&(a==="jump"||a==="interact")){e.preventDefault();cookStop();return}
  if(a==="close"){if(COOK){cookClose();return}if(bagOpenNow){bagClose();return}if(document.getElementById("keys").style.display==="block"){document.getElementById("keys").style.display="none";return}if(HOLD){HOLD=null;toast("You put it away.");return}if(scene==="map"){document.getElementById("mapb").click();return}if(scene!=="doors")document.getElementById("back").click();return}
  if(a==="bag"){e.preventDefault();if(bagOpenNow)bagClose();else if(document.getElementById("bagb").style.display!=="none")bagOpen();return}
+if(a==="look"){lookToggle();return}
+ if(e.key.toLowerCase()==="n"&&scene==="hall"){S.mini=S.mini==="room"?"house":"room";save();return}
  if(a==="map"){if(scene==="doors"||scene==="hall"||scene==="map")document.getElementById("mapb").click();return}
  if(a==="help"){keyHelp();return}
  if(scene!=="hall"||bagOpenNow||COOK)return;
@@ -1529,7 +1637,7 @@ function drawSwingFP(){if(!SWING)return;const u=(now()-SWING.t0)/350;if(u>1){SWI
  if(SWING.id)ITEMART.draw(ctx,SWING.id,0,0,s,{state:EN.combat.wear(S.wield?S.wield.left:1,(itemById(S.wield&&S.wield.id)||{dur:1}).dur)});else{ctx.fillStyle="#d8b090";ctx.beginPath();ctx.ellipse(0,-s*.4,s*.12,s*.16,0,0,7);ctx.fill()}ctx.restore()}
 function wieldItem(i){const id=S.inv[i],m=String(id).match(/^(weapon-[a-z]+-[a-z]+)(?:@(\d+))?$/);if(!m)return;const w=EN.combat.weapon(m[1]);S.inv.splice(i,1);if(S.wield)S.inv.push(weaponId(S.wield));S.wield={id:m[1],left:m[2]!=null?+m[2]:w.dur};save();BAGSEL=-1;renderBag();hudUpdate();toast(`${w.name} in hand: F (or tap a creature) to strike.`)}
 const weaponId=wd=>{const w=EN.combat.weapon(wd.id);return wd.left>=w.dur?wd.id:`${wd.id}@${wd.left}`};
-function unwield(){if(!S.wield)return;if(bagCount()>=BAGSIZE){toast("Your bag is full.");return}S.inv.push(weaponId(S.wield));S.wield=null;save();renderBag();hudUpdate()}
+function unwield(){if(!S.wield)return;if(bagCount()>=bagSize()){toast("Your bag is full.");return}S.inv.push(weaponId(S.wield));S.wield=null;save();renderBag();hudUpdate()}
 /* --- cooking: an oven in a kitchen, or a cauldron over a greenhouse campfire. Only ingredients go in. --- */
 const isIngredient=id=>{const it=itemById(id);return!!(it&&it.ingredient)};
 let COOK=null;
@@ -1568,7 +1676,7 @@ function interact(){const pz=PZ(),near=(x,z,r)=>Math.hypot(x-CAM.x,z-pz)<r;const
  toast("Nothing in reach. Walk up to something and press E.")}
 /* --- the minimap: this room from above, in the corner --- */
 const MMD={doors:[]};
-function drawMinimap(){const RT=roomType(hallId),RW=CURG.RW,RL=CURG.RL,s=Math.min(120/(RL),80/(2*RW)),w=2*RW*s,h=RL*s,x0=W-w-14,y0=112,X=x=>x0+(x+RW)*s,Y=z=>y0+h-z*s;
+function drawMinimap(){const RT=roomType(hallId),RW=CURG.RW,RL=CURG.RL,s=Math.min(120/(RL),80/(2*RW)),w=2*RW*s,h=RL*s,x0=W-w-14,y0=112,X=x=>x0+(x+RW)*s,Y=z=>y0+h-z*s;MMBOX=[x0-6,y0-18,w+12,h+24];
  ctx.save();ctx.fillStyle="rgba(20,14,8,.62)";ctx.fillRect(x0-6,y0-18,w+12,h+24);ctx.strokeStyle="#c9a55a";ctx.lineWidth=1;ctx.strokeRect(x0,y0,w,h);ctx.fillStyle="#f3e6c4";ctx.font="11px Georgia";ctx.fillText(`${hallId} · ${RT}`,x0,y0-6);
  for(const d of MMD.doors){ctx.fillStyle=d.open?"#ffd27a":"#8a6a44";ctx.fillRect(d.s<0?x0-2:x0+w-2,Y(d.z+.95),4,.95*s)}
  const L=LEDGES[hallId];if(L){ctx.fillStyle="rgba(168,154,132,.8)";ctx.fillRect(L.s<0?x0:x0+w-L.d*s,Y(L.z1),L.d*s,(L.z1-L.z0)*s)}
@@ -1593,16 +1701,19 @@ function treeTap(h){const P=h.pl,ready=!S.fruit[h.key]||EN.clock.now(S)-S.fruit[
 
 /* ---------- input ---------- */
 function begin(){audioInit();document.getElementById("menu").style.display="none";go("intro")}
-cv.addEventListener("pointerdown",e=>{const x=e.clientX,y=e.clientY;audioInit();if(fade)return;
+cv.addEventListener("contextmenu",e=>{if(scene==="hall")e.preventDefault()});
+document.addEventListener("pointerlockchange",()=>{if(looking())toast(EN.l10n.t("look_on"))});
+cv.addEventListener("pointerdown",e=>{if(e.button===2&&scene==="hall")return;const x=looking()?W/2:e.clientX,y=looking()?H/2:e.clientY;audioInit();if(fade)return;
 if(scene==="title"){if(!hasProgress())begin();return}if(scene==="green")return greenTap(x,y);if(scene==="intro")return endIntro();if(scene==="map")return mapTap(x,y);
 if(scene==="doors"){if(axSpotHit(x,y))return takeAx();if(swordSpotHit(x,y))return takeSword();const D=doorLayout();if(y<D.y0||y>D.y0+D.dh||x<D.x0||x>D.x0+D.tw){if(HOLD){HOLD=null;toast("You put the flask away.")}return}const id=x<D.x0+D.lw?1:4;
 if(vined(id)){const ox=D.x0+(id===1?0:D.lw);if(HOLD)return pour(id,x,y,(u,v)=>[ox+u*D.lw,D.y0+v*D.dh],false);return chopTap(id,x,y,(u,v)=>[ox+u*D.lw,D.y0+v*D.dh],false)}
 if(!solved(id))return openLock(id);if(doorOpenAmt(id)>=1){hallStack=[];enterHall(id)}return}
 if(scene==="lock"){cv.setPointerCapture(e.pointerId);return lockId===4?l4Down(x,y):FIGS[lockId]?figDown(x,y):lkDown(x,y)}
+if(scene==="hall"&&MMBOX&&!looking()&&x>=MMBOX[0]&&x<=MMBOX[0]+MMBOX[2]&&y>=MMBOX[1]&&y<=MMBOX[1]+MMBOX[3]+16){S.mini=S.mini==="room"?"house":"room";save();return}
 if(scene==="hall"){if(BP){BP=null;return}if(PLQ){hidePlaque();return}{const hb=hallHits.find(h=>h.kind==="item"&&h.it.hidden&&inPoly([x,y],h.poly));if(hb){itemTap(hb.it);return}}
 if(HOLD){for(let i=hallHits.length-1;i>=0;i--){const h=hallHits[i];if(!inPoly([x,y],h.poly))continue;if(h.kind==="door"&&h.st!=="open"&&vined(h.id)&&HOLD.id!=="soil")return pour(h.id,x,y,h.map,h.st!=="amber");if(h.kind==="plant")return HOLD.id==="soil"?pourSoil(h):S.dead[h.key]?toast("It's already dead."):pourPlant(h.key)}HOLD=null;toast("You put the flask away.");return}for(let i=hallHits.length-1;i>=0;i--){const h=hallHits[i];if(!inPoly([x,y],h.poly))continue;if(h.kind==="item"){itemTap(h.it);return}if(h.kind==="shop"){shopOpen();return}if(h.kind==="plant"){plantTap(h);return}if(h.kind==="mob"){attack(true);return}if(h.kind==="cook"){cookOpen(h.src);return}if(h.kind==="mind"){showPlaque(h.who);return}if(h.kind==="art"){const T=now();if(artTap.id===h.id&&T-artTap.t<450){BP={id:h.id,t0:T};document.getElementById("toast").style.opacity=0;artTap={id:null,t:0};sfxChime(false)}else{artTap={id:h.id,t:T};if(!S.bpHint){S.bpHint=1;save();toast("Double-tap a painting to see its blueprint.")}}return}if(h.kind==="door"&&h.st!=="open"&&vined(h.id)){chopTap(h.id,x,y,h.map,h.st!=="amber");return}if(h.kind==="door"&&(h.st==="open"||(h.st==="amber"&&!vined(h.id)))&&stripBetween(PZ(),DOORZ[h.id]||0)){const hh=h;CAM.target=[CAM.x,clamp((DOORZ[h.id]||0)-1.25,0,Math.max(0,CURG.RL-3.4))];PEND=()=>doorGo(hh);toast("You walk over to the door.");return}
 if(h.st==="amber"){if(hasLock(h.id))openLock(h.id);else{sfxChime(false);toast("This lock is still being made.")}}else if(h.st==="open"){if(h.id===0){crossWay(hallId,0);hallStack=[];fadeTo("doors",700)}else enterHall(h.id)}else if(h.kind==="garden")enterGarden(hallId);else if(h.st==="covered"){sfxRattle();toast("Its lock is covered.")}return}hallFloorTap(x,y)}});
-cv.addEventListener("pointermove",e=>{if(scene==="lock")(lockId===4?l4Move:FIGS[lockId]?figMove:lkMove)(e.clientX,e.clientY);else if(e.pointerType==="mouse")axCursor(e.clientX,e.clientY)});
+cv.addEventListener("pointermove",e=>{if(scene==="hall"&&(looking()||(e.buttons&2))){EN.look.feed(VIEW,e.movementX||0,e.movementY||0);return}if(scene==="lock")(lockId===4?l4Move:FIGS[lockId]?figMove:lkMove)(e.clientX,e.clientY);else if(e.pointerType==="mouse")axCursor(e.clientX,e.clientY)});
 cv.addEventListener("pointerup",e=>{if(SW&&!SW.up)SW.up=now();if(scene==="lock")(lockId===4?l4Up:FIGS[lockId]?figUp:lkUp)(e.clientX,e.clientY)});
 cv.addEventListener("pointercancel",()=>{if(SW&&!SW.up)SW.up=now();if(scene==="lock"){LK.drag=null;LK4.drag=null;if(LKF){LKF.drag=null;LKF.ghost=null;LKF.ext=null}if(LK4.ghost&&LK4.ghost.t!=="t")LK4.ghost=null}});
 addEventListener("keydown",e=>{if(e.target&&(e.target.tagName==="INPUT"||e.target.tagName==="SELECT"))return;audioInit();if(scene==="title"){if(!hasProgress())begin();else if(e.key==="Enter")contGame()}else if(scene==="intro")endIntro()});
@@ -1612,12 +1723,12 @@ function contGame(){audioInit();hallStack=[];fadeTo("doors",800)}
 document.getElementById("cont").addEventListener("click",contGame);document.getElementById("hkeys").addEventListener("click",keyHelp);
 const newB=document.getElementById("newg");let newArm=-1e9;
 newB.addEventListener("click",()=>{audioInit();if(now()-newArm>3500){newArm=now();newB.textContent="Erase progress?";setTimeout(()=>newB.textContent="Start over",3500);return}
-S.solved=[];S.coins=0;S.inv=[];S.ax=0;S.vd={};S.rooms={};S.taken={};S.opened={};S.drops={};S.got={};S.worn={};S.sold=[];S.dead={};S.grow={};S.hill={};S.picked={};HOLD=null;S.time=EN.clock.START;S.hp=EN.health.MAX;S.cool={};S.wood=0;S.kindling=0;S.wield=null;S.mob={};S.path={};S.fruit={};S.chop={};S.sword=0;S.walk=null;S.arm={};S.ghost=0;S.shieldHits={};S.capeDay=0;save();VC.clear();doorOpenT={1:null,4:null};hallStack=[];newB.textContent="Start over";begin()});
+S.solved=[];S.coins=0;S.inv=[];S.ax=0;S.vd={};S.rooms={};S.taken={};S.opened={};S.drops={};S.got={};S.worn={};S.sold=[];S.dead={};S.grow={};S.hill={};S.picked={};HOLD=null;S.time=EN.clock.START;S.hp=EN.health.MAX;S.cool={};S.wood=0;S.kindling=0;S.wield=null;S.mob={};S.path={};S.fruit={};S.chop={};S.sword=0;S.pack=null;S.walk=null;S.arm={};S.ghost=0;S.shieldHits={};S.capeDay=0;save();VC.clear();doorOpenT={1:null,4:null};hallStack=[];newB.textContent="Start over";begin()});
 document.getElementById("relock").addEventListener("click",()=>{if(scene==="hall"&&hasLock(hallId))openLock(hallId)});
 document.getElementById("help").addEventListener("click",()=>{if(scene==="lock"&&EMB){lockF.contentWindow.postMessage({cmd:"step"},"*");return}if(scene==="lock")HELP={t0:now(),path:helpPath()}});
 document.getElementById("bagb").addEventListener("click",()=>{audioInit();const b=document.getElementById("bag");if(b.style.display==="block")bagClose();else bagOpen()});
 document.getElementById("toolb").addEventListener("click",()=>{audioInit();if(PLQ)hidePlaque();else axCard()});
-document.getElementById("mapb").addEventListener("click",()=>{audioInit();if(scene==="map")fadeTo(mapPrev,500);else{mapPrev=scene;fadeTo("map",500)}});
+document.getElementById("mapb").addEventListener("click",()=>{audioInit();if(scene==="map"){REVEAL=false;fadeTo(mapPrev,500)}else{REVEAL=false;mapPrev=scene;fadeTo("map",500)}});
 go("title");requestAnimationFrame(frame);
 </script>
 </body>
