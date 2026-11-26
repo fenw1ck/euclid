@@ -84,11 +84,13 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
 
 ## 3b. The ax and the vines (built, 24 Nov 2026)
 
-- **Vines on every door.** Every door (the two front doors, hall doors and glass greenhouse doors) is overgrown with one of four vines, chosen by the door's number: English ivy, muscadine grape, wisteria or Virginia creeper. Each has its own leaves, bark and climbing parts (ivy rootlets, grape tendrils, creeper tendrils with sticky discs, twined wisteria trunks). Some carry flowers or fruit (ivy umbels or black berries, purple or bronze grapes, wisteria racemes or pods, creeper berries or autumn red).
+- **Vines on every door, tougher deeper in the book** (26 Nov 2026). Every lock door is overgrown, and the vine is set by its proof: **1–12 wisteria, 13–24 Virginia creeper, 25–36 English ivy, 37–48 muscadine** (`VINEBAND` in game.html). Each has its own leaves, bark and climbing parts (twined wisteria trunks, creeper tendrils with sticky discs, ivy rootlets, grape tendrils). Some carry flowers or fruit, picked per door. Connecting rooms' doorways have no vines.
 - **Only the ax cuts them, and only when the map allows.** On an amber door (everything it relies on is solved) each tap swings the ax, and the vine is cut back from the lock outward: leaves fall, chips fly, the vine shakes. When it is cut back, the next tap opens the lock. On a covered door the ax bounces off with a clang. Solved doors show their vines cut back: stubs at the frame and a heap at the foot.
 - **The ax** is a tool kept for good, shown in the slot at the bottom left (tap it for its card). The **Bronze Ax** leans by the front doors at the start of a new game; tapping the vines without it says where it is. It is upgraded to the **Iron Ax** after 12 solved locks and the **Starmetal Ax** after 30, until the statue shop sells them.
-  - Strikes to cut a door back: Bronze 10, Iron 6, Starmetal 3 (after Stardew Valley's axes: 10 hits for a tree, fewer per upgrade).
-  - A tap during a swing waits for it to finish (one tap is kept).
+- **The Bronze Sword** (26 Nov 2026) leans by the left front door at the start of a game, as the Bronze Ax leans by the right one. Tapping it wields it (or puts it in the bag if you already wield something). `S.sword` remembers it was taken; Start over puts it back.
+  - Blows to cut a door back with the Bronze Ax: wisteria 6, Virginia creeper 10, English ivy 15, muscadine 20. The Iron Ax takes 0.6 as many (4, 6, 9, 12) and the Starmetal Ax 0.3 (2, 3, 5, 6), rounded, never fewer than one (`axStrikes`). The ax card lists the blows for each vine with the ax you carry.
+  - **Every tap is a blow** (26 Nov 2026): the blow lands the moment you press, and the swing lasts only as long as the press. Holding keeps the bit in the vines; letting go bounces it off in 0.14 s. A new tap during a swing starts a new blow at once, so a door comes clear as fast as you can tap (6 taps for wisteria). A weed killer still clears its share in one pour.
+  - The ax is drawn broad (26 Nov 2026): the head is 1.15× longer and 1.45× taller than before, and the haft 1.25× thicker (`HEAD_X`, `HEAD_Y`, `HAFT_W` in tools.js).
 - **Swing.** First person: the hands are just below the screen, the ax comes over from behind and its bit lands on the tapped spot, then bounces off. On a computer the pointer becomes the ax over vines it can cut.
 - **Map.** Ready rooms still covered in vines carry a leaf; tapping one walks you to the hall (or the front doors) where that door is.
 - **Save.** `S.ax` (0 none, 1–3 the tier) and `S.vd` (each door's damage, 0–1). Saved games with progress get the Bronze Ax (and any upgrade they have earned) on load. Start over clears both.
@@ -106,6 +108,43 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
 - **Indoor floors:** every room except the greenhouse has a stone or wood floor from `floors.js` (corridor stone, library wood, bedroom either), drawn row by row so it stays true in perspective, with a carpet: a runner in corridors that have one, a large carpet in the library, a rug in every bedroom.
 - Art: `floors.js` and `bedroom.js` from Art-Assets.
 
+## 3d. One fixed building (built 26 Nov 2026)
+
+- **Map first.** The whole tomb is one floor plan, the same for every player: `world.js`, made by `tools/make-world.py` (run it again only to change the building; its `SEED` and layout numbers are at the top). The plan is a grid of 3 m cells.
+- **Lock rooms** (1–48) are halls three cells long. The book's depths run in bands that snake left to right, right to left, then left to right again, so the plan is about square.
+- **Connecting rooms** (ids 100 and up) hold no lock. Every dependency is a walkable route from one lock room to the next. Routes share corridors, and where corridors cross they meet in a junction, so the building fits on one floor without stairs. Junctions where three or more ways meet are **greenhouses**. Each greenhouse's far wall is the gate to its garden, whose size is fixed in the plan (`GARDEN.plan(seed,{w,h})`).
+- **Doors.** A room's doors are its doorways in the plan. A lock room whose proofs are not all solved keeps its plate covered. You can walk up to its door, but not open it.
+- **48 is the last room:** a dead end past the far corner of the last band, with one door. It is the farthest room from the entrance (80 cells' walk; the next farthest, 45, is 74). It opens only when all 47 other proofs are solved.
+- **The forecourt** (room 100) joins the two front doors (1 and 4). Its far door leads back out to them.
+- **Map screen.** It draws the floor plan. Tapping a room tells you about it; you walk everywhere (see 3e).
+- **Rooms are fixed.** Every room's type comes from the plan. Its size, plants, items, traps and creature are grown from its number, so they are the same on every visit. A connecting room's creatures and loot follow the earliest proof whose route runs through it (`lvl`). Saved games keep their progress, but room types now come from the plan (`S.rooms` is no longer used).
+- **Speed** (26 Nov 2026):
+  - The room's walls, floor, ceiling and far wall are drawn once per view and kept. While you walk they are redrawn at lower resolution, and sharp again the moment you stop.
+  - Plants and floor items are pictures. Each plant has one picture per stage (seedling, young, past, dormant, dead) and three for mature; a potato's three are its skins, so what you see is what you dig up. Each picture is drawn once, large, and smaller sizes are scaled down from it.
+  - Paintings, vines and shelves only draw their own slice of the picture per strip.
+  - Wall paintings: each picture is drawn once and kept, then halved down (large to small); a painting on the wall uses the kept size nearest its size on screen.
+  - Glows (torches, lamps, doors, the hand, sparks) are one soft dot per colour, drawn once and reused, instead of a new gradient for every glow.
+  - The floor is clipped to its own outline, so its taller near strips keep straight edges.
+  - The map's plan is drawn once per change in progress.
+  - Measured in headless Chrome at 2× (1280×800): a standing frame went from 40–143 ms to 10–30 ms, walking to 27–46 ms, and the map from 41 ms to under 1 ms.
+- **Copy back to Art-Assets:** `garden.js` gained the optional `{w,h}` size in `GARDEN.plan`, and `items.js` gained a shield drawing and the Ghost Draught's pale blue.
+
+## 3e. The building's Euler puzzle (built 26 Nov 2026)
+
+- **Walk each doorway once a day.** Every doorway you walk through is marked for the game day (`S.walk`), including the front doors and the Back button.
+- **Walking back sets a trap.** Walk back through a doorway you have already walked today, and the room you step into sets its doorway trap (`S.arm`). The trap is a strip of pressure plates across the floor, just inside the entrance and before the room's doors. It fires spikes from the floor or flame jets from the walls (fixed per room), for 15 health.
+- **Using a far door.** Tapping a door beyond a set strip walks you across it, so you can't skip it by tapping from afar. Back works the same way.
+- **Ways past:**
+  - walk along the room's ledge, which runs beside the strip;
+  - jump the strip (spikes only);
+  - set an item down on it: the trap springs on the item, the item is lost, and the trap is spent;
+  - carry a **Bronze Shield** (statue shop, 25 coins; takes three blows, then splits);
+  - wear a cape (takes one blow a day);
+  - drink a **Ghost Draught** (statue shop, 20 coins): for an hour of game time no trap can touch you, and the view takes a pale blue tint.
+- **Ledges.** Every room now has one ledge: 0.6 m high, along a wall just inside the entrance, on the side with no door there. It replaces the old random ledges (0.6 or 1.2 m, about one room in three). Stepping down from 1.2 m costs 13 health, nearly as much as the trap, so a high ledge would not be a real way past.
+- **At dawn** every doorway counts as unwalked again and every trap disarms.
+- **The map only shows.** There is no jumping between rooms, so every doorway you use is walked. It marks today's walked doorways with gold dots and set traps with red dashes, and tapping a room tells you about it. A set strip also shows red on the minimap.
+
 ## 4. Treasure, coins and the statue shop
 
 - **Chests** are hidden in halls and greenhouses. Opening one gives 1–20 coins, weighted by the hall's proposition number *n* (`coinRoll(n)` in the code). The weights follow a bell curve centred at 1 + 19·(n−1)/47, with a spread of 1.6:
@@ -115,7 +154,7 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
 - **Scrolls** are single-use guides. Inside a lock, a scroll makes the light run ahead of your hand through each step, so you can follow it. This reuses the site's Solve/Step hand.
 - **Clothes** are ornamental and dress your character: necklace, sword, boots, cape, gloves, crown.
 
-### The items (all in `ITEMS` in the code)
+### The 41 items (all in `ITEMS` in the code)
 
 | # | Item | Kind | Price | Description |
 |---|---|---|---|---|
@@ -160,11 +199,6 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
 | 39 | Weed Killer (strong) | potion | 14 | Withers 7/10 of a door's vines. Kills a plant. One use. |
 | 40 | Weed Killer (strongest) | potion | 28 | Withers all of a door's vines. Kills a plant. One use. |
 | 41 | Chest | container | 12 | Once emptied, carry it and set it down in any room. |
-| 42 | Health Potion | potion | 10 | Rose-pink, bronze caduceus stopper. Drink: +25 health. |
-| 43 | Greater Health Potion | potion | 22 | Red, silver caduceus. Drink: +50 health. |
-| 44 | Supreme Health Potion | potion | 45 | Deep crimson, glowing, gold caduceus. Drink: full health. Rare in rooms. |
-| 45 | Rucksack | pack | 40 | The bag holds 24. Bought once at the statue; not a bag item. |
-| 46 | Expedition Pack | pack | 90 | The bag holds 32. Sold once you have the Rucksack. |
 
 ### Built (25 Nov 2026): items in rooms, the bag, the wardrobe, the shop, weed killer
 - **Rooms:** every room holds 1–3 items, picked per room type (`KINDROOMS`, `ITEMROOMS`; 0 keeps a kind out, e.g. no scrolls in greenhouses, no tools anywhere). About one room in three has a chest: coins (`coinRoll`) plus one random item. An empty chest is an item: carry it, place it in another room.
@@ -174,11 +208,6 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
 - **The statue shop:** one statue in each greenhouse room glows blue. It sells scrolls and the boots you don't have, buys anything (except tools) at half price, and sells back what you sold it, at full price.
 - **Greenhouse harvest** (25 Nov 2026): about one greenhouse plant in four is still growing when first seen and is ready once you solve another lock. Tap a ready plant to harvest it: its fruit, root, flower or leaf (`PLANTS.harvest`) goes in the bag (anything that doesn't fit is left on the floor) and the plant is gone (`S.picked`). Houseplants give nothing. Potatoes grow in about half the greenhouses.
 - **Potatoes:** a ready potato shows a third of each tuber above the soil and gives 3 raw potatoes (red, purple or brown by plant). Pour a **Sack of Soil** (greenhouse rooms, or the statue shop) on a growing potato to earth it up: up to 3 times, each adding 2 potatoes (5, 7, 9). Raw potatoes must be cooked (Bag → Cook, in any room) into a Baked Potato before they can be eaten. Other produce is eaten as it is.
-- **Health potions** (25 Nov 2026): red potions with a caduceus stopper in three strengths (+25, +50, full). They turn up in rooms now and then (the Supreme one rarely) and the statue shop always sells all three. Bag → Drink. You can't drink one at full health.
-- **Ripe crops show:** a ripe plant's crop floats over it in a gold ring, so you can see what is ready to harvest from across the room. Food that is eaten as it is (raspberries, strawberries, apples…) gives health; its card says how much.
-- **Kitchens are stocked:** every kitchen has 3–5 Ingredients on its table or island, usually all of one recipe, so there is always something to cook at the oven.
-- **Backpacks:** the bag starts as a 16-slot satchel. The statue sells the Rucksack (24, 40 coins), then the Expedition Pack (32, 90 coins). Buying one swaps it in.
-- **Shops on the map:** every greenhouse room you have found shows a small blue statue on the map.
 - **Weed killer** (Potion category, single use): Pour from the bag, then tap a door's vines (they wither by 0.4, 0.7 or all, the same cuts in work as the Iron and Starmetal Axes) or a greenhouse plant (it dies, `S.dead`). Tap anywhere else to put it away.
 
 Proposed rules (open to change):
@@ -207,6 +236,7 @@ The rules and numbers live in **engine.js** (Art Assets; see its "Game engine" t
 - **Music:** ten songs in a dungeon-crawl style, but bright (adventure, curiosity, fun). Drums lead (kick, snare backbeat, hats, fills on every song); the lead line is kept soft. They are composed in code from a seed: a melody, bass, pad, arpeggio and drums, with an echo like a stone room. Each song plays twice, then the next one starts.
   - Songs: The First Postulate, Lantern Corridor, Compass and Ivy, Gnomon's March, The Greenhouse Fountain, Parallel Halls, The Gilded Theorem, Stairs of Alexandria, Byrne's Colours, Q.E.D.
   - The bottom-right corner always has: on/off, a song list, next song, and a volume slider.
+- **Playback (26 Nov 2026):** each song is rendered once into a sound buffer (`OfflineAudioContext`, mono) and looped, so playing it makes almost no new audio nodes. A song plays note by note until its buffer is ready, then switches over at the top of a loop. The next song is rendered while this one plays; only those two are kept (about 7 MB each). The room echo is still added live.
 - **Effects (built):** unlock (tumblers, then bolt, creak and thud), chimes as each part of the figure is cut, ticks while sweeping, and a rattle on a closed door.
 - **Next:** running water near working fountains, louder as you approach; a chest creak and the clink of coins; and the shimmer of the blue statue.
 
@@ -228,8 +258,6 @@ The rules and numbers live in **engine.js** (Art Assets; see its "Game engine" t
 ## 7. Art note
 
 All art is drawn in code (canvas): stars, the solar system, the temple, stone walls, ivy, bronze plates, wooden doors, and halls in perspective. This keeps the game to one small file and sharp at any screen size, but the style is clean and illustrated rather than painted. If painted art is wanted later, each scene has a single drawing function that an image could replace.
-
-**House style (25 Nov 2026):** accurate proportions with back-lit silhouette lighting. Creatures are dark shapes lit from behind, with a cool rim on their outer edge, hair breaking the edge and glowing eyes (amber calm, red-orange angry). Their bodies come from the engine's skeleton (`ENGINE.skeleton`), so a creature's proportions stay the same whatever the paint. The creatures are done; rooms, plants, items and locks follow. Rules: Art-Assets `research/rendering/house-style.md`.
 
 Built (23 Nov 2026), from the feedback list:
 - Every hall has its own look, the same on each visit (seeded by its number). It sets the wall and floor colours, which wall the doors start on, and whether there is a rug and night windows. It also picks the lighting: torches, sconces, candelabras, floor lamps or a Tiffany lamp on a side table.

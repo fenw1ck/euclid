@@ -2,7 +2,7 @@
    The art package source is github.com/fenw1ck/art-assets; copy this file in at release.
    Needs plants.js (window.PLANTS) for the plants themselves.
 
-   window.GARDEN.plan(seed)            a garden: size (8×16 up to 50×50), theme, paths, beds, plants and props
+   window.GARDEN.plan(seed,o)          a garden (o.w, o.h fix its size): size (8×16 up to 50×50), theme, paths, beds, plants and props
    window.GARDEN.render(plan, s, o)    the still parts (ground, paths, beds, plants, benches, trellises, tools) on a canvas, s px per cell;
                                        o.wild: an abandoned greenhouse floor (irregular flagstone or dirt paths, moss and grass creeping in)
    window.GARDEN.fountain(ctx,x,y,s,t) a working fountain, centre (x,y), s px per cell, t seconds (animated water)
@@ -25,8 +25,8 @@ const CLIMB=new Set(["tomato_indeterminate","tomato_cherry","bean_pole","pea","c
 const NAMES={herb:"Herb garden",vegetable:"Kitchen garden",fruit:"Orchard and berries",flower:"Flower garden",mixed:"Mixed garden"};
 
 /* ---- the plan ---- */
-function plan(seed){const r=rng(seed);
- const w=8+Math.round(Math.pow(r(),1.4)*42),h=Math.max(16,w+Math.round(r()*(50-w))),themeName=Object.keys(THEMES)[Math.floor(r()*5)],theme=THEMES[themeName];
+function plan(seed,o){const r=rng(seed); /* o.w, o.h: a size fixed elsewhere (the Euclid game's building plan) */
+ const w0=8+Math.round(Math.pow(r(),1.4)*42),h0=Math.max(16,w0+Math.round(r()*(50-w0))),w=(o&&o.w)||w0,h=(o&&o.h)||h0,themeName=Object.keys(THEMES)[Math.floor(r()*5)],theme=THEMES[themeName];
  const PATH=1,BED=2,GRASS=0,cell=new Uint8Array(w*h),at=(x,y)=>cell[y*w+x],set=(x,y,v)=>{if(x>=0&&y>=0&&x<w&&y<h)cell[y*w+x]=v};
  /* paths: a ring round the edge, a spine up the middle, cross paths every 7 or 8 rows, and more spines in a wide garden */
  const vx=[0,w-1],hy=[0,h-1],sp=Math.floor(w/2);vx.push(sp);if(w>=22){const k=Math.floor((w-1)/10);for(let i=1;i<k;i++){const x=Math.round(i*(w-1)/k);if(Math.abs(x-sp)>3)vx.push(x)}}

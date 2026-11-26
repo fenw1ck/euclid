@@ -1,7 +1,8 @@
 /* engine.js: how the game behaves, kept apart from how it looks, so another project can load it and so it can be read
    and improved on the Art Assets site ("Game engine" tab). No drawing here: only rules, numbers and small pure
    functions over a save object S. The Euclid game (game.html) is the first user.
-   window.ENGINE = {clock, health, keys, locks, moves, traps, combat, cook, fuel, skeleton, parts}
+   window.ENGINE = {clock, health, keys, locks, moves, traps, combat, cook, fuel, skeleton, input, look, loop, signals,
+                    scene, timeline, l10n, save, parts}
    Every number a designer might tune is a named field; ENGINE.parts describes each part for the engine tab. */
 (function(){
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -30,9 +31,9 @@ const health={MAX:100,REGEN_PER_HOUR:2,FAINT_COIN_LOSS:.1,WAKE_HP:50,
   faint(S){const lost=Math.floor((S.coins||0)*health.FAINT_COIN_LOSS);S.coins=(S.coins||0)-lost;S.hp=health.WAKE_HP;return{lost}}};
 
 /* ---------- keys: the usual PC game layout ---------- */
-const keys={MAP:{map:['m'],bag:['i','b','tab'],jump:[' '],climb:['c'],attack:['f'],interact:['e','enter'],close:['escape'],help:['h','?'],
+const keys={MAP:{map:['m'],bag:['i','b','tab'],jump:[' '],climb:['c'],attack:['f'],interact:['e','enter'],close:['escape'],help:['h','?'],look:['l'],
     up:['w','arrowup'],down:['s','arrowdown'],left:['a','arrowleft'],right:['d','arrowright']},
-  LABEL:{map:'Map',bag:'Bag (inventory)',jump:'Jump',climb:'Climb a ledge',attack:'Attack with your weapon',interact:'Use, open, pick up, talk',close:'Close / back',help:'Keys',up:'Walk forward',down:'Walk back',left:'Step left',right:'Step right'},
+  LABEL:{map:'Map',bag:'Bag (inventory)',jump:'Jump',climb:'Climb a ledge',attack:'Attack with your weapon',interact:'Use, open, pick up, talk',close:'Close / back',help:'Keys',look:'Look around (or hold the right mouse button)',up:'Walk forward',down:'Walk back',left:'Step left',right:'Step right'},
   action(k){k=String(k||'').toLowerCase();for(const a in keys.MAP)if(keys.MAP[a].includes(k))return a;return null},
   list:()=>Object.keys(keys.MAP).map(a=>[a,keys.LABEL[a],keys.MAP[a].map(k=>({' ':'Space',arrowup:'↑',arrowdown:'↓',arrowleft:'←',arrowright:'→',escape:'Esc'})[k]||(k.length===1?k.toUpperCase():k[0].toUpperCase()+k.slice(1)))])};
 
@@ -218,6 +219,116 @@ const skeleton=(()=>{const TAU=Math.PI*2;
   B.state=state;B.kind=kind;B.mood={friendly:'calm',threatening:'angry',wounded:'hurt',dead:'dead'}[state]||'calm';B.open=st.open;B.bounds=bounds(B.parts);return B}
  return{plans:Object.keys(plans),KIND,STATE,build,bounds,limb,ell,cr}})();
 
+/* ================= engine components added 25 Nov 2026 (ticket "Engine component expansion") =================
+   Each follows the common practice of the big engines (see engine-why.html on the Art Assets site):
+   input (Unreal Enhanced Input / Unity Input System / Godot InputMap), look (camera yaw and pitch), loop (the fixed
+   timestep of Godot _physics_process and Unity FixedUpdate, after "Fix Your Timestep"), signals (Godot signals),
+   scene (Godot's node tree), timeline (Unreal Sequencer / Godot AnimationPlayer, for cinematics), l10n (Godot
+   TranslationServer), save (versioned migrations), and skeleton.blend (pose blending between states). */
+
+/* ---------- signals: name an event, connect handlers, emit it (Godot signals; GameMaker user events) ---------- */
+const signals=(()=>{const H={};return{
+  on(name,fn){(H[name]=H[name]||[]).push(fn);return()=>signals.off(name,fn)},
+  once(name,fn){const off=signals.on(name,(...a)=>{off();fn(...a)});return off},
+  off(name,fn){if(H[name])H[name]=H[name].filter(f=>f!==fn)},
+  emit(name,...a){(H[name]||[]).slice().forEach(f=>{try{f(...a)}catch(e){console.error(e)}})},
+  count:name=>(H[name]||[]).length}})();
+
+/* ---------- input: actions in contexts, bound to keys, mouse buttons and gamepad buttons and axes ----------
+   Game code asks about actions ("interact"), never about keys. Contexts are layered by priority (the bag open above
+   gameplay); a key is read by the highest-priority active context that binds it. Polling (down / pressed / released,
+   updated once per frame by input.frame()) and events (input.on('pressed:jump', fn)) both work. Bindings can be
+   changed at run time (input.bind) and saved (input.save(S) / input.load(S)). */
+const input=(()=>{
+  const CTX={gameplay:{prio:0,map:{up:['w','arrowup','pad:12'],down:['s','arrowdown','pad:13'],left:['a','arrowleft','pad:14'],right:['d','arrowright','pad:15'],
+      jump:[' ','pad:0'],climb:['c','pad:3'],attack:['f','mouse:0x','pad:2'],interact:['e','enter','pad:1'],map:['m','pad:8'],bag:['i','b','tab','pad:9'],look:['l','mouse:2'],close:['escape'],help:['h','?']}},
+    menu:{prio:10,map:{close:['escape','pad:1'],confirm:['enter','pad:0'],up:['arrowup','pad:12'],down:['arrowdown','pad:13'],left:['arrowleft','pad:14'],right:['arrowright','pad:15']}}};
+  const on={gameplay:true,menu:false},held=new Set(),now={},prev={},axesRaw={lx:0,ly:0,rx:0,ry:0};let mouse={dx:0,dy:0,locked:false};
+  const actionsFor=code=>{const out=[];let best=-1e9;for(const c in CTX)if(on[c]){const a=Object.keys(CTX[c].map).filter(k=>CTX[c].map[k].includes(code));if(a.length&&CTX[c].prio>best){best=CTX[c].prio;out.length=0;out.push(...a)}}return out};
+  const I={CONTEXTS:CTX,DEADZONE:.18,
+    /* raw events in (from the page, or from input.attach) */
+    key(code,isDown){code=String(code).toLowerCase();isDown?held.add(code):held.delete(code)},
+    button(n,isDown){const c='mouse:'+n;isDown?held.add(c):held.delete(c)},
+    move(dx,dy){mouse.dx+=dx;mouse.dy+=dy},
+    pad(gp){if(!gp)return;gp.buttons.forEach((b,i)=>{const c='pad:'+i;b.pressed?held.add(c):held.delete(c)});const dz=v=>Math.abs(v)<I.DEADZONE?0:(v-Math.sign(v)*I.DEADZONE)/(1-I.DEADZONE);
+      axesRaw.lx=dz(gp.axes[0]||0);axesRaw.ly=dz(gp.axes[1]||0);axesRaw.rx=dz(gp.axes[2]||0);axesRaw.ry=dz(gp.axes[3]||0)},
+    /* once a frame: work out which actions are down, and fire pressed:/released: signals */
+    frame(){for(const a in now)prev[a]=now[a];for(const a in now)now[a]=false;for(const code of held)for(const a of actionsFor(code))now[a]=true;
+      for(const a in now){if(now[a]&&!prev[a])signals.emit('pressed:'+a);if(!now[a]&&prev[a])signals.emit('released:'+a)}const m={dx:mouse.dx,dy:mouse.dy};mouse.dx=mouse.dy=0;return m},
+    down:a=>!!now[a],pressed:a=>!!now[a]&&!prev[a],released:a=>!now[a]&&!!prev[a],
+    /* a 2-D axis from four actions plus a stick: move = (left/right, up/down); look = right stick */
+    axis(name){if(name==='look')return[axesRaw.rx,axesRaw.ry];const x=(now.right?1:0)-(now.left?1:0)+axesRaw.lx,y=(now.down?1:0)-(now.up?1:0)+axesRaw.ly,l=Math.hypot(x,y);return l>1?[x/l,y/l]:[x,y]},
+    on:(ev,fn)=>signals.on(ev,fn),
+    context(name,active){on[name]=!!active},active:name=>!!on[name],
+    action:code=>actionsFor(String(code).toLowerCase())[0]||null,
+    bind(action,codes,ctx){ctx=ctx||'gameplay';CTX[ctx].map[action]=[].concat(codes).map(c=>String(c).toLowerCase())},
+    save(S){S.binds={};for(const c in CTX)S.binds[c]=CTX[c].map},load(S){if(S&&S.binds)for(const c in S.binds)if(CTX[c])Object.assign(CTX[c].map,S.binds[c])},
+    /* wire a page to it: keys, mouse buttons and movement (pointer lock aware); gamepads are read in frame() via input.pad */
+    attach(win,el){win=win||window;win.addEventListener('keydown',e=>{if(!/INPUT|SELECT|TEXTAREA/.test((e.target||{}).tagName||''))I.key(e.key,true)});win.addEventListener('keyup',e=>I.key(e.key,false));win.addEventListener('blur',()=>held.clear());
+      if(el){el.addEventListener('pointerdown',e=>I.button(e.button===0&&!mouse.locked?'0x':e.button,true));win.addEventListener('pointerup',e=>{I.button('0x',false);I.button(e.button,false)});win.addEventListener('pointermove',e=>{if(e.buttons&4||e.buttons&2||mouse.locked)I.move(e.movementX||0,e.movementY||0)});el.addEventListener('contextmenu',e=>e.preventDefault());
+        win.document.addEventListener('pointerlockchange',()=>{mouse.locked=win.document.pointerLockElement===el;signals.emit('look:lock',mouse.locked)})}},
+    locked:()=>mouse.locked,
+    list:ctx=>Object.entries(CTX[ctx||'gameplay'].map)};return I})();
+
+/* ---------- look: turn the view left/right (yaw) and up/down (pitch) ----------
+   Mouse movement (in look mode, or while the right button is held) and the right stick feed a target; the view eases
+   toward it. A renderer with only vertical walls cannot truly rotate, so look.shear() gives the classic answer
+   (Heretic's y-shearing, and the same sideways): move the vanishing point by f·tan(angle). It stays convincing up to
+   about 25°, so the angles are clamped there. Mouse forward (moving it away from you) looks up. */
+const look={MAX_YAW:.42,MAX_PITCH:.3,SENS:.0024,STICK:1.6,EASE:12,RECENTER:0,
+  make:()=>({yaw:0,pitch:0,ty:0,tp:0}),
+  feed(L,dx,dy){L.ty=clamp(L.ty+dx*look.SENS,-look.MAX_YAW,look.MAX_YAW);L.tp=clamp(L.tp-dy*look.SENS,-look.MAX_PITCH,look.MAX_PITCH)},
+  stick(L,x,y,dt){look.feed(L,x*look.STICK*dt/look.SENS,y*look.STICK*dt/look.SENS)},
+  step(L,dt){const k=1-Math.exp(-look.EASE*dt);if(look.RECENTER){L.ty*=1-look.RECENTER*dt;L.tp*=1-look.RECENTER*dt}L.yaw+=(L.ty-L.yaw)*k;L.pitch+=(L.tp-L.pitch)*k;return L},
+  reset(L){L.yaw=L.pitch=L.ty=L.tp=0},
+  /* how far to move the vanishing point, in px, for a focal length f (px): [dx, dy] */
+  shear:(L,f)=>[-Math.tan(L.yaw)*f,Math.tan(L.pitch)*f]};
+
+/* ---------- loop: a fixed timestep for the rules, a free frame rate for drawing ("Fix Your Timestep") ----------
+   loop.make(hz) → runner; runner.frame(dtReal, tick) calls tick(STEP) as many times as real time allows (at most MAX_FRAME
+   seconds' worth, so a stall never spirals), and returns alpha (0..1), how far between ticks the drawing is. */
+const loop={HZ:60,MAX_FRAME:.25,
+  make(hz){const STEP=1/(hz||loop.HZ);let acc=0,ticks=0;return{STEP,frame(dt,tick){acc+=Math.min(loop.MAX_FRAME,Math.max(0,dt));let n=0;while(acc>=STEP){tick(STEP);acc-=STEP;n++;ticks++}return{alpha:acc/STEP,ticks:n,total:ticks}}}},
+  lerp:(a,b,t)=>a+(b-a)*t};
+
+/* ---------- scene: a tree of nodes (Godot), each with optional enter / ready / process / exit; groups find nodes ---------- */
+const scene={
+  node(name,o){return Object.assign({name,children:[],parent:null,groups:[],inside:false},o||{})},
+  add(parent,child){child.parent=parent;parent.children.push(child);if(parent.inside)scene._enter(child);return child},
+  remove(child){const p=child.parent;if(!p)return;p.children=p.children.filter(c=>c!==child);child.parent=null;scene._exit(child)},
+  root(name){const r=scene.node(name||'root');r.inside=true;return r},
+  _enter(n){n.inside=true;n.enter&&n.enter(n);n.children.forEach(scene._enter);n.ready&&n.ready(n)}, /* parent enters first; children are ready first */
+  _exit(n){n.children.forEach(scene._exit);n.exit&&n.exit(n);n.inside=false},
+  process(n,dt){if(n.paused)return;n.process&&n.process(n,dt);n.children.forEach(c=>scene.process(c,dt))},
+  find(n,path){return String(path).split('/').reduce((a,k)=>a&&a.children.find(c=>c.name===k),n)},
+  group(n,g,out){out=out||[];if(n.groups.includes(g))out.push(n);n.children.forEach(c=>scene.group(c,g,out));return out}};
+
+/* ---------- timeline: keyframed tracks for cinematics and animation (Unreal Sequencer, Godot AnimationPlayer) ----------
+   timeline.make({length, tracks:{name:[[t,value,ease?],…]}, events:[[t,'signal']]}) → tl; timeline.at(tl, t) → {name: value};
+   timeline.play(tl, dtStep) advances tl.t, emits the events it passes, and returns the values. Values may be numbers or arrays. */
+const EASE={linear:t=>t,inOut:t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2,out:t=>1-(1-t)*(1-t),in:t=>t*t,step:t=>t<1?0:1};
+const timeline={EASE,
+  make:o=>Object.assign({length:1,tracks:{},events:[],t:0,loop:false},o),
+  value(keys,t){if(!keys.length)return null;if(t<=keys[0][0])return keys[0][1];for(let i=0;i<keys.length-1;i++){const a=keys[i],b=keys[i+1];if(t<=b[0]){const u=(EASE[b[2]||'inOut'])((t-a[0])/((b[0]-a[0])||1));
+    return Array.isArray(a[1])?a[1].map((v,j)=>v+(b[1][j]-v)*u):a[1]+(b[1]-a[1])*u}}return keys[keys.length-1][1]},
+  at(tl,t){const o={};for(const k in tl.tracks)o[k]=timeline.value(tl.tracks[k],t);return o},
+  play(tl,dt){const t0=tl.t;tl.t+=dt;if(tl.loop&&tl.t>tl.length)tl.t%=tl.length;else tl.t=Math.min(tl.t,tl.length);for(const[t,name]of tl.events)if(t>t0&&t<=tl.t)signals.emit(name,tl);return timeline.at(tl,tl.t)},
+  done:tl=>!tl.loop&&tl.t>=tl.length};
+
+/* ---------- l10n: every string the player reads, by key, per language, with English as the fallback (Godot TranslationServer) ---------- */
+const l10n={lang:'en',TABLE:{en:{look_hint:'Press L (or hold the right mouse button) to look around.',look_on:'Looking around: move the mouse. Esc to stop.',bag_full:'Your bag is full.',you_are_here:'You are here'},
+    es:{look_hint:'Pulsa L (o mantén el botón derecho) para mirar alrededor.',look_on:'Mirando: mueve el ratón. Esc para salir.',bag_full:'Tu bolsa está llena.',you_are_here:'Estás aquí'}},
+  t(key,vars){const s=(l10n.TABLE[l10n.lang]||{})[key]??l10n.TABLE.en[key]??key;return vars?s.replace(/\{(\w+)\}/g,(_,k)=>vars[k]??''):s},
+  add(lang,entries){l10n.TABLE[lang]=Object.assign(l10n.TABLE[lang]||{},entries)},
+  langs:()=>Object.keys(l10n.TABLE)};
+
+/* ---------- save: versioned saves; each migration runs once, in order, and the version is stored (S.v) ---------- */
+const save={migrate(S,steps){let v=S.v||0;for(const[to,fn]of steps)if(to>v){fn(S);v=to}S.v=v;return S}};
+
+/* ---------- skeleton.blend: ease a body from one pose to another (animation between states) ---------- */
+skeleton.blend=(a,b,t)=>{if(!a||!b)return b||a;const lerpP=(P,Q)=>P.map((p,i)=>Q[i]?[p[0]+(Q[i][0]-p[0])*t,p[1]+(Q[i][1]-p[1])*t]:p);
+  return Object.assign({},b,{parts:b.parts.map((p,i)=>a.parts[i]&&a.parts[i].pts.length===p.pts.length?Object.assign({},p,{pts:lerpP(a.parts[i].pts,p.pts)}):p),heads:b.heads.map((h,i)=>{const g=a.heads[i];return g?Object.assign({},h,{x:g.x+(h.x-g.x)*t,y:g.y+(h.y-g.y)*t,eyes:lerpP(g.eyes,h.eyes)}):h})})};
+
 /* ---------- the parts, described for the engine tab and the Request Builder ---------- */
 const parts=[
  {id:'clock',name:'Time',what:'A game clock: 1 real second is 1 game minute, so a day lasts 24 minutes. Plants first seen growing are ready 6 game hours later. Glass rooms dim at night.',params:()=>({MIN_PER_SEC:clock.MIN_PER_SEC,GROW_HOURS:clock.GROW_HOURS,START:'08:00'})},
@@ -228,8 +339,16 @@ const parts=[
  {id:'traps',name:'Traps',what:'Pressure plates spring spikes (jump over them). Timed locks seal. Path rooms have points and edges on the floor: walk every edge once without going back over one (an Euler trail); backtracking fires flame throwers, spikes or poison fog.',params:()=>({PLATE_DMG:traps.PLATE_DMG,BACKTRACK_DMG:traps.BACKTRACK_DMG,PLATE_CHANCE:traps.PLATE_CHANCE,PATH_CHANCE:traps.PATH_CHANCE})},
  {id:'combat',name:'Combat',what:'Knife (fast, short), sword (strong), staff (long reach), each in bronze, iron or starmetal. Weapons wear out: perfect, damaged, broken. Harpies, basilisks, minotaurs, manticores and hydras live in deeper halls; some are friendly until struck.',params:()=>({creatures:Object.values(combat.CREATURES).map(c=>`${c.name} ${c.hp}hp/${c.dmg}dmg from hall ${c.from}`).join('; '),weapons:combat.allWeapons().map(w=>{const x=combat.weapon(w);return`${x.name} ${x.dmg}dmg ${x.dur}uses`}).join('; ')})},
  {id:'cook',name:'Cooking',what:'Ingredients (food that must be cooked) go in a kitchen oven, or in a cauldron over a greenhouse campfire (2 firewood a dish). A timing check per ingredient: stop the sweeping marker inside the lit range. Miss and it burns.',params:()=>({WOOD_PER_UNIT:cook.WOOD_PER_UNIT,recipes:cook.RECIPES.map(r=>`${r.name} (${r.needs.join(' + ')})`).join('; ')})},
- {id:'skeleton',name:'Skeleton',what:'Posable bodies for creatures: five body plans (four-legged, two-legged, bird, serpent, many-headed) with anatomical proportions, jointed legs, wing bones, tail curves and head anchors, posed for friendly, threatening, wounded and dead. Geometry only: the art style paints it.',params:()=>({plans:skeleton.plans.join(', '),creatures:Object.entries(skeleton.KIND).map(([k,v])=>k+' → '+v).join('; '),states:Object.keys(skeleton.STATE).join(', ')})},
+ {id:'input',name:'Input',what:'Actions, not keys: the game asks "is interact pressed?". Actions live in contexts (gameplay, menu) layered by priority, are bound to keys, mouse buttons and gamepad buttons and sticks, can be rebound and saved, and can be polled each frame or listened to as events.',params:()=>({contexts:Object.keys(input.CONTEXTS).join(', '),DEADZONE:input.DEADZONE,gameplay:input.list('gameplay').map(([a,k])=>a+' '+k.join('/')).join('; ')})},
+ {id:'look',name:'Looking around',what:'Turn the view left and right and up and down: L (or hold the right mouse button) and move the mouse, or the right stick. Mouse forward looks up. The room renderer moves the vanishing point (shearing, as Heretic did), clamped to the angles where that still looks right.',params:()=>({MAX_YAW:look.MAX_YAW+' rad',MAX_PITCH:look.MAX_PITCH+' rad',SENS:look.SENS,STICK:look.STICK,EASE:look.EASE})},
+ {id:'loop',name:'Game loop',what:'Rules run on a fixed timestep (60 a second) whatever the frame rate; drawing runs as fast as the screen allows and is told how far between two ticks it is. A stall is capped at a quarter second so the game never tries to catch up forever.',params:()=>({HZ:loop.HZ,MAX_FRAME:loop.MAX_FRAME+' s'})},
+ {id:'signals',name:'Signals',what:'Named events any part can emit and any part can listen to (a lock opened, an action pressed, a timeline cue), so parts never need to know about each other.',params:()=>({methods:'on, once, off, emit'})},
+ {id:'scene',name:'Scene tree',what:'Nodes in a tree, as in Godot: a parent enters before its children, children are ready before their parent, process runs down the tree each tick, groups find nodes by tag. For rooms built from many pieces.',params:()=>({callbacks:'enter, ready, process, exit',lookup:'find(path), group(tag)'})},
+ {id:'timeline',name:'Timeline (cinematics)',what:'Keyframed tracks (numbers or points) with easing, plus cues that fire signals as the playhead passes them: for the opening scene, door openings and camera moves.',params:()=>({easings:Object.keys(EASE).join(', ')})},
+ {id:'l10n',name:'Languages',what:'Every string the player reads looked up by key in the current language, falling back to English, with {placeholders}.',params:()=>({languages:l10n.langs().join(', '),current:l10n.lang})},
+ {id:'save',name:'Saves',what:'Versioned saves: each change to the save format is a numbered migration that runs once on old saves, so nobody loses progress when the game changes.',params:()=>({methods:'migrate(S, [[version, fn], …])'})},
+ {id:'skeleton',name:'Skeleton',what:'Posable bodies for creatures: five body plans (four-legged, two-legged, bird, serpent, many-headed) with anatomical proportions, jointed legs, wing bones, tail curves and head anchors, posed for friendly, threatening, wounded and dead, and blended between poses (skeleton.blend). Geometry only: the art style paints it.',params:()=>({plans:skeleton.plans.join(', '),creatures:Object.entries(skeleton.KIND).map(([k,v])=>k+' → '+v).join('; '),states:Object.keys(skeleton.STATE).join(', ')})},
  {id:'fuel',name:'Firewood',what:'Each strike on vines gives 1 kindling; 5 kindling make 1 firewood. Fruit trees can be cut down for 3 firewood. The statue shop sells firewood.',params:()=>({KINDLING_PER_WOOD:fuel.KINDLING_PER_WOOD,WOOD_PER_TREE:fuel.WOOD_PER_TREE,FIREWOOD_PRICE:fuel.FIREWOOD_PRICE})}];
 
-window.ENGINE={clock,health,keys,locks,moves,traps,combat,cook,fuel,skeleton,parts,rng,VERSION:'2026-11-25'};
+window.ENGINE={clock,health,keys,locks,moves,traps,combat,cook,fuel,skeleton,input,look,loop,signals,scene,timeline,l10n,save,parts,rng,VERSION:'2026-11-25'};
 })();
