@@ -120,6 +120,9 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
   - The room's walls, floor, ceiling and far wall are drawn once per view and kept. While you walk they are redrawn at lower resolution, and sharp again the moment you stop.
   - Plants and floor items are pictures. Each plant has one picture per stage (seedling, young, past, dormant, dead) and three for mature; a potato's three are its skins, so what you see is what you dig up. Each picture is drawn once, large, and smaller sizes are scaled down from it.
   - Paintings, vines and shelves only draw their own slice of the picture per strip.
+  - Wall paintings: each picture is drawn once and kept, then halved down (large to small); a painting on the wall uses the kept size nearest its size on screen.
+  - Glows (torches, lamps, doors, the hand, sparks) are one soft dot per colour, drawn once and reused, instead of a new gradient for every glow.
+  - The floor is clipped to its own outline, so its taller near strips keep straight edges.
   - The map's plan is drawn once per change in progress.
   - Measured in headless Chrome at 2× (1280×800): a standing frame went from 40–143 ms to 10–30 ms, walking to 27–46 ms, and the map from 41 ms to under 1 ms.
 - **Copy back to Art-Assets:** `garden.js` gained the optional `{w,h}` size in `GARDEN.plan`, and `items.js` gained a shield drawing and the Ghost Draught's pale blue.
@@ -231,6 +234,7 @@ The rules and numbers live in **engine.js** (Art Assets; see its "Game engine" t
 - **Music:** ten songs in a dungeon-crawl style, but bright (adventure, curiosity, fun). Drums lead (kick, snare backbeat, hats, fills on every song); the lead line is kept soft. They are composed in code from a seed: a melody, bass, pad, arpeggio and drums, with an echo like a stone room. Each song plays twice, then the next one starts.
   - Songs: The First Postulate, Lantern Corridor, Compass and Ivy, Gnomon's March, The Greenhouse Fountain, Parallel Halls, The Gilded Theorem, Stairs of Alexandria, Byrne's Colours, Q.E.D.
   - The bottom-right corner always has: on/off, a song list, next song, and a volume slider.
+- **Playback (26 Nov 2026):** each song is rendered once into a sound buffer (`OfflineAudioContext`, mono) and looped, so playing it makes almost no new audio nodes. A song plays note by note until its buffer is ready, then switches over at the top of a loop. The next song is rendered while this one plays; only those two are kept (about 7 MB each). The room echo is still added live.
 - **Effects (built):** unlock (tumblers, then bolt, creak and thud), chimes as each part of the figure is cut, ticks while sweeping, and a rattle on a closed door.
 - **Next:** running water near working fountains, louder as you approach; a chest creak and the clink of coins; and the shimmer of the blue statue.
 
