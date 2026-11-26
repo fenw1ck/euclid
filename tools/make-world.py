@@ -9,7 +9,7 @@ Every player walks the same building. It is laid out on a grid of 3 m cells, map
   - junctions where three or more ways meet are greenhouses, each with a garden whose size is rolled
     once, here, from a fixed seed.
 The output is data only; game.html draws it and walks it.
-Run: python3 tools/make-world.py  (writes world.js next to game.html)
+Run from the repo root: python3 tools/make-world.py world.js  (writes world.js next to game.html)
 """
 import heapq, itertools, json, random, sys
 TIE = itertools.count()
@@ -183,31 +183,66 @@ for a, b in links:
     ka, kb = conn_of[a], conn_of[b]
     if ka != kb: ways.add(tuple(sorted((CID0 + ka, CID0 + kb))))
 start = CID0 + conn_of[fore[0]]
+# ---------- 4. corridors taken out by hand, after the rooms are numbered (so no other room changes) ----------
+# 26 Nov 2026: the 9-cell corridor straight down from 4 to 21 let players loop between the two without finding the next lock
+REMOVE = [[(5, y) for y in range(7, 16)]]
+for cells in REMOVE:
+    cs = set(cells)
+    gone = [k for k, r in rooms.items() if not r["lock"] and {tuple(c) for c in r["cells"]} == cs]
+    assert len(gone) == 1, f"no corridor is exactly {sorted(cs)}"
+    gid = int(gone[0]); del rooms[gone[0]]
+    ways = {w for w in ways if gid not in w}
+    routes = {k: v for k, v in routes.items() if not cs & set(v)}
+    for c in cs:           # and from the walking graph used by the checks below
+        for m in adj.pop(c, set()): adj[m].discard(c)
+    doors = {(r, c) for (r, c) in doors if c not in cs}
+    corr -= cs
+# every proof's door must still be reachable once what it relies on is solved (walking corridors and solved rooms)
+nb = defaultdict(set)
+for a, b in ways: nb[a].add(b); nb[b].add(a)
+done = set()
+for c in sorted(IDS):
+    seen, q = {start}, [start]
+    while q:
+        n = q.pop()
+        for m in nb[n]:
+            if m not in seen and (m >= CID0 or m in done): seen.add(m); q.append(m)
+    assert c in (1, 4) or nb[c] & seen, f"proof {c} cannot be reached"
+    done.add(c)
+# walking distance in metres (cells) from the way in to each lock room's nearest door: 48 must be the farthest
+def walk_from_entrance():
+    rdoors = defaultdict(list)
+    for (r, dc) in doors: rdoors[r].append(dc)
+    cd = {fore[0]: 0}; pq = [(0, next(TIE), fore[0])]
+    while pq:   # you walk corridors cell by cell, and cross a lock room (LEN cells) from one of its doors to another
+        g, _, c = heapq.heappop(pq)
+        if g > cd[c]: continue
+        nxt = [(m, 1) for m in adj[c]] + [(dc, LEN) for (r, d0) in doors if d0 == c and r != LAST for dc in rdoors[r] if dc != c]
+        for m, w in nxt:
+            if g + w < cd.get(m, 10**9): cd[m] = g + w; heapq.heappush(pq, (g + w, next(TIE), m))
+    return {i: min(cd.get(dc, 10**6) for (r, dc) in doors if r == i) for i in IDS}
+# 48 stays the last room: while another room is as far (taking corridors out can do that), 48 moves one cell further
+# out and its own dead-end corridor grows by that cell. No other room changes.
+for _ in range(40):
+    walk = walk_from_entrance(); far = sorted(IDS, key=lambda i: -walk[i])[:4]
+    if far[0] == LAST and walk[LAST] >= walk[far[1]] + 4: break
+    d = next(c for (r, c) in doors if r == LAST); step = 1 if lb % 2 == 0 else -1
+    k = next(k for k, r in rooms.items() if not r["lock"] and list(d) in r["cells"])
+    nc = (d[0] + step, d[1]); rooms[k]["cells"].append(list(nc)); adj[d].add(nc); adj[nc].add(d)
+    doors = {(r, nc if r == LAST else c) for (r, c) in doors}
+    rooms[str(LAST)]["cells"] = [[x + step, y] for x, y in rooms[str(LAST)]["cells"]]
+    W = max(W, max(x for x, y in rooms[str(LAST)]["cells"]) + 3)
+else:
+    sys.exit("48 could not be made the last room")
+print("farthest lock rooms (cells walked):", [(i, walk[i]) for i in far])
 world = {"v": 1, "seed": SEED, "cell": 3, "w": W, "h": H, "len": LEN, "start": start,
          "rooms": rooms, "ways": sorted([list(w) for w in ways]),
          "routes": {k: [list(c) for c in v] for k, v in routes.items()}}
 out = sys.argv[1] if len(sys.argv) > 1 else "world.js"
-pass
 with open(out, "w") as f:
     f.write("/* The Euclid game's building: one fixed plan for every player. Made by tools/make-world.py; do not edit by hand. */\n")
     f.write("window.WORLD=" + json.dumps(world, separators=(",", ":")) + ";\n")
-# walking distance in metres (cells) from the way in to each lock room's nearest door: 48 must be the farthest
-from collections import deque
-rdoors = defaultdict(list)
-for (r, dc) in doors: rdoors[r].append(dc)
-cd = {fore[0]: 0}; pq = [(0, next(TIE), fore[0])]
-while pq:   # you walk corridors cell by cell, and cross a lock room (LEN cells) from one of its doors to another
-    g, _, c = heapq.heappop(pq)
-    if g > cd[c]: continue
-    nxt = [(m, 1) for m in adj[c]] + [(dc, LEN) for (r, d0) in doors if d0 == c and r != LAST for dc in rdoors[r] if dc != c]
-    for m, w in nxt:
-        if g + w < cd.get(m, 10**9): cd[m] = g + w; heapq.heappush(pq, (g + w, next(TIE), m))
-walk = {i: min(cd.get(dc, 10**6) for (r, dc) in doors if r == i) for i in IDS}
-far = sorted(IDS, key=lambda i: -walk[i])[:4]
-print("farthest lock rooms (cells walked):", [(i, walk[i]) for i in far])
-if far[0] != LAST or walk[LAST] < walk[far[1]] + 4:
-    sys.exit(3)
-nconn = len(conns); ngh = sum(1 for r in rooms.values() if r.get("kind") == "greenhouse" and not r["lock"])
+nconn = sum(1 for r in rooms.values() if not r["lock"]); ngh = sum(1 for r in rooms.values() if r.get("kind") == "greenhouse" and not r["lock"])
 print(f"grid {W}x{H}, lock rooms 48, connecting rooms {nconn} ({ngh} greenhouses), doorways {len(ways)}, corridor cells {len(corr)}")
 deg = defaultdict(int)
 for a, b in ways: deg[a] += 1; deg[b] += 1
