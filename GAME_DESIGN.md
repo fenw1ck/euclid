@@ -82,6 +82,14 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
 - **Replay.** In any hall, ↺ Lock plays that hall's lock again without changing progress.
 - **Map.** The Map button (at the doors and in halls) shows all 48 as stars: gold solved, glowing amber ready, grey locked, with a blue ring where you are. Tap a solved star to walk into its hall, or a ready one to open its lock. Shops will be marked here once they exist.
 
+## 3a+. Looking around, the house plan (built 25 Nov 2026)
+
+- **Look around:** press L and move the mouse: left and right turn, moving the mouse forward looks up and back looks down. In look mode a crosshair shows and a click acts on what is under it; Esc stops. Holding the right mouse button, or a controller's right stick, also looks. The view turns about 24° each way and 17° up and down.
+- **The map is a house plan:** each room is drawn with walls and its floor (stone corridor, wooden library or bedroom, tiled kitchen, glass greenhouse), joined by walled passages with doors; locked rooms are pencil outlines. A blue circle marks where you are.
+- **The corner map** while you walk shows the same plan around you, with your position. Tap it (or press N) to see just this room, with its items, traps and creature.
+- **The Papyrus Map** has a Use button: it shows the creatures, the unopened chests and a dotted route to the nearest shop.
+- **The shop** shows each item's name, price and use when you hover over it or tap it.
+
 ## 3b. The ax and the vines (built, 24 Nov 2026)
 
 - **Vines on every door.** Every door (the two front doors, hall doors and glass greenhouse doors) is overgrown with one of four vines, chosen by the door's number: English ivy, muscadine grape, wisteria or Virginia creeper. Each has its own leaves, bark and climbing parts (ivy rootlets, grape tendrils, creeper tendrils with sticky discs, twined wisteria trunks). Some carry flowers or fruit (ivy umbels or black berries, purple or bronze grapes, wisteria racemes or pods, creeper berries or autumn red).
@@ -228,6 +236,8 @@ The rules and numbers live in **engine.js** (Art Assets; see its "Game engine" t
 ## 7. Art note
 
 All art is drawn in code (canvas): stars, the solar system, the temple, stone walls, ivy, bronze plates, wooden doors, and halls in perspective. This keeps the game to one small file and sharp at any screen size, but the style is clean and illustrated rather than painted. If painted art is wanted later, each scene has a single drawing function that an image could replace.
+
+**House style (25 Nov 2026):** accurate proportions with back-lit silhouette lighting. Creatures are dark shapes lit from behind, with a cool rim on their outer edge, hair breaking the edge and glowing eyes (amber calm, red-orange angry). Their bodies come from the engine's skeleton (`ENGINE.skeleton`), so a creature's proportions stay the same whatever the paint. The creatures are done; rooms, plants, items and locks follow. Rules: Art-Assets `research/rendering/house-style.md`.
 
 Built (23 Nov 2026), from the feedback list:
 - Every hall has its own look, the same on each visit (seeded by its number). It sets the wall and floor colours, which wall the doors start on, and whether there is a rug and night windows. It also picks the lighting: torches, sconces, candelabras, floor lamps or a Tiffany lamp on a side table.

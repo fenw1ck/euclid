@@ -16,7 +16,8 @@
    ART_CORE.light(n)                      shading: how lit a surface with normal n is (0..1), key light from the upper left and in front
    ART_CORE.shade(c,n)                    the colour c on a surface facing n, hue-shifted toward blue in shadow and yellow in light
    ART_CORE.ink(c) / ART_CORE.weight(px)  line: a darker version of the local colour (never black) and a line width for an object px wide
-   ART_CORE.lod(px)                       resolution: 'icon' (<=48 px), 'card' (<=200) or 'detail' */
+   ART_CORE.lod(px)                       resolution: 'icon' (<=48 px), 'card' (<=200) or 'detail'
+   ART_CORE.house                         the house style: accurate proportions, back-lit silhouette with a cool rim (see below) */
 (function(){
 "use strict";
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -76,5 +77,33 @@ const weight=px=>Math.max(.5,px*.0055);
 /* resolution */
 const lod=px=>px<=48?'icon':px<=200?'card':'detail';
 
-window.ART_CORE={view,face,light,shade,ink,weight,lod,hex,rgb,mix,lighten,darken,toHsl,fromHsl,ramp,rngLCG,rngMulberry,noise,fbm,warp,voronoi,shadow,clamp};
+/* ---- the house style (research/rendering/house-style.md; decided 25 Nov 2026 for every project's new art) ----
+   Accurate, anatomical proportions; lit like a back-lit silhouette: the subject is one dark shape against a pale moon,
+   only its outer edge catches a cool rim of light, hair and feathers break that edge, faint inner contours keep the
+   parts readable, and the eyes glow.
+   ART_CORE.house.paint(ctx, W, H, parts, o)   parts: [{pts (px), role, far, center}] in draw order (back to front)
+       o.s        px per unit (for stroke lengths); o.bones: [[a,b]] faint struts (wing fingers); o.eyes: [{x,y,r,col}]
+       o.dim      0..1 less rim (wounded, dead); o.body the silhouette colour; o.rim the rim colour
+   ART_CORE.house.moon(ctx, W, H, x, y, r)    the pale back-light: a moon glow through mist (backgrounds, cards)
+   Roles that grow hair at the edge: fur, mane (long, outward from parts[i].center), hair; feather (short tips). */
+const house=(()=>{const mkc=(W,H)=>{const c=document.createElement('canvas');c.width=W;c.height=H;return c};
+ const path=(g,P)=>{g.beginPath();const n=P.length;for(let i=0;i<=n;i++){const a=P[i%n],b=P[(i+1)%n],m=[(a[0]+b[0])/2,(a[1]+b[1])/2];i?g.quadraticCurveTo(a[0],a[1],m[0],m[1]):g.moveTo(m[0],m[1])}g.closePath()};
+ function paint(ctx,W,H,parts,o){o=o||{};const s=o.s||100,body=o.body||'#070c0f',rimC=o.rim||'#d6f2ff',dim=o.dim||0,u=mkc(W,H),g=u.getContext('2d');let seed=o.seed||9;const R=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};
+  g.fillStyle=body;parts.forEach(p=>{path(g,p.pts);g.fill()});
+  g.strokeStyle=body;g.lineCap='round';
+  if(s>30)parts.forEach(p=>{const hair=p.role==='fur'||p.role==='mane'||p.role==='hair',fea=p.role==='feather';if(!hair&&!fea)return;const P=p.pts,n=P.length,c=p.center;
+   for(let k=0;k<n*(p.role==='mane'?14:fea?3:4);k++){const i=Math.floor(R()*n),a=P[i],b=P[(i+1)%n],t=R(),x=a[0]+(b[0]-a[0])*t,y=a[1]+(b[1]-a[1])*t;let nx,ny;if(c){nx=x-c[0];ny=y-c[1]}else{nx=b[1]-a[1];ny=-(b[0]-a[0])}const l=Math.hypot(nx,ny)||1,L=s*(p.role==='mane'?.02+R()*.045:fea?.012+R()*.01:.006+R()*.012);
+    g.lineWidth=p.role==='mane'?Math.max(.8,s*.004)*(1+R()):fea?Math.max(1,s*.006):Math.max(.6,s*.002);g.beginPath();g.moveTo(x-nx/l*L*.3,y-ny/l*L*.3);g.quadraticCurveTo(x+nx/l*L*.5+(R()-.5)*L*.4,y+ny/l*L*.5,x+nx/l*L+(R()-.5)*L*.5,y+ny/l*L+(R()-.3)*L*.4);g.stroke()}});
+  g.save();g.globalCompositeOperation='source-atop';parts.forEach(p=>{if(p.far||p.torso)return;g.strokeStyle='rgba(90,130,150,.22)';g.lineWidth=Math.max(.6,s*.0012);g.save();g.translate(Math.max(.5,s*.001),-Math.max(.5,s*.001));path(g,p.pts);g.stroke();g.restore()});
+  (o.bones||[]).forEach(Q=>{g.strokeStyle='rgba(110,150,170,.25)';g.lineWidth=Math.max(.7,s*.0016);g.beginPath();g.moveTo(...Q[0]);g.lineTo(...Q[1]);g.stroke()});
+  const lg=g.createLinearGradient(0,0,W*.3,H);lg.addColorStop(0,'rgba(60,90,105,.25)');lg.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=lg;g.fillRect(0,0,W,H);g.restore();
+  ctx.drawImage(u,0,0);
+  const rim=(d,blur,col,a)=>{const r=mkc(W,H),q=r.getContext('2d');q.drawImage(u,0,0);q.globalCompositeOperation='destination-out';q.drawImage(u,-d,d*.7);q.globalCompositeOperation='source-in';q.fillStyle=col;q.fillRect(0,0,W,H);ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=a*(1-dim*.6);if(blur)ctx.filter=`blur(${blur}px)`;ctx.drawImage(r,0,0);ctx.restore()};
+  rim(Math.max(1,s*.005),0,rimC,.95);rim(Math.max(1.5,s*.012),Math.max(.8,s*.006),'#9fd8f0',.45);
+  (o.eyes||[]).forEach(e=>{const gr=ctx.createRadialGradient(e.x,e.y,0,e.x,e.y,e.r);gr.addColorStop(0,e.core||'rgba(255,236,150,1)');gr.addColorStop(.25,e.col||'rgba(255,180,60,.85)');gr.addColorStop(1,'rgba(255,170,60,0)');ctx.fillStyle=gr;ctx.fillRect(e.x-e.r,e.y-e.r,2*e.r,2*e.r)})}
+ function moon(ctx,W,H,x,y,r){const bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#0e1c28');bg.addColorStop(.6,'#56808f');bg.addColorStop(1,'#18242a');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+  const m=ctx.createRadialGradient(x,y,0,x,y,r);m.addColorStop(0,'rgba(232,248,255,.95)');m.addColorStop(.18,'rgba(196,230,244,.6)');m.addColorStop(1,'rgba(196,230,244,0)');ctx.fillStyle=m;ctx.fillRect(0,0,W,H)}
+ return{paint,moon}})();
+
+window.ART_CORE={house,view,face,light,shade,ink,weight,lod,hex,rgb,mix,lighten,darken,toHsl,fromHsl,ramp,rngLCG,rngMulberry,noise,fbm,warp,voronoi,shadow,clamp};
 })();
