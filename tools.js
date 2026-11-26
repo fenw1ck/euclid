@@ -19,14 +19,16 @@ const {mix,lighten,darken,noise,lod}=A;
 /* the three axes. Strikes follow the farming-game ladder (a starter tool, then fewer blows per upgrade). */
 const AXES=[
   {tier:0,id:'bronze-ax',name:'Bronze Ax',strikes:10,metal:'bronze',head:'#b07a35',edge:'#f2cf8a',wood:'ash',haft:'#c9a36b',grain:'#9c7a48',head_shape:'flared',lugs:false,beard:0,wrap:null,
-    desc:'A cast bronze head on an ash haft. It takes ten blows to cut a door\'s vines back.'},
+    desc:'A broad cast bronze head on an ash haft. Six blows for wisteria, ten for Virginia creeper, fifteen for English ivy, twenty for muscadine.'},
   {tier:1,id:'iron-ax',name:'Iron Ax',strikes:6,metal:'wrought iron',head:'#6d7177',edge:'#e8eef2',wood:'hickory',haft:'#b07c45',grain:'#7e5228',head_shape:'single-bit',lugs:true,beard:0,wrap:null,
-    desc:'A forged iron head with a bright tempered edge, hung on hickory. Six blows.'},
+    desc:'A broad forged iron head with a bright tempered edge, hung on hickory. Cuts vines in about six tenths the blows of the Bronze Ax.'},
   {tier:2,id:'starmetal-ax',name:'Starmetal Ax',strikes:3,metal:'starmetal',head:'#2b3754',edge:'#d8ecff',wood:'hickory',haft:'#8a5a2e',grain:'#5a3618',head_shape:'bearded',lugs:true,beard:1,wrap:'#c99a3e',
-    desc:'Forged from a fallen star, like the sword. Gold-bound hickory. Three blows.'}
+    desc:'Forged from a fallen star, like the sword. Gold-bound hickory. Cuts vines in about three tenths the blows of the Bronze Ax.'}
 ];
 
-/* head outlines, in haft lengths, eye centre at (0,0), bit to +x. Each point: [x, y, corner radius] */
+/* head outlines, in haft lengths, eye centre at (0,0), bit to +x. Each point: [x, y, corner radius].
+   Drawn broad (26 Nov 2026): HEAD_X longer and HEAD_Y much taller than these outlines, so the bit reads as a wide blade. */
+const HEAD_X=1.15,HEAD_Y=1.45,HAFT_W=1.25;
 const HEADS={
   flared:[[-.062,-.03,.008],[.02,-.034,.03],[.115,-.058,.004],[.128,-.002,.06],[.115,.056,.004],[.02,.034,.03],[-.062,.03,.008]],
   'single-bit':[[-.07,-.036,.006],[-.03,-.042,.01],[.03,-.036,.03],[.15,-.07,.004],[.163,-.004,.08],[.15,.066,.004],[.03,.036,.03],[-.03,.042,.01],[-.07,.036,.006]],
@@ -39,7 +41,7 @@ function roundPoly(ctx,pts,k){ /* a closed outline with rounded corners (radius 
 /* the haft: a slight S along its belly, a swell knob at the bottom, a flared shoulder under the head. t=0 knob, t=1 top. */
 function haftAt(t){const x=.014*Math.sin(t*Math.PI*1.7+.3)-.006,y=-t;
   const w=t<.05?.026+.012*Math.sin(t/.05*Math.PI*.9):t<.2?.021:t<.78?.021+.003*Math.sin((t-.2)/.58*Math.PI):t<.88?.023+.008*(t-.78)/.1:.031-.004*(t-.88)/.12;
-  return[x,y,w]}
+  return[x,y,w*HAFT_W]}
 
 function drawAx(ctx,tier,x,y,size,angle,o){o=o||{};const T=typeof tier==='object'?tier:AXES[Math.max(0,Math.min(2,tier|0))],L=size,detail=lod(size*.45),R=(s=>()=>{s=(s*16807)%2147483647;return s/2147483647})(T.tier*97+13);
   ctx.save();ctx.translate(x,y);ctx.rotate(angle||0);if(o.mirror)ctx.scale(-1,1);ctx.lineJoin='round';ctx.lineCap='round';
@@ -59,7 +61,7 @@ function drawAx(ctx,tier,x,y,size,angle,o){o=o||{};const T=typeof tier==='object
   if(T.wrap){const a=.06,b=.24;ctx.fillStyle='#4a2c1a';ctx.beginPath();for(let i=0;i<=10;i++){const t=a+(b-a)*i/10,[hx,hy,hw]=haftAt(t);i?ctx.lineTo((hx-hw*1.08)*L,hy*L):ctx.moveTo((hx-hw*1.08)*L,hy*L)}for(let i=10;i>=0;i--){const t=a+(b-a)*i/10,[hx,hy,hw]=haftAt(t);ctx.lineTo((hx+hw*1.08)*L,hy*L)}ctx.closePath();ctx.fill();
     for(let k=0;k<=(detail==='icon'?2:7);k++){const t=a+(b-a)*k/(detail==='icon'?2:7),[hx,hy,hw]=haftAt(t);ctx.strokeStyle=T.wrap;ctx.lineWidth=Math.max(1,L*.007);ctx.beginPath();ctx.moveTo((hx-hw*1.1)*L,hy*L+L*.004);ctx.lineTo((hx+hw*1.1)*L,hy*L-L*.004);ctx.stroke()}}
   /* ---- head ---- */
-  const ex=top[0]*L,ey=-.93*L;ctx.save();ctx.translate(ex,ey);
+  const ex=top[0]*L,ey=-.93*L;ctx.save();ctx.translate(ex,ey);ctx.scale(HEAD_X,HEAD_Y);
   const pts=HEADS[T.head_shape];roundPoly(ctx,pts,L);
   const mg=ctx.createLinearGradient(0,-.08*L,0,.12*L);mg.addColorStop(0,lighten(T.head,.38));mg.addColorStop(.35,T.head);mg.addColorStop(1,darken(T.head,.45));ctx.fillStyle=mg;ctx.fill();
   ctx.save();ctx.clip();
@@ -103,7 +105,7 @@ function swing(u){u=Math.max(0,Math.min(1,u));let a;
   return{angle:a,lift:u<HIT?0:Math.sin((u-HIT)/(1-HIT)*Math.PI)*.04}}
 /* the middle of the cutting edge, relative to the knob, for an ax `size` px long at `angle` (mirrored, as in the swing) */
 function bitPoint(tier,size,angle,mirror){const T=AXES[Math.max(0,Math.min(2,tier|0))],ex=T.head_shape==='flared'?.125:T.head_shape==='bearded'?.17:.16,top=haftAt(1);
-  let x=(top[0]+ex)*size,y=-.93*size;if(mirror!==false)x=-x;const c=Math.cos(angle),s=Math.sin(angle);return[x*c-y*s,x*s+y*c]}
+  let x=(top[0]+ex*HEAD_X)*size,y=-.93*size;if(mirror!==false)x=-x;const c=Math.cos(angle),s=Math.sin(angle);return[x*c-y*s,x*s+y*c]}
 
 window.TOOLS={AXES,drawAx,swing,bitPoint,HIT,STRIKE};
 })();
