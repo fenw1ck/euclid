@@ -115,7 +115,7 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
 - **Scrolls** are single-use guides. Inside a lock, a scroll makes the light run ahead of your hand through each step, so you can follow it. This reuses the site's Solve/Step hand.
 - **Clothes** are ornamental and dress your character: necklace, sword, boots, cape, gloves, crown.
 
-### The 41 items (all in `ITEMS` in the code)
+### The items (all in `ITEMS` in the code)
 
 | # | Item | Kind | Price | Description |
 |---|---|---|---|---|
@@ -160,6 +160,11 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
 | 39 | Weed Killer (strong) | potion | 14 | Withers 7/10 of a door's vines. Kills a plant. One use. |
 | 40 | Weed Killer (strongest) | potion | 28 | Withers all of a door's vines. Kills a plant. One use. |
 | 41 | Chest | container | 12 | Once emptied, carry it and set it down in any room. |
+| 42 | Health Potion | potion | 10 | Rose-pink, bronze caduceus stopper. Drink: +25 health. |
+| 43 | Greater Health Potion | potion | 22 | Red, silver caduceus. Drink: +50 health. |
+| 44 | Supreme Health Potion | potion | 45 | Deep crimson, glowing, gold caduceus. Drink: full health. Rare in rooms. |
+| 45 | Rucksack | pack | 40 | The bag holds 24. Bought once at the statue; not a bag item. |
+| 46 | Expedition Pack | pack | 90 | The bag holds 32. Sold once you have the Rucksack. |
 
 ### Built (25 Nov 2026): items in rooms, the bag, the wardrobe, the shop, weed killer
 - **Rooms:** every room holds 1–3 items, picked per room type (`KINDROOMS`, `ITEMROOMS`; 0 keeps a kind out, e.g. no scrolls in greenhouses, no tools anywhere). About one room in three has a chest: coins (`coinRoll`) plus one random item. An empty chest is an item: carry it, place it in another room.
@@ -169,6 +174,11 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
 - **The statue shop:** one statue in each greenhouse room glows blue. It sells scrolls and the boots you don't have, buys anything (except tools) at half price, and sells back what you sold it, at full price.
 - **Greenhouse harvest** (25 Nov 2026): about one greenhouse plant in four is still growing when first seen and is ready once you solve another lock. Tap a ready plant to harvest it: its fruit, root, flower or leaf (`PLANTS.harvest`) goes in the bag (anything that doesn't fit is left on the floor) and the plant is gone (`S.picked`). Houseplants give nothing. Potatoes grow in about half the greenhouses.
 - **Potatoes:** a ready potato shows a third of each tuber above the soil and gives 3 raw potatoes (red, purple or brown by plant). Pour a **Sack of Soil** (greenhouse rooms, or the statue shop) on a growing potato to earth it up: up to 3 times, each adding 2 potatoes (5, 7, 9). Raw potatoes must be cooked (Bag → Cook, in any room) into a Baked Potato before they can be eaten. Other produce is eaten as it is.
+- **Health potions** (25 Nov 2026): red potions with a caduceus stopper in three strengths (+25, +50, full). They turn up in rooms now and then (the Supreme one rarely) and the statue shop always sells all three. Bag → Drink. You can't drink one at full health.
+- **Ripe crops show:** a ripe plant's crop floats over it in a gold ring, so you can see what is ready to harvest from across the room. Food that is eaten as it is (raspberries, strawberries, apples…) gives health; its card says how much.
+- **Kitchens are stocked:** every kitchen has 3–5 Ingredients on its table or island, usually all of one recipe, so there is always something to cook at the oven.
+- **Backpacks:** the bag starts as a 16-slot satchel. The statue sells the Rucksack (24, 40 coins), then the Expedition Pack (32, 90 coins). Buying one swaps it in.
+- **Shops on the map:** every greenhouse room you have found shows a small blue statue on the map.
 - **Weed killer** (Potion category, single use): Pour from the bag, then tap a door's vines (they wither by 0.4, 0.7 or all, the same cuts in work as the Iron and Starmetal Axes) or a greenhouse plant (it dies, `S.dead`). Tap anywhere else to put it away.
 
 Proposed rules (open to change):
