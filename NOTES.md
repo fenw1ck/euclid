@@ -83,6 +83,14 @@ Features already in place: a control panel inside the figure (Solve, Step, Slowe
 
 ## Design rules
 
+### Euclid style guide (rule set 25 Nov 2026)
+Every new piece of art follows its category's style (rules in Art-Assets `research/rendering/crafted-style.md` and `house-style.md`; studies in Art-Assets `drafts/manticore-crafted.html`):
+- **Architecture** (rooms, halls, corridors, doors, the temple): **9 · the sublime, monumental halls**: vast colonnades in golden mist, soaring arches, great steps, warm light shafts, grandeur.
+- **Objects** (furniture, items, chests, tools): **2 · Tree of Life, carved and inlaid**: warm wood relief, grain, carved bevel light, organic branching ornament.
+- **Plants:** **1 · naturalist's plate**: the mint standard (exact botany, crisp shapes, soft light, a thin same-colour edge, fine detail).
+- **Mythical creatures:** **the shadow style** (black and white, back-lit silhouettes on `ENGINE.skeleton`). Leave them alone.
+Existing rooms and objects move over when next worked on.
+
 ### Figures
 - **Every** proposition gets an interactive figure.
 - The starting figure comes from the proposition's "Let…" sentence.
