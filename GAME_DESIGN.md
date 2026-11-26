@@ -165,7 +165,7 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
   - in hall 47, nearly 9 in 10 give 18–20.
 - **Statue shop.** One statue stands in every greenhouse. It glows blue, not gold, and sparkles as you pass. Sell items to it for coins, and buy scrolls with coins.
 - **Scrolls** are single-use guides. Inside a lock, a scroll makes the light run ahead of your hand through each step, so you can follow it. This reuses the site's Solve/Step hand.
-- **Clothes** are ornamental and dress your character: necklace, sword, boots, cape, gloves, crown.
+- **Clothes** dress your character: necklace, sword, boots, cape, gloves, crown. Most are ornamental; boots speed walking, and charm necklaces give fire or poison immunity or heal over time. Fire is the wall flames and flame traps; poison is the fog traps.
 
 ### The items (all in `ITEMS` in the code)
 
@@ -217,12 +217,21 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
 | 44 | Supreme Health Potion | potion | 45 | Deep crimson, glowing, gold caduceus. Drink: full health. Rare in rooms. |
 | 45 | Rucksack | pack | 40 | The bag holds 24. Bought once at the statue; not a bag item. |
 | 46 | Expedition Pack | pack | 90 | The bag holds 32. Sold once you have the Rucksack. |
+| 47 | Ember Charm | necklace | 15 | One lick of flame on a bronze chain. Fire immunity 30%. Shop. |
+| 48 | Twin Flame Pendant | necklace | 35 | Two licks of flame, silver chain. Fire immunity 60%. |
+| 49 | Triple Flame Amulet | necklace | 80 | Three licks of flame, gold chain. Fire immunity 98%. Rare. |
+| 50 | Antidote Drop | necklace | 15 | A green drop with a skull and crossbones. Poison immunity 30%. Shop. |
+| 51 | Heart of Antidote | necklace | 35 | Two green drops making a heart. Poison immunity 60%. |
+| 52 | Tulip of Antidote | necklace | 80 | Three green drops making a tulip. Poison immunity 98%. Rare. |
+| 53 | Gentle Caduceus | necklace | 20 | Bronze caduceus. Heals 1 health a minute while worn. Shop. |
+| 54 | Effective Caduceus | necklace | 45 | Silver caduceus. Heals 3 health a minute. |
+| 55 | Reckless Caduceus | necklace | 90 | Gold caduceus. Heals 10 health a minute. Rare. |
 
 ### Built (25 Nov 2026): items in rooms, the bag, the wardrobe, the shop, weed killer
 - **Rooms:** every room holds 1–3 items, picked per room type (`KINDROOMS`, `ITEMROOMS`; 0 keeps a kind out, e.g. no scrolls in greenhouses, no tools anywhere). About one room in three has a chest: coins (`coinRoll`) plus one random item. An empty chest is an item: carry it, place it in another room.
 - **The bag** (Bag button, bottom left): 16 slots; coins are a count. Tap an item for its card: Use / Pour, Wear, Drop. Dropped items stay where you set them (`S.drops`).
 - **Boots:** the three speed boots never appear at random. Each is found once, tucked behind the far statue in hall 3, 15, 30, and only after you have the one before (found or bought). Worn boots multiply walking speed in halls and greenhouses.
-- **The wardrobe:** seven carved hollows above the bag (hat, cape, shirt, gloves, rings, trousers, boots), the locks' gem-and-hollow idea. Drag clothes into the hollow they fit (it glows), drag them out to take them off. Worn clothes don't use bag space.
+- **The wardrobe:** eight carved hollows above the bag (hat, necklace, cape, shirt, gloves, rings, trousers, boots; the necklace hollow sits under the hat and above the shirt), the locks' gem-and-hollow idea. Drag clothes into the hollow they fit (it glows), drag them out to take them off. Worn clothes don't use bag space.
 - **The statue shop:** one statue in each greenhouse room glows blue. It sells scrolls and the boots you don't have, buys anything (except tools) at half price, and sells back what you sold it, at full price.
 - **Greenhouse harvest** (25 Nov 2026): about one greenhouse plant in four is still growing when first seen and is ready once you solve another lock. Tap a ready plant to harvest it: its fruit, root, flower or leaf (`PLANTS.harvest`) goes in the bag (anything that doesn't fit is left on the floor) and the plant is gone (`S.picked`). Houseplants give nothing. Potatoes grow in about half the greenhouses.
 - **Potatoes:** a ready potato shows a third of each tuber above the soil and gives 3 raw potatoes (red, purple or brown by plant). Pour a **Sack of Soil** (greenhouse rooms, or the statue shop) on a growing potato to earth it up: up to 3 times, each adding 2 potatoes (5, 7, 9). Raw potatoes must be cooked (Bag → Cook, in any room) into a Baked Potato before they can be eaten. Other produce is eaten as it is.

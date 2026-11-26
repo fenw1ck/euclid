@@ -50,7 +50,32 @@ function coins(ctx,x,y,size,n,o){o=o||{};const R=rngMulberry((o.seed||1)*17+3),r
 
 /* ---- the other items, each in a 1 x 1 box: x from -.5 to .5, y from 0 (resting) up to -1 ---- */
 const D={};
-D.necklace=(ctx,o)=>{const torc=/gold|torc/.test(o.id||''),c=torc?METAL.gold:'#8a6a4a';ctx.strokeStyle=shade(ctx,-.5,-1,.5,0,c);ctx.lineWidth=torc?.09:.04;ctx.beginPath();ctx.ellipse(0,-.55,.38,.32,0,Math.PI*(torc?.1:0),Math.PI*(torc?1.9:2));ctx.stroke();
+/* charm necklaces (26 Nov 2026): a fine chain (bronze, silver or gold by strength) and a charm.
+   Fire immunity: licks of flame, one, two or three. Poison immunity: green drops with a skull and crossbones, one drop,
+   two that make a heart, or three that make a tulip. Healing: the health potions' caduceus, its wings fuller with strength.
+   ids: necklace-fire|poison-weak|strong|powerful, necklace-heal-gentle|effective|reckless. */
+const CHARM={weak:0,gentle:0,strong:1,effective:1,powerful:2,reckless:2},CHAIN=['#b07a35','#c9ccd0','#d4a73a'];
+function flameLick(ctx,x,y,h,w,lean){const g=ctx.createLinearGradient(x,y,x,y-h);g.addColorStop(0,'#c8281e');g.addColorStop(.45,'#f07a1e');g.addColorStop(1,'#ffd24a');
+  ctx.beginPath();ctx.moveTo(x-w/2,y);ctx.bezierCurveTo(x-w*.75,y-h*.45,x-w*.1+lean*w,y-h*.6,x+lean*w*1.2,y-h);ctx.bezierCurveTo(x+w*.2+lean*w,y-h*.6,x+w*.85,y-h*.4,x+w/2,y);
+  ctx.quadraticCurveTo(x,y+w*.35,x-w/2,y);ctx.closePath();ctx.fillStyle=g;ctx.fill();out(ctx,'#c8281e',.008);
+  ctx.beginPath();ctx.moveTo(x-w*.18,y-w*.05);ctx.quadraticCurveTo(x-w*.1+lean*w*.5,y-h*.45,x+lean*w*.6,y-h*.6);ctx.quadraticCurveTo(x+w*.15,y-h*.3,x+w*.18,y-w*.05);ctx.closePath();ctx.fillStyle='rgba(255,240,170,.75)';ctx.fill()}
+function drop(ctx,x,y,r,rot,skull){ctx.save();ctx.translate(x,y);ctx.rotate(rot); /* a teardrop, round end at (0,0), point up */
+  ctx.beginPath();ctx.moveTo(0,-r*2.1);ctx.bezierCurveTo(r*.6,-r*1.3,r,-r*.6,r,0);ctx.arc(0,0,r,0,Math.PI);ctx.bezierCurveTo(-r,-r*.6,-r*.6,-r*1.3,0,-r*2.1);ctx.closePath();
+  ctx.fillStyle=shade(ctx,-r,-r*2,r,r,'#3f9a3a',.35);ctx.fill();out(ctx,'#2a6a28',.008);ctx.fillStyle='rgba(255,255,255,.45)';ctx.beginPath();ctx.ellipse(-r*.4,-r*.5,r*.15,r*.28,-.4,0,TAU);ctx.fill();
+  if(skull)skullX(ctx,0,0,r*.5);
+  ctx.restore()}
+function skullX(ctx,x,y,s){ctx.save();ctx.translate(x,y);ctx.strokeStyle='#f2efe2';ctx.lineWidth=s*.22;ctx.lineCap='round';for(const k of[-1,1]){ctx.beginPath();ctx.moveTo(-s*.9,k*s*.75+s*.25);ctx.lineTo(s*.9,-k*s*.75+s*.25);ctx.stroke()}
+    ctx.fillStyle='#f2efe2';ctx.beginPath();ctx.arc(0,-s*.15,s*.55,0,TAU);ctx.fill();ctx.fillRect(-s*.3,s*.2,s*.6,s*.3);ctx.fillStyle='#1d3a1a';for(const k of[-1,1]){ctx.beginPath();ctx.arc(k*s*.22,-s*.18,s*.14,0,TAU);ctx.fill()}
+  ctx.restore()}
+function charmNecklace(ctx,id){const kind=/fire/.test(id)?'fire':/poison/.test(id)?'poison':'heal',lv=CHARM[(id.match(/-(weak|strong|powerful|gentle|effective|reckless)$/)||[])[1]]||0,c=CHAIN[lv];
+  ctx.strokeStyle=shade(ctx,-.5,-1,.5,0,c);ctx.lineWidth=.025;ctx.setLineDash([.035,.012]);ctx.beginPath();ctx.moveTo(0,-.33);ctx.quadraticCurveTo(-.34,-.4,-.36,-.62);ctx.ellipse(0,-.62,.36,.28,0,Math.PI,TAU);ctx.quadraticCurveTo(.34,-.4,0,-.33);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle=c;ctx.beginPath();ctx.arc(0,-.31,.022,0,TAU);ctx.fill();out(ctx,c,.006); /* the bail */
+  if(kind==='fire'){const n=lv+1,h=.3,w=.14;for(let i=0;i<n;i++){const k=n===1?0:i/(n-1)*2-1;flameLick(ctx,k*w*.55,-.03,h*(1-.18*Math.abs(k)),w,k*.25)}}
+  else if(kind==='poison'){const r=.09;if(lv===0)drop(ctx,0,-.09,r,0,true);
+    else if(lv===1){drop(ctx,-r*.85,-.23,r,Math.PI-.45,false);drop(ctx,r*.85,-.23,r,Math.PI+.45,false);skullX(ctx,0,-.17,r*.55)} /* two drops, points down together: a heart */
+    else{drop(ctx,-r*.8,-.07,r*.85,-.38,false);drop(ctx,r*.8,-.07,r*.85,.38,false);drop(ctx,0,-.08,r,0,true)}} /* three drops, points up and fanned: a tulip */
+  else caduceus(ctx,0,-.02,.27,c,lv+2)}
+D.necklace=(ctx,o)=>{if(/-(fire|poison|heal)-/.test(o.id||''))return charmNecklace(ctx,o.id);const torc=/gold|torc/.test(o.id||''),c=torc?METAL.gold:'#8a6a4a';ctx.strokeStyle=shade(ctx,-.5,-1,.5,0,c);ctx.lineWidth=torc?.09:.04;ctx.beginPath();ctx.ellipse(0,-.55,.38,.32,0,Math.PI*(torc?.1:0),Math.PI*(torc?1.9:2));ctx.stroke();
   if(torc){for(const s of[-1,1]){ctx.beginPath();ctx.arc(s*.12,-.25,.06,0,TAU);ctx.fillStyle=shade(ctx,-.2,-.3,.2,-.2,c);ctx.fill()}}
   else{ctx.beginPath();for(let i=0;i<6;i++){const a=i/6*TAU;ctx.lineTo(Math.cos(a)*.14,-.2+Math.sin(a)*.14)}ctx.closePath();ctx.fillStyle=shade(ctx,-.14,-.34,.14,-.06,'#2f5fb0');ctx.fill();out(ctx,'#2f5fb0',.015);ctx.fillStyle='rgba(255,255,255,.5)';ctx.beginPath();ctx.arc(-.05,-.25,.03,0,TAU);ctx.fill()}};
 D.sword=(ctx,o)=>{const star=/star/.test(o.id||''),bl=star?'#2b3754':METAL.bronze;ctx.save();ctx.rotate(-.5);ctx.translate(.12,0);
