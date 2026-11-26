@@ -114,7 +114,7 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
 - **Doors.** A room's doors are its doorways in the plan. A lock room whose proofs are not all solved keeps its plate covered. You can walk up to its door, but not open it.
 - **48 is the last room:** a dead end past the far corner of the last band, with one door. It is the farthest room from the entrance (80 cells' walk; the next farthest, 45, is 74). It opens only when all 47 other proofs are solved.
 - **The forecourt** (room 100) joins the two front doors (1 and 4). Its far door leads back out to them.
-- **Map screen.** It draws the floor plan. Tap any room you can reach to walk there; tap a ready lock to open it.
+- **Map screen.** It draws the floor plan. Tapping a room tells you about it; you walk everywhere (see 3e).
 - **Rooms are fixed.** Every room's type comes from the plan. Its size, plants, items, traps and creature are grown from its number, so they are the same on every visit. A connecting room's creatures and loot follow the earliest proof whose route runs through it (`lvl`). Saved games keep their progress, but room types now come from the plan (`S.rooms` is no longer used).
 - **Speed** (26 Nov 2026):
   - The room's walls, floor, ceiling and far wall are drawn once per view and kept. While you walk they are redrawn at lower resolution, and sharp again the moment you stop.
@@ -122,7 +122,23 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
   - Paintings, vines and shelves only draw their own slice of the picture per strip.
   - The map's plan is drawn once per change in progress.
   - Measured in headless Chrome at 2× (1280×800): a standing frame went from 40–143 ms to 10–30 ms, walking to 27–46 ms, and the map from 41 ms to under 1 ms.
-- **Copy back to Art-Assets:** `garden.js` gained the optional `{w,h}` size in `GARDEN.plan`.
+- **Copy back to Art-Assets:** `garden.js` gained the optional `{w,h}` size in `GARDEN.plan`, and `items.js` gained a shield drawing and the Ghost Draught's pale blue.
+
+## 3e. The building's Euler puzzle (built 26 Nov 2026)
+
+- **Walk each doorway once a day.** Every doorway you walk through is marked for the game day (`S.walk`), including the front doors and the Back button.
+- **Walking back sets a trap.** Walk back through a doorway you have already walked today, and the room you step into sets its doorway trap (`S.arm`). The trap is a strip of pressure plates across the floor, just inside the entrance and before the room's doors. It fires spikes from the floor or flame jets from the walls (fixed per room), for 15 health.
+- **Using a far door.** Tapping a door beyond a set strip walks you across it, so you can't skip it by tapping from afar. Back works the same way.
+- **Ways past:**
+  - walk along the room's ledge, which runs beside the strip;
+  - jump the strip (spikes only);
+  - set an item down on it: the trap springs on the item, the item is lost, and the trap is spent;
+  - carry a **Bronze Shield** (statue shop, 25 coins; takes three blows, then splits);
+  - wear a cape (takes one blow a day);
+  - drink a **Ghost Draught** (statue shop, 20 coins): for an hour of game time no trap can touch you, and the view takes a pale blue tint.
+- **Ledges.** Every room now has one ledge: 0.6 m high, along a wall just inside the entrance, on the side with no door there. It replaces the old random ledges (0.6 or 1.2 m, about one room in three). Stepping down from 1.2 m costs 13 health, nearly as much as the trap, so a high ledge would not be a real way past.
+- **At dawn** every doorway counts as unwalked again and every trap disarms.
+- **The map only shows.** There is no jumping between rooms, so every doorway you use is walked. It marks today's walked doorways with gold dots and set traps with red dashes, and tapping a room tells you about it. A set strip also shows red on the minimap.
 
 ## 4. Treasure, coins and the statue shop
 
