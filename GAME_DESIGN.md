@@ -219,6 +219,8 @@ The rules and numbers live in **engine.js** (Art Assets; see its "Game engine" t
 
 All art is drawn in code (canvas): stars, the solar system, the temple, stone walls, ivy, bronze plates, wooden doors, and halls in perspective. This keeps the game to one small file and sharp at any screen size, but the style is clean and illustrated rather than painted. If painted art is wanted later, each scene has a single drawing function that an image could replace.
 
+**House style (25 Nov 2026):** accurate proportions with back-lit silhouette lighting. Creatures are dark shapes lit from behind, with a cool rim on their outer edge, hair breaking the edge and glowing eyes (amber calm, red-orange angry). Their bodies come from the engine's skeleton (`ENGINE.skeleton`), so a creature's proportions stay the same whatever the paint. The creatures are done; rooms, plants, items and locks follow. Rules: Art-Assets `research/rendering/house-style.md`.
+
 Built (23 Nov 2026), from the feedback list:
 - Every hall has its own look, the same on each visit (seeded by its number). It sets the wall and floor colours, which wall the doors start on, and whether there is a rug and night windows. It also picks the lighting: torches, sconces, candelabras, floor lamps or a Tiffany lamp on a side table.
 - Two great minds stand in each hall, as busts or full figures in marble or bronze. Tap one to read its plaque: name, dates, a saying with its source, and its greatest work. Thirteen people so far, from Euclid to Emmy Noether. Each quote was checked against a source, and Eratosthenes and Hypatia say "None of his/her sayings survive" rather than carry a made-up quote.

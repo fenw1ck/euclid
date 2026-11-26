@@ -83,6 +83,12 @@ Features already in place: a control panel inside the figure (Solve, Step, Slowe
 
 ## Design rules
 
+### Art style (house style, rule set 25 Nov 2026)
+- **Every piece of new game art: accurate proportions, back-lit silhouette lighting.** The subject is one dark shape lit from behind (a pale moon or a torch), only its outer edge catches a cool rim, hair breaks the edge, faint inner contours keep the parts readable, and the eyes glow (amber calm, red-orange threatening, dim hurt, dark dead). Not photorealistic, not rounded or cartoon.
+- Bodies come from the engine's skeleton (`ENGINE.skeleton` in engine.js: five anatomical body plans, posed per state); painting is `ART_CORE.house` in core.js. Both live in Art-Assets; rules and history in Art-Assets `research/rendering/house-style.md`.
+- Chosen from ten drafts of the manticore (photorealistic, anime, 3D film, pixel art, low-poly, comic, painterly, dark fantasy, silhouette, flat vector): draft 1's proportions with draft 9's lighting. A rounded "storybook" look was tried first and rejected.
+- Done: the five creatures. Still in the older clean style: rooms, plants, items, vines, the locks; each moves over when next worked on.
+
 ### Figures
 - **Every** proposition gets an interactive figure.
 - The starting figure comes from the proposition's "Let…" sentence.
@@ -177,3 +183,4 @@ Features already in place: a control panel inside the figure (Solve, Step, Slowe
 - Game: items (25 Nov 2026). Rooms hold 1–3 items by room type, chests (coins + an item; empty chests can be carried), a 16-slot bag, a wardrobe of seven carved hollows (drag to wear), three speed boots found once in order (halls 3/15/30), the blue statue shop in greenhouse rooms (buy, sell at half, buy back), and weed killer potions (pour on vines or plants, single use). Art from Art-Assets items.js. Saved: S.inv, S.taken, S.opened, S.drops, S.got, S.worn, S.sold, S.dead. GAME_DESIGN.md section 4.
 - Game: harvest and potatoes (25 Nov 2026). Greenhouse plants can be growing or ready (`plantStage`), harvested into the bag (`plantTap`, `PLANTS.harvest`), earthed up with a Sack of Soil (potatoes, `S.hill`), and raw potatoes cooked then eaten (`foodItem`, `cookItem`). Art from Art-Assets plants.js (`drawPotato`, `tuber`, `harvest`) and items.js (potato, produce, soil). Saved: S.grow, S.hill, S.picked.
 - Game systems (25 Nov 2026): clock, health, HUD and minimap, PC keys, lock timers, ledges/jump/climb/falls, traps (plates; Euler-path rooms), combat (creatures, wielded weapons that wear out), cooking (kitchen room with oven; greenhouse campfire + cauldron; timing minigame; ingredients), fuel (kindling from vines, trees for firewood). Rules in engine.js from Art Assets (ENGINE.*); this game's glue is the "game systems" block in game.html (ledgeOf, platesOf, pathOf, mobOf, cookOpen, drawMinimap, lockGate). Saved: S.time, S.hp, S.cool, S.wood, S.kindling, S.wield, S.mob, S.path, S.fruit, S.chop; S.gv=2 marks the switch of S.grow to clock times. Art: creatures.js, kitchen.js, traps.js, items.js (weapons, fuel, dishes). GAME_DESIGN.md section 4b.
+- Art: house style (25 Nov 2026). The five creatures are redrawn on `ENGINE.skeleton` as back-lit silhouettes (creatures.js, core.js `ART_CORE.house`, engine.js `skeleton`, all copied from Art-Assets). `CREATURES.draw` keeps its arguments, so no game code changed. See Design rules → Art style.
