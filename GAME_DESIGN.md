@@ -82,14 +82,6 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
 - **Replay.** In any hall, ↺ Lock plays that hall's lock again without changing progress.
 - **Map.** The Map button (at the doors and in halls) shows all 48 as stars: gold solved, glowing amber ready, grey locked, with a blue ring where you are. Tap a solved star to walk into its hall, or a ready one to open its lock. Shops will be marked here once they exist.
 
-## 3a+. Looking around, the house plan (built 25 Nov 2026)
-
-- **Look around:** press L and move the mouse: left and right turn, moving the mouse forward looks up and back looks down. In look mode a crosshair shows and a click acts on what is under it; Esc stops. Holding the right mouse button, or a controller's right stick, also looks. The view turns about 24° each way and 17° up and down.
-- **The map is a house plan:** each room is drawn with walls and its floor (stone corridor, wooden library or bedroom, tiled kitchen, glass greenhouse), joined by walled passages with doors; locked rooms are pencil outlines. A blue circle marks where you are.
-- **The corner map** while you walk shows the same plan around you, with your position. Tap it (or press N) to see just this room, with its items, traps and creature.
-- **The Papyrus Map** has a Use button: it shows the creatures, the unopened chests and a dotted route to the nearest shop.
-- **The shop** shows each item's name, price and use when you hover over it or tap it.
-
 ## 3b. The ax and the vines (built, 24 Nov 2026)
 
 - **Vines on every door.** Every door (the two front doors, hall doors and glass greenhouse doors) is overgrown with one of four vines, chosen by the door's number: English ivy, muscadine grape, wisteria or Virginia creeper. Each has its own leaves, bark and climbing parts (ivy rootlets, grape tendrils, creeper tendrils with sticky discs, twined wisteria trunks). Some carry flowers or fruit (ivy umbels or black berries, purple or bronze grapes, wisteria racemes or pods, creeper berries or autumn red).
@@ -114,6 +106,24 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
 - **Indoor floors:** every room except the greenhouse has a stone or wood floor from `floors.js` (corridor stone, library wood, bedroom either), drawn row by row so it stays true in perspective, with a carpet: a runner in corridors that have one, a large carpet in the library, a rug in every bedroom.
 - Art: `floors.js` and `bedroom.js` from Art-Assets.
 
+## 3d. One fixed building (built 26 Nov 2026)
+
+- **Map first.** The whole tomb is one floor plan, the same for every player: `world.js`, made by `tools/make-world.py` (run it again only to change the building; its `SEED` and layout numbers are at the top). The plan is a grid of 3 m cells.
+- **Lock rooms** (1–48) are halls three cells long. The book's depths run in bands that snake left to right, right to left, then left to right again, so the plan is about square.
+- **Connecting rooms** (ids 100 and up) hold no lock. Every dependency is a walkable route from one lock room to the next. Routes share corridors, and where corridors cross they meet in a junction, so the building fits on one floor without stairs. Junctions where three or more ways meet are **greenhouses**. Each greenhouse's far wall is the gate to its garden, whose size is fixed in the plan (`GARDEN.plan(seed,{w,h})`).
+- **Doors.** A room's doors are its doorways in the plan. A lock room whose proofs are not all solved keeps its plate covered. You can walk up to its door, but not open it.
+- **48 is the last room:** a dead end past the far corner of the last band, with one door. It is the farthest room from the entrance (80 cells' walk; the next farthest, 45, is 74). It opens only when all 47 other proofs are solved.
+- **The forecourt** (room 100) joins the two front doors (1 and 4). Its far door leads back out to them.
+- **Map screen.** It draws the floor plan. Tap any room you can reach to walk there; tap a ready lock to open it.
+- **Rooms are fixed.** Every room's type comes from the plan. Its size, plants, items, traps and creature are grown from its number, so they are the same on every visit. A connecting room's creatures and loot follow the earliest proof whose route runs through it (`lvl`). Saved games keep their progress, but room types now come from the plan (`S.rooms` is no longer used).
+- **Speed** (26 Nov 2026):
+  - The room's walls, floor, ceiling and far wall are drawn once per view and kept. While you walk they are redrawn at lower resolution, and sharp again the moment you stop.
+  - Plants and floor items are pictures. Each plant has one picture per stage (seedling, young, past, dormant, dead) and three for mature; a potato's three are its skins, so what you see is what you dig up. Each picture is drawn once, large, and smaller sizes are scaled down from it.
+  - Paintings, vines and shelves only draw their own slice of the picture per strip.
+  - The map's plan is drawn once per change in progress.
+  - Measured in headless Chrome at 2× (1280×800): a standing frame went from 40–143 ms to 10–30 ms, walking to 27–46 ms, and the map from 41 ms to under 1 ms.
+- **Copy back to Art-Assets:** `garden.js` gained the optional `{w,h}` size in `GARDEN.plan`.
+
 ## 4. Treasure, coins and the statue shop
 
 - **Chests** are hidden in halls and greenhouses. Opening one gives 1–20 coins, weighted by the hall's proposition number *n* (`coinRoll(n)` in the code). The weights follow a bell curve centred at 1 + 19·(n−1)/47, with a spread of 1.6:
@@ -123,7 +133,7 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
 - **Scrolls** are single-use guides. Inside a lock, a scroll makes the light run ahead of your hand through each step, so you can follow it. This reuses the site's Solve/Step hand.
 - **Clothes** are ornamental and dress your character: necklace, sword, boots, cape, gloves, crown.
 
-### The items (all in `ITEMS` in the code)
+### The 41 items (all in `ITEMS` in the code)
 
 | # | Item | Kind | Price | Description |
 |---|---|---|---|---|
@@ -168,11 +178,6 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
 | 39 | Weed Killer (strong) | potion | 14 | Withers 7/10 of a door's vines. Kills a plant. One use. |
 | 40 | Weed Killer (strongest) | potion | 28 | Withers all of a door's vines. Kills a plant. One use. |
 | 41 | Chest | container | 12 | Once emptied, carry it and set it down in any room. |
-| 42 | Health Potion | potion | 10 | Rose-pink, bronze caduceus stopper. Drink: +25 health. |
-| 43 | Greater Health Potion | potion | 22 | Red, silver caduceus. Drink: +50 health. |
-| 44 | Supreme Health Potion | potion | 45 | Deep crimson, glowing, gold caduceus. Drink: full health. Rare in rooms. |
-| 45 | Rucksack | pack | 40 | The bag holds 24. Bought once at the statue; not a bag item. |
-| 46 | Expedition Pack | pack | 90 | The bag holds 32. Sold once you have the Rucksack. |
 
 ### Built (25 Nov 2026): items in rooms, the bag, the wardrobe, the shop, weed killer
 - **Rooms:** every room holds 1–3 items, picked per room type (`KINDROOMS`, `ITEMROOMS`; 0 keeps a kind out, e.g. no scrolls in greenhouses, no tools anywhere). About one room in three has a chest: coins (`coinRoll`) plus one random item. An empty chest is an item: carry it, place it in another room.
@@ -182,11 +187,6 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
 - **The statue shop:** one statue in each greenhouse room glows blue. It sells scrolls and the boots you don't have, buys anything (except tools) at half price, and sells back what you sold it, at full price.
 - **Greenhouse harvest** (25 Nov 2026): about one greenhouse plant in four is still growing when first seen and is ready once you solve another lock. Tap a ready plant to harvest it: its fruit, root, flower or leaf (`PLANTS.harvest`) goes in the bag (anything that doesn't fit is left on the floor) and the plant is gone (`S.picked`). Houseplants give nothing. Potatoes grow in about half the greenhouses.
 - **Potatoes:** a ready potato shows a third of each tuber above the soil and gives 3 raw potatoes (red, purple or brown by plant). Pour a **Sack of Soil** (greenhouse rooms, or the statue shop) on a growing potato to earth it up: up to 3 times, each adding 2 potatoes (5, 7, 9). Raw potatoes must be cooked (Bag → Cook, in any room) into a Baked Potato before they can be eaten. Other produce is eaten as it is.
-- **Health potions** (25 Nov 2026): red potions with a caduceus stopper in three strengths (+25, +50, full). They turn up in rooms now and then (the Supreme one rarely) and the statue shop always sells all three. Bag → Drink. You can't drink one at full health.
-- **Ripe crops show:** a ripe plant's crop floats over it in a gold ring, so you can see what is ready to harvest from across the room. Food that is eaten as it is (raspberries, strawberries, apples…) gives health; its card says how much.
-- **Kitchens are stocked:** every kitchen has 3–5 Ingredients on its table or island, usually all of one recipe, so there is always something to cook at the oven.
-- **Backpacks:** the bag starts as a 16-slot satchel. The statue sells the Rucksack (24, 40 coins), then the Expedition Pack (32, 90 coins). Buying one swaps it in.
-- **Shops on the map:** every greenhouse room you have found shows a small blue statue on the map.
 - **Weed killer** (Potion category, single use): Pour from the bag, then tap a door's vines (they wither by 0.4, 0.7 or all, the same cuts in work as the Iron and Starmetal Axes) or a greenhouse plant (it dies, `S.dead`). Tap anywhere else to put it away.
 
 Proposed rules (open to change):
@@ -236,8 +236,6 @@ The rules and numbers live in **engine.js** (Art Assets; see its "Game engine" t
 ## 7. Art note
 
 All art is drawn in code (canvas): stars, the solar system, the temple, stone walls, ivy, bronze plates, wooden doors, and halls in perspective. This keeps the game to one small file and sharp at any screen size, but the style is clean and illustrated rather than painted. If painted art is wanted later, each scene has a single drawing function that an image could replace.
-
-**House style (25 Nov 2026):** accurate proportions with back-lit silhouette lighting. Creatures are dark shapes lit from behind, with a cool rim on their outer edge, hair breaking the edge and glowing eyes (amber calm, red-orange angry). Their bodies come from the engine's skeleton (`ENGINE.skeleton`), so a creature's proportions stay the same whatever the paint. The creatures are done; rooms, plants, items and locks follow. Rules: Art-Assets `research/rendering/house-style.md`.
 
 Built (23 Nov 2026), from the feedback list:
 - Every hall has its own look, the same on each visit (seeded by its number). It sets the wall and floor colours, which wall the doors start on, and whether there is a rug and night windows. It also picks the lighting: torches, sconces, candelabras, floor lamps or a Tiffany lamp on a side table.

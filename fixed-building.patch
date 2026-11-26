@@ -1,0 +1,623 @@
+diff --git a/base/GAME_DESIGN.md b/new/GAME_DESIGN.md
+index 01fd6c8..9e1c82e 100644
+--- a/base/GAME_DESIGN.md
++++ b/new/GAME_DESIGN.md
+@@ -106,6 +106,24 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
+ - **Indoor floors:** every room except the greenhouse has a stone or wood floor from `floors.js` (corridor stone, library wood, bedroom either), drawn row by row so it stays true in perspective, with a carpet: a runner in corridors that have one, a large carpet in the library, a rug in every bedroom.
+ - Art: `floors.js` and `bedroom.js` from Art-Assets.
+ 
++## 3d. One fixed building (built 26 Nov 2026)
++
++- **Map first.** The whole tomb is one floor plan, the same for every player: `world.js`, made by `tools/make-world.py` (run it again only to change the building; its `SEED` and layout numbers are at the top). The plan is a grid of 3 m cells.
++- **Lock rooms** (1–48) are halls three cells long. The book's depths run in bands that snake left to right, right to left, then left to right again, so the plan is about square.
++- **Connecting rooms** (ids 100 and up) hold no lock. Every dependency is a walkable route from one lock room to the next. Routes share corridors, and where corridors cross they meet in a junction, so the building fits on one floor without stairs. Junctions where three or more ways meet are **greenhouses**. Each greenhouse's far wall is the gate to its garden, whose size is fixed in the plan (`GARDEN.plan(seed,{w,h})`).
++- **Doors.** A room's doors are its doorways in the plan. A lock room whose proofs are not all solved keeps its plate covered. You can walk up to its door, but not open it.
++- **48 is the last room:** a dead end past the far corner of the last band, with one door. It is the farthest room from the entrance (80 cells' walk; the next farthest, 45, is 74). It opens only when all 47 other proofs are solved.
++- **The forecourt** (room 100) joins the two front doors (1 and 4). Its far door leads back out to them.
++- **Map screen.** It draws the floor plan. Tap any room you can reach to walk there; tap a ready lock to open it.
++- **Rooms are fixed.** Every room's type comes from the plan. Its size, plants, items, traps and creature are grown from its number, so they are the same on every visit. A connecting room's creatures and loot follow the earliest proof whose route runs through it (`lvl`). Saved games keep their progress, but room types now come from the plan (`S.rooms` is no longer used).
++- **Speed** (26 Nov 2026):
++  - The room's walls, floor, ceiling and far wall are drawn once per view and kept. While you walk they are redrawn at lower resolution, and sharp again the moment you stop.
++  - Plants and floor items are pictures. Each plant has one picture per stage (seedling, young, past, dormant, dead) and three for mature; a potato's three are its skins, so what you see is what you dig up. Each picture is drawn once, large, and smaller sizes are scaled down from it.
++  - Paintings, vines and shelves only draw their own slice of the picture per strip.
++  - The map's plan is drawn once per change in progress.
++  - Measured in headless Chrome at 2× (1280×800): a standing frame went from 40–143 ms to 10–30 ms, walking to 27–46 ms, and the map from 41 ms to under 1 ms.
++- **Copy back to Art-Assets:** `garden.js` gained the optional `{w,h}` size in `GARDEN.plan`.
++
+ ## 4. Treasure, coins and the statue shop
+ 
+ - **Chests** are hidden in halls and greenhouses. Opening one gives 1–20 coins, weighted by the hall's proposition number *n* (`coinRoll(n)` in the code). The weights follow a bell curve centred at 1 + 19·(n−1)/47, with a spread of 1.6:
+diff --git a/base/game.html b/new/game.html
+index a18c031..eb1f761 100644
+--- a/base/game.html
++++ b/new/game.html
+@@ -54,6 +54,7 @@ canvas{display:block;width:100vw;height:100vh;touch-action:none}
+ <script src="proofs.js"></script>
+ <script src="thumbs.js"></script>
+ <script src="plants.js"></script>
++<script src="world.js"></script>
+ <script src="core.js"></script>
+ <script src="tools.js"></script>
+ <script src="vines.js"></script>
+@@ -83,6 +84,20 @@ const now=()=>performance.now();
+ const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x)),lerp=(a,b,t)=>a+(b-a)*t,ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2,seg=(t,a,b)=>clamp((t-a)/(b-a));
+ const dist=(p,q)=>Math.hypot(p[0]-q[0],p[1]-q[1]);
+ function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
++/* ---------- the building: one fixed plan for every player (world.js, made by tools/make-world.py) ----------
++   WORLD.rooms: the 48 lock rooms (ids 1-48) and the connecting rooms that hold no lock (ids 100 and up: corridors,
++   and junctions that are greenhouses with a garden of fixed size). WORLD.ways: the doorways between rooms.
++   Everything else about a room (its size, plants, items, traps, creature) is grown from its number, so it is the
++   same on every visit and for every player. */
++const WR=n=>WORLD.rooms[n],isConn=n=>n>=100,isGreen=n=>isConn(n)&&!!WR(n)&&WR(n).kind==="greenhouse";
++const WNB={};for(const[a,b]of WORLD.ways){(WNB[a]=WNB[a]||[]).push(b);(WNB[b]=WNB[b]||[]).push(a)}
++/* the doors in a room, in a steady order: lock rooms first, then the way on; the forecourt also has the way out (0) */
++const worldDoors=n=>{const L=(WNB[n]||[]).slice().sort((a,b)=>(isConn(a)-isConn(b))||a-b);if(n===WORLD.start)L.push(0);return L};
++/* how deep in the book a room is: a lock room is its own number; a connecting room takes the earliest proof whose way runs through it */
++const lvl=n=>n<100?n:(WR(n)&&WR(n).lvl)||1;
++/* the rooms you can walk to now: from the forecourt through connecting rooms and solved lock rooms */
++function reachable(){const seen=new Set([WORLD.start]),q=[WORLD.start];while(q.length){const n=q.pop();for(const m of WNB[n]||[])if(!seen.has(m)&&(isConn(m)||solved(m))){seen.add(m);q.push(m)}}return seen}
++const rngW=rng;
+ 
+ /* ---------- save ---------- */
+ const SAVE_KEY="elemGeoGame1";
+@@ -97,7 +112,8 @@ const IDS=Object.keys(USES).map(Number);
+ const KIDS={};IDS.forEach(i=>KIDS[i]=IDS.filter(j=>USES[j].includes(i)));
+ const DEP={};const depth=i=>DEP[i]||(DEP[i]=1+Math.max(0,...USES[i].map(depth)));
+ /* a door is open (its proposition is solved), amber (every proposition it needs is solved), or covered */
+-const doorState=i=>solved(i)?"open":USES[i].every(solved)?"amber":"covered";
++/* 48, the last room, opens only once every other proof is solved */
++const doorState=i=>i===0||i>=100?"open":solved(i)?"open":(i===48?IDS.every(j=>j===48||solved(j)):USES[i].every(solved))?"amber":"covered";
+ const MAP=(()=>{const cols={};IDS.forEach(i=>(cols[depth(i)]=cols[depth(i)]||[]).push(i));const mx=Math.max(...Object.keys(cols).map(Number)),rows=Math.max(...Object.values(cols).map(c=>c.length)),Wd=Math.max(640,mx*60+70),Hd=Math.max(420,rows*36+70),pos={};
+ for(const d in cols)cols[d].forEach((id,k)=>pos[id]=[38+(d-1)*60-Wd/2,30+(k+.5)*(Hd-60)/cols[d].length-Hd/2]);
+ const edges=[];IDS.forEach(p=>USES[p].forEach(u=>edges.push([u,p,depth(p)])));edges.sort((a,b)=>a[2]-b[2]);return{pos,edges,Wd,Hd}})();
+@@ -108,8 +124,8 @@ const GH={};IDS.forEach(i=>GH[i]=[]);{const cols={};IDS.forEach(i=>{const x=MAP.
+ function needFront(q,seen=new Set()){if(seen.has(q)||solved(q))return[];seen.add(q);if(USES[q].every(solved))return[q];return USES[q].flatMap(u=>needFront(u,seen))}
+ /* only from the farthest solved room of a branch: one whose own next rooms are all still unsolved */
+ function bridges(n){if(!solved(n)||KIDS[n].some(solved))return[];const out=new Set();for(const k of KIDS[n]){if(solved(k)||USES[k].every(u=>u===n||solved(u)))continue;for(const u of USES[k])if(u!==n&&!solved(u))needFront(u).forEach(x=>out.add(x))}return[...out].filter(x=>x!==n&&!KIDS[n].includes(x)&&hasLock(x))}
+-/* greenhouse plants: each greenhouse gets its own few plants from the Planting Guide's list, chosen at random once per game */
+-const GPICK=(()=>{const L=(window.PLANTS&&PLANTS.list)||[],m={};return id=>{if(!L.length)return[];if(!m[id]){const n=3+Math.floor(Math.random()*2),a=[];while(a.length<n){const p=L[Math.floor(Math.random()*L.length)];if(!a.includes(p))a.push(p)}m[id]=a}return m[id]}})();
++/* greenhouse plants: each greenhouse gets its own few plants from the Planting Guide's list, picked from its number, so they never change */
++const GPICK=(()=>{const L=(window.PLANTS&&PLANTS.list)||[],m={};return id=>{if(!L.length)return[];if(!m[id]){const R=rng(id*389+11),n=3+Math.floor(R()*2),a=[];while(a.length<n){const p=L[Math.floor(R()*L.length)];if(!a.includes(p))a.push(p)}m[id]=a}return m[id]}})();
+ const SKY=(()=>{const r=rng(7),a=[];for(let k=0;k<900;k++)a.push([(r()-.5)*MAP.Wd*2.4,(r()-.5)*MAP.Hd*2.4,r()*1.3+.4,r()*6.28,.25+r()*.75]);return a})();
+ 
+ /* ---------- treasure (used from phase 3 on; see the design doc) ---------- */
+@@ -753,6 +769,24 @@ let lockFrom="doors",hallStack=[];
+ function enterHall(id){hallStack.push(id);hallId=id;CAM={x:0,z:0,target:null};fadeTo("hall",800)}
+ 
+ 
++/* ---------- plant pictures ----------
++   Each plant is drawn once per life stage and kept as a picture: one for seedling, young, past, dormant and dead, and
++   three for mature, so a bed of one plant still varies (a potato's three are its red, purple and brown skins, so what
++   you see is what you dig up). Each is drawn once, large, the first time it is needed; smaller sizes are scaled down from that drawing (large to small). */
++const PSPR={},PBIG=384;
++/* a picture kept for anything drawn standing on a point (plants, items): drawn once, large (big px tall), then each
++   smaller size is halved down from the one above, so the thing is never drawn twice */
++function spriteOf(key,big,draw,px){let L=PSPR[key];
++ if(!L){const c=document.createElement("canvas");c.width=Math.ceil(big*2.1);c.height=Math.ceil(big*1.87);const ox=c.width/2,oy=Math.ceil(big*1.45);draw(c.getContext("2d"),ox,oy,big);L=PSPR[key]=[{c,S0:big,ox,oy}]}
++ while(L[L.length-1].S0/2>=Math.max(24,px)){const p=L[L.length-1],c=document.createElement("canvas");c.width=Math.ceil(p.c.width/2);c.height=Math.ceil(p.c.height/2);const g=c.getContext("2d");g.imageSmoothingQuality="high";g.drawImage(p.c,0,0,c.width,c.height);L.push({c,S0:p.S0/2,ox:p.ox/2,oy:p.oy/2})}
++ let sp=L[0];for(const q of L)if(q.S0>=px)sp=q;return sp}
++const blitSprite=(g,sp,x,y,s)=>{const k=s/sp.S0;g.drawImage(sp.c,x-sp.ox*k,y-sp.oy*k,sp.c.width*k,sp.c.height*k)};
++const plantSprite=(pl,stage,v,o,px)=>spriteOf(["p",pl.id,stage,v,o.hill||0,o.skin||""].join("|"),PBIG,(g,x,y,S0)=>PLANTS.drawFit(g,pl,x,y,S0,stage,1+v*7919,o),px);
++/* an item on the floor: one picture per item, look and state */
++function drawItemS(g,id,x,y,s,o){if(!(s>1))return;blitSprite(g,spriteOf(["i",id,o.seed||0,o.state||"",o.fill||0].join("|"),256,(h,x0,y0,S0)=>ITEMART.draw(h,id,x0,y0,S0,o),s*DPR),x,y,s)}
++function drawPlantS(g,pl,x,y,s,stage,seed,o){if(!(s>1))return;stage=stage||"mature";const pot=pl.id==="potato",mat=stage==="mature",skin=pot&&mat?PLANTS.potatoSkin(seed):"",
++ v=!mat?0:pot?Math.max(0,["red","purple","brown"].indexOf(skin)):(seed>>>0)%3,sp=plantSprite(pl,stage,v,pot?{hill:(o&&o.hill)||0,skin:skin||undefined}:{},s*DPR);
++ blitSprite(g,sp,x,y,s)}
+ /* ---------- halls ---------- */
+ let hallHits=[],hallId=1;
+ /* one door for each proposition that relies on this one, nearest first, alternating walls and kept clear of the torch pillars */
+@@ -761,9 +795,12 @@ function drawHall(t){const vx=W/2,vy=H*.47,f=Math.min(W,H)*.62,HW=1.5,FY=1.1,CY=
+ /* the camera walks (WASD, arrows, a controller, or tap the floor); everything below works in depth from the camera */
+ hallMove();const EY=PLY.y,CZ=CAM.z,Zr=z=>z-CZ,Zp=z=>z*ZS-CZ,pr=(x,y,z)=>[vx+(x*XS-CAM.x)*f/z,vy+(y+EY)*f/z],RT=RT0,P=(xr,y,z)=>pr(xr/XS,y,z),indoor=RT!=="greenhouse";
+ const fog=z=>Math.exp(-(z-1)*.15),col=(c,z,k=1)=>`rgb(${c.map(v=>Math.round(clamp(v*fog(z)*k,0,255))).join(",")})`,quad=(q,c)=>{ctx.fillStyle=c;poly(q);ctx.fill()};
+-ctx.fillStyle="#07060a";ctx.fillRect(0,0,W,H);hallHits=[];const HS=Object.assign({},hallStyle(hallId),ROOMLOOK[RT]||{}),ZFr=Zr(ZF);
++hallHits=[];const HS=Object.assign({},hallStyle(hallId),ROOMLOOK[RT]||{}),ZFr=Zr(ZF);
++/* the room itself (far wall, walls, floor, ceiling, rug) only changes when you move, so it is drawn once per view and kept */
++hallBG([hallId,RT,W,H,DPR,CAM.x,CZ,EY].join("|"),()=>{ctx.fillStyle="#07060a";ctx.fillRect(0,0,W,H);
+ /* far wall: this hall's own finished figure hangs at the end */
+ quad([pr(-HW,CY,ZFr),pr(HW,CY,ZFr),pr(HW,FY,ZFr),pr(-HW,FY,ZFr)],col(HS.far,ZFr));
++if(gardenOf(hallId)&&window.GARDEN){const a=pr(-.55,-1.3,ZFr),b=pr(.55,FY,ZFr),w=b[0]-a[0],h=b[1]-a[1];ctx.fillStyle=col([120,170,120],ZFr);ctx.fillRect(a[0],a[1],w,h);GARDEN.gate(ctx,(a[0]+b[0])/2,b[1],w/2.2);hallHits.push({poly:[a,[b[0],a[1]],b,[a[0],b[1]]],kind:"garden",st:"garden"})}
+ if(hasLock(hallId)&&RT0!=="kitchen"){const a=pr(-.62,-1.25,ZFr),b=pr(.62,.05,ZFr),w=b[0]-a[0],h=b[1]-a[1];ctx.fillStyle=col([200,160,70],ZFr);ctx.fillRect(a[0]-w*.06,a[1]-h*.06,w*1.12,h*1.12);ctx.globalAlpha=Math.min(1,fog(ZFr)*1.3);ctx.drawImage(artCanvas(hallId),a[0],a[1],w,h);ctx.globalAlpha=1;hallHits.push({poly:[a,[b[0],a[1]],b,[a[0],b[1]]],kind:"art",id:hallId});glow(...pr(0,-.6,ZFr),f/ZFr*1.4,.18,[255,200,120])}
+ /* floor, walls, ceiling, from far to near (slices of world depth, cut at the camera) */
+ const sl=[];for(let z=ZF-1;z>=0;z--){const a=Math.max(Zr(z),ZN),b=Zr(z+1);if(b>a)sl.push([a,b,z])}
+@@ -775,15 +812,15 @@ if(RT==="corridor"){ctx.strokeStyle="rgba(0,0,0,.25)";for(let y=FY-.4;y>CY;y-=.4
+ for(let z=2;z<ZF;z++){const r=Zr(z);if(r<ZN)continue;ctx.strokeStyle=col([48,34,24],r);ctx.lineWidth=Math.max(1,.07*f/r);ctx.beginPath();ctx.moveTo(...pr(-HW,CY,r));ctx.lineTo(...pr(HW,CY,r));ctx.stroke()}}
+ if(indoor)drawIndoorFloor(indoorFloor(hallId,RT,G,!!HS.rug),vx,vy,f,FY+EY,G,CZ,ZN);
+ roomSurfaces(RT,pr,col,quad,f,Zr,t);
+-if(HS.rug&&!indoor){const rw=.42,z0=Math.max(Zr(1.3),ZN),z1=Zr(10.6);if(z1>z0){quad([pr(-rw,FY,z0),pr(rw,FY,z0),pr(rw,FY,z1),pr(-rw,FY,z1)],col(HS.rug,4));ctx.strokeStyle=col([214,180,96],4);ctx.lineWidth=Math.max(1,f*.012);poly([pr(-rw*.86,FY,z0+.15),pr(rw*.86,FY,z0+.15),pr(rw*.86,FY,z1-.15),pr(-rw*.86,FY,z1-.15)]);ctx.stroke();for(let z=1.3+.8;z<10.6-.4;z+=1.1){const r=Zr(z);if(r<ZN+.3)continue;ctx.fillStyle=col(HS.rug.map(v=>v*1.5),r);poly([pr(0,FY,r-.28),pr(rw*.45,FY,r),pr(0,FY,r+.28),pr(-rw*.45,FY,r)]);ctx.fill()}}}
++if(HS.rug&&!indoor){const rw=.42,z0=Math.max(Zr(1.3),ZN),z1=Zr(10.6);if(z1>z0){quad([pr(-rw,FY,z0),pr(rw,FY,z0),pr(rw,FY,z1),pr(-rw,FY,z1)],col(HS.rug,4));ctx.strokeStyle=col([214,180,96],4);ctx.lineWidth=Math.max(1,f*.012);poly([pr(-rw*.86,FY,z0+.15),pr(rw*.86,FY,z0+.15),pr(rw*.86,FY,z1-.15),pr(-rw*.86,FY,z1-.15)]);ctx.stroke();for(let z=1.3+.8;z<10.6-.4;z+=1.1){const r=Zr(z);if(r<ZN+.3)continue;ctx.fillStyle=col(HS.rug.map(v=>v*1.5),r);poly([pr(0,FY,r-.28),pr(rw*.45,FY,r),pr(0,FY,r+.28),pr(-rw*.45,FY,r)]);ctx.fill()}}}});
+ /* things along the walls, drawn far to near; anything behind the camera is left out */
+-const obj=[],add=(z,d,len=.2)=>{if(Zp(z)+len>ZN+.15)obj.push({z:Zp(z),d})},addR=(z,d)=>{if(z-CZ>ZN+.1)obj.push({z:z-CZ,d})};const kids=hallDoors(hallId).concat(GH[hallId].filter(solved),bridges(hallId).filter(x=>!GH[hallId].includes(x))),slots=hallSlots(kids.length).map(([s0,z])=>[HS.flip?-s0:s0,z]),busy=(s,a,b)=>slots.some(([ss,z0])=>ss===s&&z0<b&&z0+.95>a);
+-kids.forEach((id,i)=>{const[s,z0]=slots[i],gh=!hallDoors(hallId).includes(id);if(Zp(z0)>ZN)add(z0+.5,()=>hallDoor(pr,f,col,s,Zp(z0),id,t,gh),.5)});
++const obj=[],add=(z,d,len=.2)=>{if(Zp(z)+len>ZN+.15)obj.push({z:Zp(z),d})},addR=(z,d)=>{if(z-CZ>ZN+.1)obj.push({z:z-CZ,d})};const kids=worldDoors(hallId),slots=hallSlots(kids.length).map(([s0,z])=>[HS.flip?-s0:s0,z]),busy=(s,a,b)=>slots.some(([ss,z0])=>ss===s&&z0<b&&z0+.95>a);
++kids.forEach((id,i)=>{const[s,z0]=slots[i],gh=isGreen(id);if(Zp(z0)>ZN)add(z0+.5,()=>hallDoor(pr,f,col,s,Zp(z0),id,t,gh),.5)});
+ /* planters full of greenhouse plants stand either side of each glass door */
+-kids.forEach((id,i)=>{const[s,z0]=slots[i];if(hallDoors(hallId).includes(id)||!window.PLANTS)return;const ps=GPICK(id);[[z0-.18,0],[z0+1.13,1]].forEach(([zw,j])=>add(zw,()=>{const zz=Zp(zw),x=s*(HW-.28),k=f/zz,a=pr(x-.17,FY,zz),b=pr(x+.17,FY-.2,zz);ctx.fillStyle=col([150,104,70],zz);ctx.fillRect(a[0],b[1],b[0]-a[0],a[1]-b[1]);ctx.fillStyle=col([110,74,48],zz);ctx.fillRect(a[0],b[1],b[0]-a[0],(a[1]-b[1])*.18);const pl=ps[j%ps.length];PLANTS.drawFit(ctx,pl,(a[0]+b[0])/2,b[1]+1,k*.75,"mature",id*3+j)}))});
++kids.forEach((id,i)=>{const[s,z0]=slots[i];if(!isGreen(id)||!window.PLANTS)return;const ps=GPICK(id);[[z0-.18,0],[z0+1.13,1]].forEach(([zw,j])=>add(zw,()=>{const zz=Zp(zw),x=s*(HW-.28),k=f/zz,a=pr(x-.17,FY,zz),b=pr(x+.17,FY-.2,zz);ctx.fillStyle=col([150,104,70],zz);ctx.fillRect(a[0],b[1],b[0]-a[0],a[1]-b[1]);ctx.fillStyle=col([110,74,48],zz);ctx.fillRect(a[0],b[1],b[0]-a[0],(a[1]-b[1])*.18);const pl=ps[j%ps.length];drawPlantS(ctx,pl,(a[0]+b[0])/2,b[1]+1,k*.75,"mature",id*3+j)}))});
+ for(const zw of[2,6,9,12])for(const s of[-1,1])if(!busy(s,zw-.05,zw+.25))add(zw,()=>{const z=Zp(zw);if(RT!=="greenhouse"){quad([pr(s*HW,FY,z),pr(s*(HW-.14),FY,z),pr(s*(HW-.14),CY,z),pr(s*HW,CY,z)],col(RT==="library"?[96,62,38]:[140,126,108],z));quad([pr(s*(HW-.14),FY,z),pr(s*(HW-.14),FY,z+.2),pr(s*(HW-.14),CY,z+.2),pr(s*(HW-.14),CY,z)],col(RT==="library"?[80,50,30]:[118,106,90],z))}
+ hallLight(HS.light,pr,f,s,z,t)});
+-{const free=[[-1,2.5,3.7],[1,2.9,4.1],[-1,4.4,5.6],[1,4.7,5.9],[-1,6.6,7.8],[1,6.9,8.1]].filter(([s0,a,b])=>!busy(s0,a,b)),art=hallArt(hallId,free.length);
++{const free=[[-1,2.5,3.7],[1,2.9,4.1],[-1,4.4,5.6],[1,4.7,5.9],[-1,6.6,7.8],[1,6.9,8.1]].filter(([s0,a,b])=>!busy(s0,a,b)),art=hallArt(lvl(hallId),free.length);
+  if(RT==="library")free.forEach(([s0,a,b],i)=>add((a+b)/2,()=>Zp(a)<ZN+.05?0:i%3===2&&art[i]?painting(pr,col,s0,Zp(a),Zp(b),art[i]):shelfOnWall(pr,col,s0,Zp(a),Zp(b),hallId*10+i),.6));
+  else if(RT==="bedroom")free.slice(0,2).forEach(([s0,a,b],i)=>add((a+b)/2,()=>Zp(a)<ZN+.05?0:bedLayout(hallId).shelf&&i===0?shelfOnWall(pr,col,s0,Zp(a),Zp(b),hallId*10+i):art[i]?painting(pr,col,s0,Zp(a),Zp(b),art[i]):0,.6));
+  else if(RT==="corridor")free.slice(0,art.length).forEach(([s0,a,b],i)=>add((a+b)/2,()=>Zp(a)<ZN+.05?0:HS.win&&i%2===1?hallWindow(pr,col,s0,Zp(a),Zp(b),t):painting(pr,col,s0,Zp(a),Zp(b),art[i]),.6))}
+@@ -794,14 +831,21 @@ roomThings(RT,add,busy,pr,col,f,Zp,t);drawRoomItems(addR,P,f,CZ,t);if(RT==="bedr
+  if(sh===2)add(11.7,()=>drawShopStatue(pr,f,col,1,Zp(11.7),t));
+  if(RT!=="kitchen")if(RT!=="bedroom"||bedLayout(hallId).statue)if(!busy(-1,9.0,10.2))add(9.6,()=>sh===-1?drawShopStatue(pr,f,col,-1,Zp(9.6),t):statue(pr,f,col,-1,Zp(9.6),m[0]));if(RT!=="kitchen"&&!busy(1,9.6,10.8))add(10.2,()=>sh===1?drawShopStatue(pr,f,col,1,Zp(10.2),t):statue(pr,f,col,1,Zp(10.2),m[1]))}
+ obj.sort((a,b)=>b.z-a.z).forEach(o=>o.d());
+-const vg=ctx.createRadialGradient(W/2,H*.47,Math.min(W,H)*.25,W/2,H*.47,Math.max(W,H)*.8);vg.addColorStop(0,"rgba(0,0,0,0)");vg.addColorStop(1,"rgba(0,0,0,.65)");ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);drawFX(P,f,CZ,t);if(!BP)drawMinimap();if(BP)drawBlueprint(t)}
++ctx.drawImage(vignette(),0,0,W,H);drawFX(P,f,CZ,t);if(!BP)drawMinimap();if(BP)drawBlueprint(t)}
++let HBG=null,VIG=null;
++function hallBG(key,draw){if(HBG&&HBG.key===key&&!HBG.low){ctx.drawImage(HBG.c,0,0,W,H);for(const h of HBG.hits)hallHits.push(h);return}
++ /* while you walk the room is redrawn at a lower resolution; the moment you stop it is drawn sharp again */
++ const low=!!HBG&&HBG.key!==key&&HBG.id===hallId&&DPR>1,r=low?1:DPR,c=document.createElement("canvas");c.width=Math.round(W*r);c.height=Math.round(H*r);const g=c.getContext("2d");g.setTransform(r,0,0,r,0,0);const keep=ctx,n0=hallHits.length;ctx=g;try{draw()}finally{ctx=keep}
++ HBG={c,id:hallId,low,key:!hasLock(hallId)||roomType(hallId)==="kitchen"||ART[hallId]?key:null,hits:hallHits.slice(n0)};ctx.drawImage(c,0,0,W,H)} /* kept only once the far wall's figure has loaded */
++function vignette(){const k=W+"|"+H+"|"+DPR;if(VIG&&VIG.k===k)return VIG.c;const c=document.createElement("canvas");c.width=Math.round(W*DPR);c.height=Math.round(H*DPR);const g=c.getContext("2d");g.setTransform(DPR,0,0,DPR,0,0);
++ const vg=g.createRadialGradient(W/2,H*.47,Math.min(W,H)*.25,W/2,H*.47,Math.max(W,H)*.8);vg.addColorStop(0,"rgba(0,0,0,0)");vg.addColorStop(1,"rgba(0,0,0,.65)");g.fillStyle=vg;g.fillRect(0,0,W,H);VIG={k,c};return c}
+ function hallDoor(pr,f,col,s,z0,id,t,gh){const HW=1.5,FY=1.1,top=-.5,ar=.475,zc=z0+ar,st=doorState(id),pts=[pr(s*HW,FY,z0)];
+ for(let k=0;k<=12;k++){const a=Math.PI*k/12;pts.push(pr(s*HW,top-Math.sin(a)*ar*.9,z0+(1-Math.cos(a))*ar))}pts.push(pr(s*HW,FY,z0+2*ar));
+ if(st==="amber"){ctx.save();ctx.globalCompositeOperation="lighter";const c=pr(s*HW,.1,zc);glow(c[0],c[1],1.3*f/zc,.28+.12*Math.sin(t*3),[255,160,50]);const fl=pr(s*1.05,FY,zc);ctx.fillStyle=`rgba(255,160,60,${.12+.05*Math.sin(t*3)})`;ctx.beginPath();ctx.ellipse(fl[0],fl[1],.55*f/zc,.12*f/zc,0,0,7);ctx.fill();ctx.restore()}
+-ctx.fillStyle=st==="open"?"#0d0908":col([104,68,40],zc);poly(pts);ctx.fill();if(gh){ctx.fillStyle="rgba(120,200,140,.35)";poly(pts);ctx.fill();ctx.strokeStyle="rgba(230,255,235,.55)";ctx.lineWidth=Math.max(1,.02*f/zc);for(const zz of[.33,.66]){ctx.beginPath();ctx.moveTo(...pr(s*HW,FY,z0+zz*2*ar));ctx.lineTo(...pr(s*HW,top-.35,z0+zz*2*ar));ctx.stroke()}for(const yy of[.5,-.1]){ctx.beginPath();ctx.moveTo(...pr(s*HW,yy,z0));ctx.lineTo(...pr(s*HW,yy,z0+2*ar));ctx.stroke()}{const ps=GPICK(id);ctx.save();poly(pts);ctx.clip();ps.forEach((pl,i)=>{const zz=z0+(i+.6)/(ps.length+.2)*2*ar,b=pr(s*(HW-.02),FY,zz),k=f/zz;PLANTS.drawFit(ctx,pl,b[0],b[1],k*(.85+.3*((i*37)%3)/2),"mature",id*10+i)});ctx.restore();ctx.fillStyle="rgba(190,235,210,.16)";poly(pts);ctx.fill()}}
++ctx.fillStyle=st==="open"?"#0d0908":col([104,68,40],zc);poly(pts);ctx.fill();if(gh){ctx.fillStyle="rgba(120,200,140,.35)";poly(pts);ctx.fill();ctx.strokeStyle="rgba(230,255,235,.55)";ctx.lineWidth=Math.max(1,.02*f/zc);for(const zz of[.33,.66]){ctx.beginPath();ctx.moveTo(...pr(s*HW,FY,z0+zz*2*ar));ctx.lineTo(...pr(s*HW,top-.35,z0+zz*2*ar));ctx.stroke()}for(const yy of[.5,-.1]){ctx.beginPath();ctx.moveTo(...pr(s*HW,yy,z0));ctx.lineTo(...pr(s*HW,yy,z0+2*ar));ctx.stroke()}{const ps=GPICK(id);ctx.save();poly(pts);ctx.clip();ps.forEach((pl,i)=>{const zz=z0+(i+.6)/(ps.length+.2)*2*ar,b=pr(s*(HW-.02),FY,zz),k=f/zz;drawPlantS(ctx,pl,b[0],b[1],k*(.85+.3*((i*37)%3)/2),"mature",id*10+i)});ctx.restore();ctx.fillStyle="rgba(190,235,210,.16)";poly(pts);ctx.fill()}}
+ if(st!=="open"&&!gh){ctx.strokeStyle=col([60,38,22],zc);ctx.lineWidth=1;for(const zz of[.24,.48,.72]){ctx.beginPath();ctx.moveTo(...pr(s*HW,FY,z0+zz*2*ar));ctx.lineTo(...pr(s*HW,top-.3,z0+zz*2*ar));ctx.stroke()}
+ const c=pr(s*HW,.18,zc),r=.13*f/zc;ctx.save();ctx.translate(c[0],c[1]);ctx.scale(.55,1);drawPlate(0,0,r);if(r>9){lockFace(id,0,0,r*FK);plateLabel(id,0,0,r)}if(st==="covered")coverPlate(r);ctx.restore()}
+-{const yT=top-ar*.9,at=(u,v)=>pr(s*HW,yT+v*(FY-yT),s<0?z0+u*2*ar:z0+2*ar-u*2*ar),aspect=Math.round((FY-yT)/(2*ar)*20)/20;vineOnWall(id,at,pts,aspect,[.5,(.18-yT)/(FY-yT)]);
++{const yT=top-ar*.9,at=(u,v)=>pr(s*HW,yT+v*(FY-yT),s<0?z0+u*2*ar:z0+2*ar-u*2*ar),aspect=Math.round((FY-yT)/(2*ar)*20)/20;if(id>0&&id<100)vineOnWall(id,at,pts,aspect,[.5,(.18-yT)/(FY-yT)]);if(id===0){ctx.fillStyle="rgba(255,210,150,.18)";poly(pts);ctx.fill()}
+ ctx.strokeStyle=col([150,136,116],zc);ctx.lineWidth=Math.max(2,.07*f/zc);poly(pts);ctx.stroke();hallHits.push({poly:pts,kind:"door",id,st,map:at,gh})}}
+ /* a covered lock: the lock is still visible behind an iron cover */
+ function coverPlate(r){ctx.fillStyle="rgba(40,40,44,.92)";ctx.save();ctx.rotate(.6);ctx.fillRect(-r*1.15,-r*.22,r*2.3,r*.44);ctx.rotate(-1.2);ctx.fillRect(-r*1.15,-r*.22,r*2.3,r*.44);ctx.restore();ctx.fillStyle="#55555c";circ(0,0,r*.32);ctx.fill();ctx.fillStyle="#9a9aa2";circ(-r*.06,-r*.06,r*.1);ctx.fill()}
+@@ -809,7 +853,7 @@ function coverPlate(r){ctx.fillStyle="rgba(40,40,44,.92)";ctx.save();ctx.rotate(
+ function painting(pr,col,s,za,zb,id){const HW=1.49,ya=-1.3,yb=-.2,zc=(za+zb)/2,q=[pr(s*HW,ya,za),pr(s*HW,ya,zb),pr(s*HW,yb,zb),pr(s*HW,yb,za)],img=artCanvas(id),iw=img.width,ih=img.height,
+ at=(u,v)=>pr(s*HW,ya+v*(yb-ya),s<0?za+u*(zb-za):zb-u*(zb-za)),N=10;
+ for(let i=0;i<N;i++){const u0=i/N,u1=(i+1)/N,TL=at(u0,0),TR=at(u1,0),BL=at(u0,1),BR=at(u1,1),ux=[(TR[0]-TL[0])/(iw/N),(TR[1]-TL[1])/(iw/N)],vy=[(BL[0]-TL[0])/ih,(BL[1]-TL[1])/ih];
+-ctx.save();poly([TL,at(Math.min(1,u1+.01),0),at(Math.min(1,u1+.01),1),BL]);ctx.clip();ctx.transform(ux[0],ux[1],vy[0],vy[1],TL[0]-ux[0]*u0*iw,TL[1]-ux[1]*u0*iw);ctx.drawImage(img,0,0);ctx.restore()}
++ctx.save();poly([TL,at(Math.min(1,u1+.01),0),at(Math.min(1,u1+.01),1),BL]);ctx.clip();ctx.transform(ux[0],ux[1],vy[0],vy[1],TL[0]-ux[0]*u0*iw,TL[1]-ux[1]*u0*iw);const sx=Math.max(0,Math.floor(u0*iw)-1),sw=Math.min(iw-sx,Math.ceil(iw/N)+4);ctx.drawImage(img,sx,0,sw,ih,sx,0,sw,ih);ctx.restore()}
+ ctx.fillStyle=`rgba(0,0,0,${clamp(1-Math.exp(-(zc-1)*.15)*1.15,0,.8)})`;poly(q);ctx.fill();ctx.strokeStyle=col([210,160,60],zc);ctx.lineWidth=Math.max(2,4/zc*3);poly(q);ctx.stroke();hallHits.push({poly:q,kind:"art",id})}
+ /* the finished figure of a proposition on parchment, made once and kept */
+ const ART={};
+@@ -890,32 +934,44 @@ function inPoly(p,q){let c=false;for(let i=0,j=q.length-1;i<q.length;j=i++){if((
+ 
+ /* ---------- the map: every proposition as a star; tap one you can reach ---------- */
+ let mapPrev="doors",mapHits=[];
+-function drawMap(t){const rot=H>W,top=96,bot=70,pad=30,mw=rot?MAP.Hd:MAP.Wd,mh=rot?MAP.Wd:MAP.Hd,kx=(W-2*pad)/mw,ky=(H-top-bot)/mh,
+-Pm=q=>{const x=rot?q[1]:q[0],y=rot?q[0]:q[1];return[W/2+x*kx,top+(H-top-bot)/2+y*ky]},P=id=>Pm(MAP.pos[id]),r=clamp(Math.min(kx,ky)*14,8,16),here=mapPrev==="hall"?hallId:null;mapHits=[];
+-/* the building plan, on blueprint paper */
+-const bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,"#1d2c44");bg.addColorStop(1,"#121b2d");ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);ctx.strokeStyle="rgba(170,200,240,.07)";ctx.lineWidth=1;for(let x=0;x<W;x+=18){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}for(let y=0;y<H;y+=18){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+-let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const id of IDS){const q=P(id);x0=Math.min(x0,q[0]);y0=Math.min(y0,q[1]);x1=Math.max(x1,q[0]);y1=Math.max(y1,q[1])}
+-ctx.fillStyle="rgba(40,52,72,.6)";ctx.fillRect(x0-r*2,y0-r*2,x1-x0+r*4,y1-y0+r*4);ctx.strokeStyle="#c9b48a";ctx.lineWidth=4;ctx.strokeRect(x0-r*2,y0-r*2,x1-x0+r*4,y1-y0+r*4);
+-/* corridors run straight and turn square corners */
+-for(const[u,p]of MAP.edges){const a=MAP.pos[u],b=MAP.pos[p],xm=b[0]-30,path=[a,[xm,a[1]],[xm,b[1]],b].map(Pm),lit=solved(u)&&solved(p);ctx.strokeStyle=lit?"rgba(227,176,75,.8)":"rgba(150,170,220,.22)";ctx.lineWidth=lit?3:1.4;ctx.beginPath();path.forEach((q,k)=>k?ctx.lineTo(...q):ctx.moveTo(...q));ctx.stroke()}
+-/* bridge greenhouses: from the farthest open room of a branch to the lock it is waiting on in another branch */
+-ctx.save();for(const n of IDS)for(const x of bridges(n)){const a=P(n),b=P(x),m=[(a[0]+b[0])/2+(b[1]-a[1])*.18,(a[1]+b[1])/2-(b[0]-a[0])*.18];ctx.strokeStyle="rgba(110,200,130,.55)";ctx.lineWidth=r*.7;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(...a);ctx.quadraticCurveTo(...m,...b);ctx.stroke();ctx.strokeStyle="rgba(225,255,230,.8)";ctx.lineWidth=1;ctx.setLineDash([4,5]);ctx.beginPath();ctx.moveTo(...a);ctx.quadraticCurveTo(...m,...b);ctx.stroke();ctx.setLineDash([])}ctx.restore();
+-/* greenhouses between neighbouring rooms */
+-for(const id of IDS)for(const nb of GH[id]){if(nb<id)continue;const a=P(id),b=P(nb),open=solved(id)&&solved(nb),vert=Math.abs(a[0]-b[0])<1,len=(vert?Math.abs(a[1]-b[1]):Math.abs(a[0]-b[0]))-2*r,w=r*.9;if(len<=2)continue;const cx=(a[0]+b[0])/2,cy=(a[1]+b[1])/2,rx=vert?cx-w/2:cx-len/2,ry=vert?cy-len/2:cy-w/2,rw=vert?w:len,rh=vert?len:w;
+-ctx.fillStyle=open?"rgba(110,200,130,.5)":"rgba(90,140,100,.16)";ctx.fillRect(rx,ry,rw,rh);ctx.strokeStyle=open?"rgba(220,255,225,.75)":"rgba(180,220,190,.22)";ctx.lineWidth=1;ctx.strokeRect(rx,ry,rw,rh);if(open&&window.PLANTS){const ps=GPICK(id*100+nb).slice(0,vert?Math.max(1,Math.floor(rh/(w*1.2))):Math.max(1,Math.floor(rw/(w*1.2)))),k=Math.min(rw,rh);ctx.save();ctx.beginPath();ctx.rect(rx,ry,rw,rh);ctx.clip();ps.forEach((pl,i)=>{const t=(i+.5)/ps.length,px=vert?rx+rw/2:rx+rw*t,py=vert?ry+rh*t+k*.45:ry+rh*.95;PLANTS.drawFit(ctx,pl,px,py,k*.9,"mature",i+id)});ctx.restore()}}
+-/* rooms */
+-for(const id of IDS){const q=P(id),st=doorState(id),ok=hasLock(id);
+-if(st==="amber"&&ok){glow(q[0],q[1],r*2.4,.35+.2*Math.sin(t*3+id),[255,170,60]);ctx.strokeStyle=`rgba(255,176,60,${.5+.4*Math.sin(t*3+id)})`;ctx.lineWidth=2;ctx.strokeRect(q[0]-r-4,q[1]-r-4,2*r+8,2*r+8)}
+-ctx.fillStyle=st==="open"?"#e3b04b":st==="amber"?(ok?"#d98a2b":"#7a5a35"):"#3a3d4a";ctx.fillRect(q[0]-r,q[1]-r,2*r,2*r);ctx.strokeStyle=st==="covered"?"#7d8192":"#f3e2b4";ctx.lineWidth=1.5;ctx.strokeRect(q[0]-r,q[1]-r,2*r,2*r);
+-if(st==="amber"&&vined(id)&&window.VINES){const v=vineOf(id);VINES.drawLeaf(ctx,v.kind,q[0]+r*.95,q[1]-r*.95,2.4,r*1.1,VINES.KINDS[v.kind].leafCol)}
+-if(id===here){ctx.strokeStyle="#9fd0ff";ctx.lineWidth=2.5;ctx.strokeRect(q[0]-r-5,q[1]-r-5,2*r+10,2*r+10)}
+-ctx.fillStyle=st==="covered"?"#b4b8c6":"#1d140a";ctx.font=`700 ${Math.round(r*.95)}px system-ui,sans-serif`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(id,q[0],q[1]+.5);ctx.textBaseline="alphabetic";
+-mapHits.push({id,q,r:Math.max(r,14)})}
+-const ly=76,items=[["#e3b04b","solved"],["#d98a2b","ready"],["#3a3d4a","locked"],["rgba(110,200,130,.8)","greenhouse"]];ctx.font="13px system-ui,sans-serif";ctx.textAlign="left";let lx=14;for(const[c,w]of items){ctx.fillStyle=c;ctx.fillRect(lx,ly-10,12,12);ctx.strokeStyle="#f3e2b4";ctx.lineWidth=1;ctx.strokeRect(lx,ly-10,12,12);ctx.fillStyle="#f3e2b4";ctx.fillText(w,lx+17,ly);lx+=ctx.measureText(w).width+30}}
+-function mapTap(x,y){let best=null,bd=1e9;for(const h of mapHits){const d=dist([x,y],h.q);if(d<h.r*1.4&&d<bd){bd=d;best=h.id}}if(best==null)return;const st=doorState(best);
+-if(st==="open"){hallStack=[best];hallId=best;CAM={x:0,z:0,target:null};fadeTo("hall",700)}else if(st==="amber"&&vined(best)){sfxRustle();toast("Vines cover its door.");if(best===1||best===4){hallStack=[];fadeTo("doors",700)}else{const p=USES[best].find(u=>solved(u)&&hallDoors(u).includes(best))||USES[best].find(solved);if(p){hallStack=[p];hallId=p;CAM={x:0,z:0,target:null};fadeTo("hall",700)}}}else if(st==="amber"){if(hasLock(best)){openLock(best);lockFrom=mapPrev}else{sfxChime(false);toast("This lock is still being made.")}}else{sfxRattle();toast("Its lock is covered.")}}
+-
+-
++let MAPC=null;
++function mapGeo(){const top=96,bot=70,pad=24,cs=Math.min((W-2*pad)/WORLD.w,(H-top-bot)/WORLD.h),ox=(W-cs*WORLD.w)/2,oy=top+(H-top-bot-cs*WORLD.h)/2;return{cs,X:x=>ox+x*cs,Y:y=>oy+y*cs}}
++function drawMap(t){const{cs,X,Y}=mapGeo(),here=mapPrev==="hall"?hallId:null,reach=reachable();
++const box=n=>{const c=WR(n).cells;let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const[x,y]of c){x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y)}return[X(x0),Y(y0),X(x1+1),Y(y1+1)]};
++/* one lock room: a bar in its state's colour with its number, a leaf on a ready door still under vines */
++const room=id=>{const[x0,y0,x1,y1]=box(id),st=doorState(id),ok=hasLock(id),g=cs*.12;
++ ctx.fillStyle=st==="open"?"#e3b04b":st==="amber"?(ok?"#d98a2b":"#7a5a35"):"#3a3d4a";ctx.fillRect(x0+g,y0+g,x1-x0-2*g,y1-y0-2*g);ctx.strokeStyle=st==="covered"?"#7d8192":"#f3e2b4";ctx.lineWidth=1.2;ctx.strokeRect(x0+g,y0+g,x1-x0-2*g,y1-y0-2*g);
++ if(st==="amber"&&vined(id)&&window.VINES){const v=vineOf(id);VINES.drawLeaf(ctx,v.kind,x1-g,y0+g,2.4,cs*.8,VINES.KINDS[v.kind].leafCol)}
++ ctx.fillStyle=st==="covered"?"#b4b8c6":"#1d140a";ctx.font=`700 ${Math.round(Math.min(cs*.8,(x1-x0)*.4))}px system-ui,sans-serif`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(id,(x0+x1)/2,(y0+y1)/2+.5);ctx.textBaseline="alphabetic"};
++const amb=IDS.filter(id=>doorState(id)==="amber"&&hasLock(id)),key=[W,H,DPR,S.solved.join(","),here,amb.map(id=>id+(vined(id)?"v":"")).join(",")].join("|");
++/* the plan only changes with progress, so it is drawn once and kept */
++if(!MAPC||MAPC.key!==key){const c=document.createElement("canvas");c.width=Math.round(W*DPR);c.height=Math.round(H*DPR);const g=c.getContext("2d");g.setTransform(DPR,0,0,DPR,0,0);const keep=ctx;ctx=g;mapHits=[];try{
++/* blueprint paper */
++const bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,"#1d2c44");bg.addColorStop(1,"#121b2d");ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);ctx.strokeStyle="rgba(170,200,240,.07)";ctx.lineWidth=1;ctx.beginPath();for(let x=0;x<W;x+=18){ctx.moveTo(x,0);ctx.lineTo(x,H)}for(let y=0;y<H;y+=18){ctx.moveTo(0,y);ctx.lineTo(W,y)}ctx.stroke();
++/* doorways between connecting rooms: the corridors are drawn joined */
++for(const[n,r]of Object.entries(WORLD.rooms)){if(r.lock)continue;const id=+n,on=reach.has(id),gh=r.kind==="greenhouse";
++ for(const[x,y]of r.cells){ctx.fillStyle=gh?(on?"rgba(110,200,130,.85)":"rgba(90,140,100,.3)"):(on?"rgba(150,170,210,.75)":"rgba(120,140,180,.22)");ctx.fillRect(X(x)+.5,Y(y)+.5,cs-1,cs-1)}
++ if(gh&&on&&window.PLANTS&&cs>=9){const[x,y]=r.cells[0],ps=GPICK(id);drawPlantS(ctx,ps[0],X(x)+cs/2,Y(y)+cs*.92,cs*.8,"mature",id)}
++ if(id===here){const[x0,y0,x1,y1]=box(id);ctx.strokeStyle="#9fd0ff";ctx.lineWidth=2.5;ctx.strokeRect(x0-2,y0-2,x1-x0+4,y1-y0+4)}
++ mapHits.push({id,poly:[[box(id)[0],box(id)[1]],[box(id)[2],box(id)[1]],[box(id)[2],box(id)[3]],[box(id)[0],box(id)[3]]]})}
++/* the way out, to the front doors */
++{const c=WR(WORLD.start).cells,ys=c.map(q=>q[1]),x=Math.min(...c.map(q=>q[0]));ctx.fillStyle="#c9b48a";ctx.font="12px system-ui,sans-serif";ctx.textAlign="right";ctx.fillText("front doors ⇢",X(x)-6,Y((Math.min(...ys)+Math.max(...ys)+1)/2)+4)}
++/* lock rooms */
++for(const id of IDS){room(id);const[x0,y0,x1,y1]=box(id);if(id===here){ctx.strokeStyle="#9fd0ff";ctx.lineWidth=2.5;ctx.strokeRect(x0-3,y0-3,x1-x0+6,y1-y0+6)}mapHits.push({id,poly:[[x0,y0],[x1,y0],[x1,y1],[x0,y1]]})}
++const ly=76,items=[["#e3b04b","solved"],["#d98a2b","ready"],["#3a3d4a","locked"],["rgba(150,170,210,.75)","corridor"],["rgba(110,200,130,.85)","greenhouse"]];ctx.font="13px system-ui,sans-serif";ctx.textAlign="left";let lx=14;for(const[c,w]of items){ctx.fillStyle=c;ctx.fillRect(lx,ly-10,12,12);ctx.strokeStyle="#f3e2b4";ctx.lineWidth=1;ctx.strokeRect(lx,ly-10,12,12);ctx.fillStyle="#f3e2b4";ctx.fillText(w,lx+17,ly);lx+=ctx.measureText(w).width+30}
++}finally{ctx=keep}MAPC={c,key,hits:mapHits}}else mapHits=MAPC.hits;
++ctx.drawImage(MAPC.c,0,0,W,H);
++/* the ready rooms glow and pulse */
++for(const id of amb){const[x0,y0,x1,y1]=box(id),a=.5+.4*Math.sin(t*3+id);glow((x0+x1)/2,(y0+y1)/2,(x1-x0)*.9,.3+.2*Math.sin(t*3+id),[255,170,60]);ctx.strokeStyle=`rgba(255,176,60,${a})`;ctx.lineWidth=2;ctx.strokeRect(x0-3,y0-3,x1-x0+6,y1-y0+6);room(id)}}
++/* tap a room on the map: walk to it if you can reach it now; a ready lock opens; a ready door under vines takes you to the room beside it */
++function mapTap(x,y){const h=mapHits.slice().reverse().find(h=>inPoly([x,y],h.poly));if(!h)return;const id=h.id,reach=reachable(),go_=n=>{hallStack=[n];hallId=n;CAM={x:0,z:0,target:null};fadeTo("hall",700)};
++ if(isConn(id)){if(reach.has(id))go_(id);else{sfxRattle();toast("You can't get there yet.")}return}
++ const st=doorState(id);
++ if(st==="open"){if(reach.has(id))go_(id);else{sfxRattle();toast("You can't get there yet.")}}
++ else if(st==="amber"){const nb=(WNB[id]||[]).find(n=>reach.has(n));
++  if(vined(id)){sfxRustle();toast("Vines cover its door.");if(id===1||id===4){hallStack=[];fadeTo("doors",700)}else if(nb!=null)go_(nb)}
++  else if(hasLock(id)){openLock(id);lockFrom=mapPrev}else{sfxChime(false);toast("This lock is still being made.")}}
++ else{sfxRattle();toast(id===48?"A plate covers the last lock: it opens once every other proof is solved.":"A plate covers its lock: solve what it relies on first.")}}
+ /* ---------- the ax and the vines ----------
+    Vines grow over every door (art: vines.js, from Art-Assets). Only the ax cuts them, and only on a door whose lock
+    you may open (amber: everything it relies on is solved). On a covered door the ax bounces off. A solved door's
+@@ -926,7 +982,7 @@ const AXUP=[0,12,30];
+ const axT=()=>S.ax?TOOLS.AXES[S.ax-1]:null;
+ const vineSeed=id=>id*101+7,vineOf=id=>VINES.pick(vineSeed(id));
+ const vineDmg=id=>solved(id)?1:clamp(S.vd[id]||0);
+-const vined=id=>!!window.VINES&&!solved(id)&&vineDmg(id)<.999;
++const vined=id=>id>0&&id<100&&!!window.VINES&&!solved(id)&&vineDmg(id)<.999;
+ function checkAx(){if(!window.TOOLS)return;if(!S.ax&&S.solved.length)S.ax=1;if(!S.ax)return;let t=1;AXUP.forEach((n,i)=>{if(S.solved.length>=n)t=i+1});
+   if(t>S.ax){S.ax=t;save();const a=axT();setTimeout(()=>{sfxChime(true);toast(`${a.name}: ${a.strikes} strikes`)},900)}axIcon()}
+ /* the vines on one door, drawn once per damage step and kept */
+@@ -944,7 +1000,7 @@ function vineOnLeaf(id,w,h){if(!window.VINES)return;const aspect=Math.round(h/w*
+ function vineOnWall(id,at,clip,aspect,lock){if(!window.VINES)return;VMETA[id]={aspect,lock};const a=at(.5,0),b=at(.5,1),hp=dist(a,b);if(hp<8)return;
+   const img=vineCanvas(id,aspect,lock,hp/aspect*DPR),iw=img.width,ih=img.height,N=8,[jx,jy]=shakeOf(id,hp*.01);ctx.save();poly(clip);ctx.clip();ctx.translate(jx,jy);
+   for(let i=0;i<N;i++){const u0=i/N,u1=(i+1)/N,TL=at(u0,0),TR=at(u1,0),BL=at(u0,1),ux=[(TR[0]-TL[0])/(iw/N),(TR[1]-TL[1])/(iw/N)],vy=[(BL[0]-TL[0])/ih,(BL[1]-TL[1])/ih];
+-    ctx.save();poly([TL,at(Math.min(1,u1+.01),0),at(Math.min(1,u1+.01),1),BL]);ctx.clip();ctx.transform(ux[0],ux[1],vy[0],vy[1],TL[0]-ux[0]*u0*iw,TL[1]-ux[1]*u0*iw);ctx.drawImage(img,0,0);ctx.restore()}
++    ctx.save();poly([TL,at(Math.min(1,u1+.01),0),at(Math.min(1,u1+.01),1),BL]);ctx.clip();ctx.transform(ux[0],ux[1],vy[0],vy[1],TL[0]-ux[0]*u0*iw,TL[1]-ux[1]*u0*iw);const sx=Math.max(0,Math.floor(u0*iw)-1),sw=Math.min(iw-sx,Math.ceil(iw/N)+4);ctx.drawImage(img,sx,0,sw,ih,sx,0,sw,ih);ctx.restore()}
+   ctx.restore()}
+ 
+ /* the ax lying by the front doors, until it is picked up */
+@@ -1001,6 +1057,9 @@ let AXCUR={};function axCursor(x,y){let on=false;if(S.ax&&!SW){if(scene==="doors
+    where to go. Beds and the fountain block the way. The gate at the bottom leads back; the glass door at the top
+    leads on into the other hall. */
+ let GHS=null;const KEYS=new Set();
++/* a junction greenhouse's garden: both gates lead back into the greenhouse */
++function enterGarden(n){const g=gardenOf(n);if(!g||!window.GARDEN)return;const P=GARDEN.plan(g.seed,{w:g.w,h:g.h}),gx=P.gate.x;
++  GHS={from:n,to:n,P,img:null,x:gx,y:P.h-1.4,dir:-Math.PI/2,walk:0,target:null,armed:false,top:{x:gx,y:.5}};fadeTo("green",800);return}
+ function enterGreen(from,to){if(!window.GARDEN){enterHall(to);return}const a=Math.min(from,to),b=Math.max(from,to),P=GARDEN.plan(a*1000+b),gx=P.gate.x;
+   GHS={from,to,P,img:null,x:gx,y:P.h-1.4,dir:-Math.PI/2,walk:0,target:null,armed:false,top:{x:gx,y:.5}};fadeTo("green",800);
+   if(!S.walkHint){S.walkHint=1;save();setTimeout(()=>toast("Walk with WASD, the arrow keys, a controller, or tap where to go."),900)}}
+@@ -1056,7 +1115,9 @@ const ROOMLOOK={greenhouse:{wl:[150,190,170],wr:[140,182,162],ce:[178,208,212],f
+   bedroom:{wl:[184,166,146],wr:[176,158,138],ce:[160,146,130],fa:[120,100,80],fb:[112,94,76],far:[184,166,146],rug:null,win:false},
+   kitchen:{wl:[206,186,150],wr:[198,178,142],ce:[150,120,90],fa:[150,90,60],fb:[140,84,56],far:[206,186,150],rug:null,win:false},
+   library:{wl:[92,60,38],wr:[86,56,36],ce:[66,44,30],fa:[118,38,40],fb:[110,34,38],far:[92,60,38],rug:[46,52,96],win:false}};
+-function roomType(n){S.rooms=S.rooms||{};if(!S.rooms[n]){S.rooms[n]=ROOMTYPES[Math.floor(Math.random()*ROOMTYPES.length)];save()}return S.rooms[n]}
++function roomType(n){const r=WR(n);return r&&ROOMTYPES.includes(r.kind)?r.kind:"corridor"} /* fixed by the building plan (world.js) */
++/* a junction greenhouse's garden: its seed and its size, fixed in the plan */
++const gardenOf=n=>WR(n)&&WR(n).garden;
+ let CAM={x:0,z:0,target:null};
+ function hallMove(){const dt=Math.min(.05,(now()-lastT)/1000);let ix=0,iz=0;if(KEYS.has("a")||KEYS.has("arrowleft"))ix--;if(KEYS.has("d")||KEYS.has("arrowright"))ix++;if(KEYS.has("w")||KEYS.has("arrowup"))iz++;if(KEYS.has("s")||KEYS.has("arrowdown"))iz--;
+   const pads=navigator.getGamepads?[...navigator.getGamepads()].filter(Boolean):[];for(const g of pads){const ax=g.axes[0]||0,ay=g.axes[1]||0;if(Math.hypot(ax,ay)>.22){ix+=ax;iz-=ay}const b=i=>g.buttons[i]&&g.buttons[i].pressed;if(b(14))ix--;if(b(15))ix++;if(b(12))iz++;if(b(13))iz--}
+@@ -1082,13 +1143,13 @@ function roomSurfaces(RT,pr,col,quad,f,Zr,t){const HW=1.5,FY=1.1,CY=-1.75,ZN=.4,
+ const SHELF={};
+ function shelfOnWall(pr,col,s,za,zb,seed){const HW=1.49,ya=-1.0,yb=1.1,img=SHELF[seed]||(SHELF[seed]=FURNITURE.bookshelf(220,380,seed)),iw=img.width,ih=img.height,at=(u,v)=>pr(s*HW,ya+v*(yb-ya),s<0?za+u*(zb-za):zb-u*(zb-za)),N=8;
+   for(let i=0;i<N;i++){const u0=i/N,u1=(i+1)/N,TL=at(u0,0),TR=at(u1,0),BL=at(u0,1),ux=[(TR[0]-TL[0])/(iw/N),(TR[1]-TL[1])/(iw/N)],vy=[(BL[0]-TL[0])/ih,(BL[1]-TL[1])/ih];
+-    ctx.save();poly([TL,at(Math.min(1,u1+.01),0),at(Math.min(1,u1+.01),1),BL]);ctx.clip();ctx.transform(ux[0],ux[1],vy[0],vy[1],TL[0]-ux[0]*u0*iw,TL[1]-ux[1]*u0*iw);ctx.drawImage(img,0,0);ctx.restore()}
++    ctx.save();poly([TL,at(Math.min(1,u1+.01),0),at(Math.min(1,u1+.01),1),BL]);ctx.clip();ctx.transform(ux[0],ux[1],vy[0],vy[1],TL[0]-ux[0]*u0*iw,TL[1]-ux[1]*u0*iw);const sx=Math.max(0,Math.floor(u0*iw)-1),sw=Math.min(iw-sx,Math.ceil(iw/N)+4);ctx.drawImage(img,sx,0,sw,ih,sx,0,sw,ih);ctx.restore()}
+   const zc=(za+zb)/2;ctx.fillStyle=`rgba(0,0,0,${clamp(1-Math.exp(-(zc-1)*.15)*1.15,0,.8)})`;poly([at(0,0),at(1,0),at(1,1),at(0,1)]);ctx.fill()}
+ function roomThings(RT,add,busy,pr,col,f,Zr,t){const HW=1.5,FY=1.1;
+   if(RT==="greenhouse"&&window.PLANTS){const L=PLANTS.list,R=rng(hallId*53+1),ps=[0,1,2,3,4].map(()=>L[Math.floor(R()*L.length)]);if(PLANTS.byId.potato&&rng(hallId*97+5)()<.5)ps[0]=PLANTS.byId.potato; /* potatoes in about half the greenhouses */
+     for(let z=.8;z<12.6;z+=.55)for(const s of[-1,1]){if(busy(s,z-.3,z+.3))continue;const pl=ps[Math.floor(R()*ps.length)],x=s*(HW-.28+(R()-.5)*.1),seed=Math.floor(R()*1e5),sz=.55+R()*.35;
+       add(z,()=>{const r=Zr(z),p=pr(x,FY,r),key=hallId+":"+seed,h=sz*f/r;if(S.picked[key])return; /* harvested: gone from the garden */
+-        PLANTS.drawFit(ctx,pl,p[0],p[1],h,plantStage(key,seed),seed,{hill:S.hill[key]||0});hallHits.push({kind:"plant",key,pl,seed,x,z,poly:[[p[0]-h*.35,p[1]-h],[p[0]+h*.35,p[1]-h],[p[0]+h*.35,p[1]],[p[0]-h*.35,p[1]]]})})}}
++        drawPlantS(ctx,pl,p[0],p[1],h,plantStage(key,seed),seed,{hill:S.hill[key]||0});hallHits.push({kind:"plant",key,pl,seed,x,z,poly:[[p[0]-h*.35,p[1]-h],[p[0]+h*.35,p[1]-h],[p[0]+h*.35,p[1]],[p[0]-h*.35,p[1]]]})})}}
+   if(RT==="library"&&window.FURNITURE){[[-1,5.0],[1,8.4],[-1,11.4],[1,3.2]].forEach(([s,z],i)=>{if(busy(s,z-.5,z+1.2))return;const x=s*(HW-.55);
+     add(z+.75,()=>{const r=Zr(z+.75),p=pr(s*(HW-.4),FY,r);FURNITURE.sideTable(ctx,p[0],p[1],.5*f/r,hallId+i,{lamp:true,t})});
+     add(z,()=>{const r=Zr(z),p=pr(x,FY,r);FURNITURE.armchair(ctx,p[0],p[1],.85*f/r,hallId*7+i,{view:"side",mirror:s>0})})})}}
+@@ -1108,10 +1169,13 @@ function indoorFloor(n,RT,G,hasRug){const key=n+RT+G.RW.toFixed(2);if(FLOORTEX[k
+   if(RT==="bedroom")rug={x0:-G.RW*.45,x1:G.RW*.45,z0:G.RL*.28,z1:G.RL*.72};else if(RT==="library")rug={x0:-(G.RW-.6),x1:G.RW-.6,z0:.8,z1:G.RL-1.2};else if(hasRug)rug={x0:-.42,x1:.42,z0:1.3,z1:10.6};
+   if(rug)rug.c=FLOORS.carpet(rug.x1-rug.x0,rug.z1-rug.z0,ppu,n*29+5);return FLOORTEX[key]={c,ppu,rug,kind}}
+ function drawIndoorFloor(F,vx,vy,f,FY,G,CZ,ZN){const tex=F.c,ppu=F.ppu,rug=F.rug,fog=d=>Math.min(1,Math.exp(-(d-1)*.15));
+-  for(let y=Math.max(Math.floor(vy+FY*f/Math.max(.1,G.RL-CZ)),Math.ceil(vy+1));y<H;y+=2){const d=FY*f/(y-vy);if(d<ZN)continue;const zw=CZ+d;if(zw>G.RL||zw<0)continue;
+-    const x0=vx+(-G.RW-CAM.x)*f/d,x1=vx+(G.RW-CAM.x)*f/d;ctx.drawImage(tex,0,Math.min(tex.height-1,Math.floor(zw*ppu)),tex.width,1,x0,y,x1-x0,2.6);
+-    if(rug&&zw>=rug.z0&&zw<=rug.z1){const a=vx+(rug.x0-CAM.x)*f/d,b=vx+(rug.x1-CAM.x)*f/d;ctx.drawImage(rug.c,0,Math.min(rug.c.height-1,Math.floor((zw-rug.z0)*ppu)),rug.c.width,1,a,y,b-a,2.6)}
+-    const fg=1-fog(d);if(fg>.01){ctx.fillStyle=`rgba(7,6,10,${fg})`;ctx.fillRect(x0,y,x1-x0,2.6)}}}
++  let st=2;for(let y=Math.max(Math.floor(vy+FY*f/Math.max(.1,G.RL-CZ)),Math.ceil(vy+1));y<H;y+=st){st=Math.max(2,Math.min(10,Math.floor(1.2*(y-vy)*(y-vy)/(ppu*FY*f))));const d=FY*f/(y-vy);if(d<ZN)continue;const zw=CZ+d;if(zw>G.RL||zw<0)continue;
++    const x0=vx+(-G.RW-CAM.x)*f/d,x1=vx+(G.RW-CAM.x)*f/d;ctx.drawImage(tex,0,Math.min(tex.height-1,Math.floor(zw*ppu)),tex.width,1,x0,y,x1-x0,st+.6);
++    if(rug&&zw>=rug.z0&&zw<=rug.z1){const a=vx+(rug.x0-CAM.x)*f/d,b=vx+(rug.x1-CAM.x)*f/d;ctx.drawImage(rug.c,0,Math.min(rug.c.height-1,Math.floor((zw-rug.z0)*ppu)),rug.c.width,1,a,y,b-a,st+.6)}
++  }
++  const yA=Math.max(Math.floor(vy+FY*f/Math.max(.1,G.RL-CZ)),Math.ceil(vy+1));if(yA>=H)return;const xs=y=>{const d=FY*f/(y-vy);return[vx+(-G.RW-CAM.x)*f/d,vx+(G.RW-CAM.x)*f/d]},A=xs(yA),B=xs(H+3),gr=ctx.createLinearGradient(0,yA,0,H+3);
++  for(let i=0;i<=24;i++){const u=(i/24)**2,y=yA+(H+3-yA)*u,d=FY*f/Math.max(.01,y-vy);gr.addColorStop(u,`rgba(7,6,10,${(1-fog(d)).toFixed(3)})`)}
++  ctx.fillStyle=gr;ctx.beginPath();ctx.moveTo(A[0],yA);ctx.lineTo(A[1],yA);ctx.lineTo(B[1],H+3);ctx.lineTo(B[0],H+3);ctx.closePath();ctx.fill()}
+ /* a bedroom's furnishings, chosen once per room: 1 or 2 beds (a bunk bed is one), a nightstand by each,
+    maybe a mobile, a bookcase, an armchair, the statues */
+ const BEDL={};
+@@ -1157,7 +1221,7 @@ function itemW(it,RT,n){if(it.find)return 0; /* the speed boots are one-time fin
+ function pickItem(R,RT,n){const pool=ITEMS.map(it=>[it,itemW(it,RT,n)]).filter(x=>x[1]>0),tot=pool.reduce((a,x)=>a+x[1],0);let u=R()*tot;for(const[it,w]of pool){u-=w;if(u<=0)return it.id}return pool[0][0].id}
+ const RITEMS={};
+ function roomItems(n){if(RITEMS[n])return RITEMS[n];const RT=roomType(n),G=roomGeo(n,RT),R=rng(n*7919+11),k=1+Math.floor(R()*3),L=[],ci=R()<.35?Math.floor(R()*k):-1; /* about one room in three has a chest */
+- for(let i=0;i<k;i++){const isChest=i===ci;L.push({uid:`${n}:${i}`,id:isChest?"chest":pickItem(R,RT,n),x:(R()*2-1)*(G.RW-.55),z:1.3+R()*Math.max(.5,G.RL-2.6)})}
++ for(let i=0;i<k;i++){const isChest=i===ci;L.push({uid:`${n}:${i}`,id:isChest?"chest":pickItem(R,RT,lvl(n)),x:(R()*2-1)*(G.RW-.55),z:1.3+R()*Math.max(.5,G.RL-2.6)})}
+  return RITEMS[n]=L}
+ S.taken=S.taken||{};S.opened=S.opened||{};S.drops=S.drops||{};
+ const bagCount=()=>S.inv.filter(id=>!(S.worn&&Object.values(S.worn).includes(id))).length;
+@@ -1173,11 +1237,11 @@ function bootFind(n){const k=BOOTFIND.findIndex(b=>b[0]===n);if(k<0)return[];con
+ const bootSpeed=()=>{const b=S.worn.boots&&itemById(S.worn.boots);return(b&&b.speed)||1};
+ function drawRoomItems(addR,P,f,CZ,t){if(!window.ITEMART)return;const FY=1.1;
+  for(const it of roomFloorItems(hallId)){const z=it.z;addR(z,()=>{const r=z-CZ,p=P(it.x,FY-(it.ledge||0),r),chest=it.id==="chest",h=(chest?.5:.3)*f/r,open=chest&&(S.opened[it.uid]||it.opened);
+-   ITEMART.draw(ctx,it.id,p[0],p[1],h,{seed:(it.uid+'').length*7+3,state:open?"open":undefined,fill:open?0:.7});
++   drawItemS(ctx,it.id,p[0],p[1],h,{seed:(it.uid+'').length*7+3,state:open?"open":undefined,fill:open?0:.7});
+    const tw=(.5+.5*Math.sin(t*3+it.x*5))*(it.hidden?(r<3?.6:0):1);if(!open){ctx.save();ctx.globalCompositeOperation="lighter";ctx.fillStyle=`rgba(255,240,190,${.35*tw})`;ctx.beginPath();ctx.arc(p[0]+h*.25,p[1]-h*.9,Math.max(2,h*.08),0,7);ctx.fill();ctx.restore()}
+    const w=Math.max(28,h*1.1);hallHits.push({kind:"item",it,poly:[[p[0]-w/2,p[1]-h*1.1],[p[0]+w/2,p[1]-h*1.1],[p[0]+w/2,p[1]+6],[p[0]-w/2,p[1]+6]]})})}}
+ function itemTap(it){if(it.ledge&&PLY.base<it.ledge-.05){toast(it.ledge>EN.moves.JUMP_H?"Out of reach, up on the ledge. Climb up (C).":"Out of reach, up on the ledge. Jump up (Space).");return}const chest=it.id==="chest",dropped=!!(S.drops[hallId]||[]).includes(it),open=chest&&(S.opened[it.uid]||it.opened);
+- if(chest&&!open){const c=coinRoll(Math.min(48,Math.max(1,hallId))),pick=pickItem(Math.random,roomType(hallId),hallId),nm=itemById(pick).name;S.coins=(S.coins||0)+c;S.opened[it.uid]=1;if(dropped)it.opened=1;
++ if(chest&&!open){const c=coinRoll(Math.min(48,Math.max(1,lvl(hallId)))),pick=pickItem(Math.random,roomType(hallId),hallId),nm=itemById(pick).name;S.coins=(S.coins||0)+c;S.opened[it.uid]=1;if(dropped)it.opened=1;
+   sfxChime(true);const ok=addInv(pick);if(!ok){(S.drops[hallId]=S.drops[hallId]||[]).push({uid:"d"+Date.now(),id:pick,x:it.x+.3,z:it.z-.2})}save();toast(`+${c} coin${c>1?"s":""}${ok?" · "+nm:""}`);bagIcon();return}
+  if(!addInv(it.id))return;if(dropped)S.drops[hallId]=S.drops[hallId].filter(x=>x!==it);else if(!it.hidden)S.taken[it.uid]=1;save();sfxChime(!!it.hidden);toast(itemById(it.id).name+(it.hidden?": hidden here all along! Wear them (Bag) to walk faster.":""))}
+ /* the bag */
+@@ -1342,7 +1406,7 @@ function drawLedge(addR,P,f,CZ){const L=LEDGES[hallId];if(!L)return;const RW=CUR
+ const PLATES={},PATHS={};
+ function platesOf(n){if(n in PLATES)return PLATES[n];const RT=roomType(n),G=roomGeo(n,RT),R=rng(n*389+17);if(RT==="greenhouse"||RT==="kitchen"||R()>EN.traps.PLATE_CHANCE||pathOf(n))return PLATES[n]=[];
+  const k=1+Math.floor(R()*3),L=[];for(let i=0;i<k;i++)L.push({x:(R()*2-1)*(G.RW-.9),z:2+R()*Math.max(.5,G.RL-5),t:-1e9});return PLATES[n]=L}
+-function pathOf(n){if(n in PATHS)return PATHS[n];const RT=roomType(n),G=roomGeo(n,RT),R=rng(n*577+41);if(RT==="greenhouse"||RT==="kitchen"||n<5||R()>EN.traps.PATH_CHANCE)return PATHS[n]=null;
++function pathOf(n){if(n in PATHS)return PATHS[n];const RT=roomType(n),G=roomGeo(n,RT),R=rng(n*577+41);if(RT==="greenhouse"||RT==="kitchen"||lvl(n)<5||R()>EN.traps.PATH_CHANCE)return PATHS[n]=null;
+  const g=EN.traps.pathGraph(n*13+7,3,4,7+Math.floor(R()*3)),zs=[1.6,1.6+(G.RL-4.4)/3,1.6+2*(G.RL-4.4)/3,G.RL-2.8];
+  g.pos=g.nodes.map(nd=>[(nd.c-1)*(G.RW-.9),zs[nd.r]]);g.kind=EN.traps.kindFor(n);return PATHS[n]=g}
+ function trapTick(){const pz=PZ(),px=CAM.x,air=PLY.y>.05;
+@@ -1367,7 +1431,7 @@ function drawFX(P,f,CZ,t){const T=now();for(let i=FX.length-1;i>=0;i--){const e=
+  else if(e.kind==="fog")TRAPS.fog(ctx,W/2,H*.7,Math.max(W,H)*.45,t,clamp(Math.sin(u/1.6*Math.PI)*1.3,0,1))}
+  const hu=(T-HURT)/1000;if(hu<.5){ctx.fillStyle=`rgba(200,20,10,${.3*(1-hu/.5)})`;ctx.fillRect(0,0,W,H)}}
+ /* --- combat --- */
+-function mobOf(n){if(S.mob[n])return S.mob[n];const RT=roomType(n),G=roomGeo(n,RT),sp=EN.combat.spawn(n,RT,7);if(!sp)return null;const R=rng(n*41+3);
++function mobOf(n){if(S.mob[n])return S.mob[n];const RT=roomType(n),G=roomGeo(n,RT),sp=EN.combat.spawn(lvl(n),RT,7+n);if(!sp)return null;const R=rng(n*41+3);
+  return S.mob[n]={kind:sp.kind,friendly:sp.friendly,hp:sp.hp,x:(R()-.5)*G.RW,z:Math.min(G.RL-1.8,3.5+R()*Math.max(1,G.RL-6)),t:0,face:-1}}
+ let SWING=null;
+ function attack(target){const m=mobOf(hallId);const w=S.wield&&EN.combat.weapon(S.wield.id),broken=S.wield&&S.wield.left<=0,W0=w&&!broken?w:EN.combat.FIST;
+@@ -1458,7 +1522,7 @@ if(vined(id)){const ox=D.x0+(id===1?0:D.lw);if(HOLD)return pour(id,x,y,(u,v)=>[o
+ if(!solved(id))return openLock(id);if(doorOpenAmt(id)>=1){hallStack=[];enterHall(id)}return}
+ if(scene==="lock"){cv.setPointerCapture(e.pointerId);return lockId===4?l4Down(x,y):FIGS[lockId]?figDown(x,y):lkDown(x,y)}
+ if(scene==="hall"){if(BP){BP=null;return}if(PLQ){hidePlaque();return}{const hb=hallHits.find(h=>h.kind==="item"&&h.it.hidden&&inPoly([x,y],h.poly));if(hb){itemTap(hb.it);return}}
+-if(HOLD){for(let i=hallHits.length-1;i>=0;i--){const h=hallHits[i];if(!inPoly([x,y],h.poly))continue;if(h.kind==="door"&&h.st!=="open"&&vined(h.id)&&HOLD.id!=="soil")return pour(h.id,x,y,h.map,h.st!=="amber");if(h.kind==="plant")return HOLD.id==="soil"?pourSoil(h):S.dead[h.key]?toast("It's already dead."):pourPlant(h.key)}HOLD=null;toast("You put the flask away.");return}for(let i=hallHits.length-1;i>=0;i--){const h=hallHits[i];if(!inPoly([x,y],h.poly))continue;if(h.kind==="item"){itemTap(h.it);return}if(h.kind==="shop"){shopOpen();return}if(h.kind==="plant"){plantTap(h);return}if(h.kind==="mob"){attack(true);return}if(h.kind==="cook"){cookOpen(h.src);return}if(h.kind==="mind"){showPlaque(h.who);return}if(h.kind==="art"){const T=now();if(artTap.id===h.id&&T-artTap.t<450){BP={id:h.id,t0:T};document.getElementById("toast").style.opacity=0;artTap={id:null,t:0};sfxChime(false)}else{artTap={id:h.id,t:T};if(!S.bpHint){S.bpHint=1;save();toast("Double-tap a painting to see its blueprint.")}}return}if(h.kind==="door"&&h.st!=="open"&&vined(h.id)){chopTap(h.id,x,y,h.map,h.st!=="amber");return}if(h.st==="amber"){if(hasLock(h.id))openLock(h.id);else{sfxChime(false);toast("This lock is still being made.")}}else if(h.st==="open")enterHall(h.id);else if(h.st==="covered"){sfxRattle();toast("Its lock is covered.")}return}hallFloorTap(x,y)}});
++if(HOLD){for(let i=hallHits.length-1;i>=0;i--){const h=hallHits[i];if(!inPoly([x,y],h.poly))continue;if(h.kind==="door"&&h.st!=="open"&&vined(h.id)&&HOLD.id!=="soil")return pour(h.id,x,y,h.map,h.st!=="amber");if(h.kind==="plant")return HOLD.id==="soil"?pourSoil(h):S.dead[h.key]?toast("It's already dead."):pourPlant(h.key)}HOLD=null;toast("You put the flask away.");return}for(let i=hallHits.length-1;i>=0;i--){const h=hallHits[i];if(!inPoly([x,y],h.poly))continue;if(h.kind==="item"){itemTap(h.it);return}if(h.kind==="shop"){shopOpen();return}if(h.kind==="plant"){plantTap(h);return}if(h.kind==="mob"){attack(true);return}if(h.kind==="cook"){cookOpen(h.src);return}if(h.kind==="mind"){showPlaque(h.who);return}if(h.kind==="art"){const T=now();if(artTap.id===h.id&&T-artTap.t<450){BP={id:h.id,t0:T};document.getElementById("toast").style.opacity=0;artTap={id:null,t:0};sfxChime(false)}else{artTap={id:h.id,t:T};if(!S.bpHint){S.bpHint=1;save();toast("Double-tap a painting to see its blueprint.")}}return}if(h.kind==="door"&&h.st!=="open"&&vined(h.id)){chopTap(h.id,x,y,h.map,h.st!=="amber");return}if(h.st==="amber"){if(hasLock(h.id))openLock(h.id);else{sfxChime(false);toast("This lock is still being made.")}}else if(h.st==="open"){if(h.id===0){hallStack=[];fadeTo("doors",700)}else enterHall(h.id)}else if(h.kind==="garden")enterGarden(hallId);else if(h.st==="covered"){sfxRattle();toast("Its lock is covered.")}return}hallFloorTap(x,y)}});
+ cv.addEventListener("pointermove",e=>{if(scene==="lock")(lockId===4?l4Move:FIGS[lockId]?figMove:lkMove)(e.clientX,e.clientY);else if(e.pointerType==="mouse")axCursor(e.clientX,e.clientY)});
+ cv.addEventListener("pointerup",e=>{if(scene==="lock")(lockId===4?l4Up:FIGS[lockId]?figUp:lkUp)(e.clientX,e.clientY)});
+ cv.addEventListener("pointercancel",()=>{if(scene==="lock"){LK.drag=null;LK4.drag=null;if(LKF){LKF.drag=null;LKF.ghost=null;LKF.ext=null}if(LK4.ghost&&LK4.ghost.t!=="t")LK4.ghost=null}});
+diff --git a/base/garden.js b/new/garden.js
+index ace065c..255aa4b 100644
+--- a/base/garden.js
++++ b/new/garden.js
+@@ -2,7 +2,7 @@
+    The art package source is github.com/fenw1ck/art-assets; copy this file in at release.
+    Needs plants.js (window.PLANTS) for the plants themselves.
+ 
+-   window.GARDEN.plan(seed)            a garden: size (8×16 up to 50×50), theme, paths, beds, plants and props
++   window.GARDEN.plan(seed,o)          a garden (o.w, o.h fix its size): size (8×16 up to 50×50), theme, paths, beds, plants and props
+    window.GARDEN.render(plan, s, o)    the still parts (ground, paths, beds, plants, benches, trellises, tools) on a canvas, s px per cell;
+                                        o.wild: an abandoned greenhouse floor (irregular flagstone or dirt paths, moss and grass creeping in)
+    window.GARDEN.fountain(ctx,x,y,s,t) a working fountain, centre (x,y), s px per cell, t seconds (animated water)
+@@ -25,8 +25,8 @@ const CLIMB=new Set(["tomato_indeterminate","tomato_cherry","bean_pole","pea","c
+ const NAMES={herb:"Herb garden",vegetable:"Kitchen garden",fruit:"Orchard and berries",flower:"Flower garden",mixed:"Mixed garden"};
+ 
+ /* ---- the plan ---- */
+-function plan(seed){const r=rng(seed);
+- const w=8+Math.round(Math.pow(r(),1.4)*42),h=Math.max(16,w+Math.round(r()*(50-w))),themeName=Object.keys(THEMES)[Math.floor(r()*5)],theme=THEMES[themeName];
++function plan(seed,o){const r=rng(seed); /* o.w, o.h: a size fixed elsewhere (the Euclid game's building plan) */
++ const w0=8+Math.round(Math.pow(r(),1.4)*42),h0=Math.max(16,w0+Math.round(r()*(50-w0))),w=(o&&o.w)||w0,h=(o&&o.h)||h0,themeName=Object.keys(THEMES)[Math.floor(r()*5)],theme=THEMES[themeName];
+  const PATH=1,BED=2,GRASS=0,cell=new Uint8Array(w*h),at=(x,y)=>cell[y*w+x],set=(x,y,v)=>{if(x>=0&&y>=0&&x<w&&y<h)cell[y*w+x]=v};
+  /* paths: a ring round the edge, a spine up the middle, cross paths every 7 or 8 rows, and more spines in a wide garden */
+  const vx=[0,w-1],hy=[0,h-1],sp=Math.floor(w/2);vx.push(sp);if(w>=22){const k=Math.floor((w-1)/10);for(let i=1;i<k;i++){const x=Math.round(i*(w-1)/k);if(Math.abs(x-sp)>3)vx.push(x)}}
+diff --git a/new/tools/make-world.py b/new/tools/make-world.py
+new file mode 100644
+index 0000000..e613166
+--- /dev/null
++++ b/new/tools/make-world.py
+@@ -0,0 +1,214 @@
++"""Make the Euclid game's one fixed building (world.js).
++
++Every player walks the same building. It is laid out on a grid of 3 m cells, map first:
++  - each of the 48 propositions is a lock room: a hall 1 cell wide and LEN cells long, running east,
++    with its own finished figure on the east wall. Doors open in its north and south walls and its west end.
++  - every dependency (u is used by c) is a walkable route from room u to room c. Routes run through
++    connecting rooms that hold no lock (corridors and junctions). Routes share corridors where they can,
++    and corridors that cross meet in a junction room, so the plan fits on one floor.
++  - junctions where three or more ways meet are greenhouses, each with a garden whose size is rolled
++    once, here, from a fixed seed.
++The output is data only; game.html draws it and walks it.
++Run: python3 tools/make-world.py  (writes world.js next to game.html)
++"""
++import heapq, itertools, json, random, sys
++TIE = itertools.count()
++from collections import defaultdict
++
++USES = {1:[],2:[1],3:[2],4:[],5:[3,4],6:[3,4],7:[5],8:[7],9:[1,3,8],10:[1,4,9],11:[1,3,8],12:[8,10],13:[11],14:[13],15:[13],16:[3,4,10,15],17:[13,16],18:[3,5,16],19:[5,18],20:[3,5,19],21:[16,20],22:[3,20],23:[8,22],24:[3,4,5,19,23],25:[4,24],26:[3,4,16],27:[16],28:[13,15,27],29:[13,15],30:[27,29],31:[23,27],32:[13,29,31],33:[4,27,29],34:[4,26,29],35:[4,29,34],36:[33,34,35],37:[31,34,35],38:[31,34,36],39:[31,37],40:[31,38],41:[34,37],42:[10,23,31,38,41],43:[34],44:[15,29,31,42,43],45:[14,29,30,33,34,42,44],46:[3,11,29,31,34],47:[4,14,31,41,46],48:[3,8,11,47]}
++IDS = list(USES)
++KIDS = {i: [j for j in IDS if i in USES[j]] for i in IDS}
++LEN = 3           # a lock room is 3 cells (about 9-13 m) long
++DX, DY = 6, 4     # grid spacing of lock rooms: columns 6 cells apart, rows 4 apart
++SEED = 1          # the building's one seed: change it and every player gets a new building
++
++depth = {}
++def dep(i):
++    if i not in depth:
++        depth[i] = 1 + max([dep(u) for u in USES[i]], default=0)
++    return depth[i]
++for i in IDS: dep(i)
++
++# ---------- 1. place the lock rooms: one column per depth, rows ordered to keep routes short ----------
++cols = defaultdict(list)
++for i in IDS: cols[depth[i]].append(i)
++order = {d: sorted(v) for d, v in cols.items()}
++def pos_index():
++    return {i: k for d in order for k, i in enumerate(order[d])}
++for sweep in range(24):  # barycentre sweeps, both ways
++    idx = pos_index()
++    rng = sorted(order) if sweep % 2 == 0 else sorted(order, reverse=True)
++    for d in rng:
++        def bary(i):
++            nb = USES[i] + KIDS[i]
++            return sum(idx[n] / max(1, len(order[depth[n]]) - 1) for n in nb) / len(nb) if nb else 0.5
++        order[d].sort(key=lambda i: (bary(i), i))
++maxrows = max(len(v) for v in order.values())
++room_at = {}   # id -> (x, y) of the west cell
++# the depths are laid out in bands that run back and forth (like ploughed rows), so the plan is closer to square
++BAND = 7
++nb = (max(order) + BAND - 1) // BAND
++brows = [max(len(order.get(d, [])) for d in range(b * BAND + 1, b * BAND + BAND + 1)) for b in range(nb)]
++btop = [2 + sum(r - 1 for r in brows[:b]) * DY + 6 * b for b in range(nb)]
++for d, ids in order.items():
++    b, k0 = (d - 1) // BAND, (d - 1) % BAND
++    col = k0 if b % 2 == 0 else BAND - 1 - k0
++    off = (brows[b] - len(ids)) / 2
++    for k, i in enumerate(ids):
++        room_at[i] = (3 + col * DX, btop[b] + round((k + off) * DY))
++# 48 is the last room you come to: alone past the end of the last band, with one door, a dead end
++LAST = 48
++lb = (depth[LAST] - 1) // BAND
++order[depth[LAST]].remove(LAST)
++EXTRA = int(sys.argv[2]) if len(sys.argv) > 2 else 0
++room_at[LAST] = (3 + BAND * DX + EXTRA if lb % 2 == 0 else 3 - DX - LEN - EXTRA, btop[lb] + round((brows[lb] - 1) / 2 * DY))
++if room_at[LAST][0] < 0:  # the last band runs west: shift the whole plan east to make room
++    sh = -room_at[LAST][0] + 1
++    room_at = {i: (x + sh, y) for i, (x, y) in room_at.items()}
++W = 2 + max(x for x, y in room_at.values()) + LEN + 4
++H = 2 + max(y for x, y in room_at.values()) + 3
++cell_room = {}
++for i, (x, y) in room_at.items():
++    for k in range(LEN): cell_room[(x + k, y)] = i
++
++def door_cells(i):
++    """cells just outside room i where a door can open: along the north and south walls, and off the west end"""
++    x, y = room_at[i]
++    if i == LAST: return [(x - 1, y)] if lb % 2 == 0 else [(x + LEN, y)]
++    out = [(x - 1, y)]
++    for k in range(LEN): out += [(x + k, y - 1), (x + k, y + 1)]
++    return [c for c in out if 0 <= c[0] < W and 0 <= c[1] < H and c not in cell_room]
++
++# ---------- 2. route every dependency through lock-free corridors, sharing corridors where possible ----------
++corr = set()            # corridor cells
++links = set()           # walkable links between two corridor cells
++doors = set()           # (room, corridor cell)
++def route(u, c):
++    starts, goals = door_cells(u), set(door_cells(c))
++    pq, best, prev = [], {}, {}
++    for s in starts:
++        g = 0 if s in corr else 3
++        best[(s, None)] = g; heapq.heappush(pq, (g, next(TIE), s, None))
++    while pq:
++        g, _, cur, dr = heapq.heappop(pq)
++        if best.get((cur, dr), 1e9) < g: continue
++        if cur in goals:
++            path = [cur]; key = (cur, dr)
++            while key in prev: key = prev[key]; path.append(key[0])
++            return path[::-1]
++        for d in ((1, 0), (-1, 0), (0, 1), (0, -1)):
++            nx = (cur[0] + d[0], cur[1] + d[1])
++            if not (0 <= nx[0] < W and 0 <= nx[1] < H) or nx in cell_room: continue
++            step = (1 if (cur, nx) in links or (nx, cur) in links else 1.6 if nx in corr else 3) + (0 if dr in (None, d) else 1.2)
++            ng = g + step
++            if ng < best.get((nx, d), 1e9):
++                best[(nx, d)] = ng; prev[(nx, d)] = (cur, dr); heapq.heappush(pq, (ng, next(TIE), nx, d))
++    raise SystemExit(f"no route {u}->{c}")
++edges = sorted(((u, c) for c in IDS for u in USES[c]), key=lambda e: (abs(room_at[e[0]][0] - room_at[e[1]][0]) + abs(room_at[e[0]][1] - room_at[e[1]][1])))
++routes = {}
++for u, c in edges:
++    p = route(u, c)
++    routes[f"{u}-{c}"] = p
++    doors.add((u, p[0])); doors.add((c, p[-1]))
++    for a, b in zip(p, p[1:]): links.add((a, b))
++    corr.update(p)
++# the way in: a forecourt west of the building, with the two front doors (1 and 4)
++ent = []
++for i in (1, 4):
++    x, y = room_at[i]
++    p = [(xx, y) for xx in range(0, x)]
++    ent.append(p); corr.update(p); doors.add((i, p[-1]))
++    for a, b in zip(p, p[1:]): links.add((a, b))
++fore = [(0, y) for y in range(min(room_at[1][1], room_at[4][1]), max(room_at[1][1], room_at[4][1]) + 1)]
++corr.update(fore)
++for a, b in zip(fore, fore[1:]): links.add((a, b))
++
++# ---------- 3. cut the corridors into connecting rooms ----------
++adj = defaultdict(set)
++for a, b in links:
++    adj[a].add(b); adj[b].add(a)
++def straight(c):
++    n = adj[c]
++    if len(n) != 2: return False
++    a, b = sorted(n)
++    return a[0] == b[0] == c[0] or a[1] == b[1] == c[1]
++conn_of, conns = {}, []
++for c in sorted(corr):
++    if c in conn_of: continue
++    if not straight(c):            # junctions, turns and dead ends are rooms of their own
++        conn_of[c] = len(conns); conns.append([c]); continue
++    run = [c]; conn_of[c] = len(conns)
++    for d in ((1, 0), (0, 1), (-1, 0), (0, -1)):
++        nx = (c[0] + d[0], c[1] + d[1])
++        while nx in adj[run[-1] if d[0] + d[1] > 0 else run[0]] and straight(nx) and nx not in conn_of:
++            if d[0] + d[1] > 0: run.append(nx)
++            else: run.insert(0, nx)
++            conn_of[nx] = len(conns)
++            nx = (nx[0] + d[0], nx[1] + d[1])
++    conns.append(run)
++for k, cells in enumerate(conns):
++    if len(cells) == 1 and len(adj[cells[0]]) <= 2:
++        c = cells[0]
++        for n in sorted(adj[c]):
++            j = conn_of[n]
++            if j != k and conns[j] and (len(conns[j]) > 1 or len(adj[conns[j][0]]) <= 2):
++                conns[j].append(c); conn_of[c] = j; conns[k] = []; break
++keep = [i for i, cells in enumerate(conns) if cells]
++remap = {old: new for new, old in enumerate(keep)}
++conns = [conns[i] for i in keep]
++conn_of = {c: remap[k] for c, k in conn_of.items()}
++R = random.Random(SEED)
++rooms = {}
++for i in IDS:
++    x, y = room_at[i]
++    rooms[str(i)] = {"lock": True, "cells": [[x + k, y] for k in range(LEN)]}
++CID0 = 100
++for k, cells in enumerate(conns):
++    cid = CID0 + k
++    ways = len({conn_of[n] for c in cells for n in adj[c]} - {k}) + sum(1 for (r, dc) in doors if dc in cells)
++    kind = "greenhouse" if len(cells) == 1 and len(adj[cells[0]]) + sum(1 for (r, dc) in doors if dc == cells[0]) >= 3 else "corridor"
++    r = {"lock": False, "kind": kind, "cells": [list(c) for c in cells]}
++    if kind == "greenhouse":   # a garden, its size rolled once, here: 8 x 16 up to 50 x 50
++        w = 8 + round(R.random() ** 1.4 * 42); h = max(16, w + round(R.random() * (50 - w)))
++        r["garden"] = {"seed": R.randrange(1, 10**6), "w": w, "h": h}
++    # how deep in the book it is: the earliest proof whose way runs through it (sets its creatures, loot and traps)
++    r["lvl"] = min([int(k.split("-")[0]) for k, p in routes.items() if any(tuple(c) in set(map(tuple, cells)) for c in p)] or [1]) or 1
++    rooms[str(cid)] = r
++for i in IDS:
++    rooms[str(i)]["kind"] = ["corridor", "greenhouse", "library", "bedroom", "kitchen"][R.randrange(5)]
++# doorways: between rooms (lock room <-> corridor, corridor <-> corridor)
++ways = set()
++for (r, c) in doors: ways.add(tuple(sorted((r, CID0 + conn_of[c]))))
++for a, b in links:
++    ka, kb = conn_of[a], conn_of[b]
++    if ka != kb: ways.add(tuple(sorted((CID0 + ka, CID0 + kb))))
++start = CID0 + conn_of[fore[0]]
++world = {"v": 1, "seed": SEED, "cell": 3, "w": W, "h": H, "len": LEN, "start": start,
++         "rooms": rooms, "ways": sorted([list(w) for w in ways]),
++         "routes": {k: [list(c) for c in v] for k, v in routes.items()}}
++out = sys.argv[1] if len(sys.argv) > 1 else "world.js"
++pass
++with open(out, "w") as f:
++    f.write("/* The Euclid game's building: one fixed plan for every player. Made by tools/make-world.py; do not edit by hand. */\n")
++    f.write("window.WORLD=" + json.dumps(world, separators=(",", ":")) + ";\n")
++# walking distance in metres (cells) from the way in to each lock room's nearest door: 48 must be the farthest
++from collections import deque
++rdoors = defaultdict(list)
++for (r, dc) in doors: rdoors[r].append(dc)
++cd = {fore[0]: 0}; pq = [(0, next(TIE), fore[0])]
++while pq:   # you walk corridors cell by cell, and cross a lock room (LEN cells) from one of its doors to another
++    g, _, c = heapq.heappop(pq)
++    if g > cd[c]: continue
++    nxt = [(m, 1) for m in adj[c]] + [(dc, LEN) for (r, d0) in doors if d0 == c and r != LAST for dc in rdoors[r] if dc != c]
++    for m, w in nxt:
++        if g + w < cd.get(m, 10**9): cd[m] = g + w; heapq.heappush(pq, (g + w, next(TIE), m))
++walk = {i: min(cd.get(dc, 10**6) for (r, dc) in doors if r == i) for i in IDS}
++far = sorted(IDS, key=lambda i: -walk[i])[:4]
++print("farthest lock rooms (cells walked):", [(i, walk[i]) for i in far])
++if far[0] != LAST or walk[LAST] < walk[far[1]] + 4:
++    sys.exit(3)
++nconn = len(conns); ngh = sum(1 for r in rooms.values() if r.get("kind") == "greenhouse" and not r["lock"])
++print(f"grid {W}x{H}, lock rooms 48, connecting rooms {nconn} ({ngh} greenhouses), doorways {len(ways)}, corridor cells {len(corr)}")
++deg = defaultdict(int)
++for a, b in ways: deg[a] += 1; deg[b] += 1
++print("most doors in one lock room:", max((deg[i], i) for i in IDS))
+diff --git a/new/world.js b/new/world.js
+new file mode 100644
+index 0000000..c7dd2e7
+--- /dev/null
++++ b/new/world.js
+@@ -0,0 +1,2 @@
++/* The Euclid game's building: one fixed plan for every player. Made by tools/make-world.py; do not edit by hand. */
++window.WORLD={"v":1,"seed":1,"cell":3,"w":54,"h":55,"len":3,"start":100,"rooms":{"1":{"lock":true,"cells":[[3,2],[4,2],[5,2]],"kind":"corridor"},"2":{"lock":true,"cells":[[9,4],[10,4],[11,4]],"kind":"kitchen"},"3":{"lock":true,"cells":[[15,4],[16,4],[17,4]],"kind":"library"},"4":{"lock":true,"cells":[[3,6],[4,6],[5,6]],"kind":"corridor"},"5":{"lock":true,"cells":[[21,2],[22,2],[23,2]],"kind":"corridor"},"6":{"lock":true,"cells":[[21,6],[22,6],[23,6]],"kind":"corridor"},"7":{"lock":true,"cells":[[27,4],[28,4],[29,4]],"kind":"corridor"},"8":{"lock":true,"cells":[[33,4],[34,4],[35,4]],"kind":"bedroom"},"9":{"lock":true,"cells":[[39,2],[40,2],[41,2]],"kind":"corridor"},"10":{"lock":true,"cells":[[39,18],[40,18],[41,18]],"kind":"library"},"11":{"lock":true,"cells":[[39,6],[40,6],[41,6]],"kind":"greenhouse"},"12":{"lock":true,"cells":[[33,16],[34,16],[35,16]],"kind":"library"},"13":{"lock":true,"cells":[[39,22],[40,22],[41,22]],"kind":"corridor"},"14":{"lock":true,"cells":[[33,20],[34,20],[35,20]],"kind":"kitchen"},"15":{"lock":true,"cells":[[33,24],[34,24],[35,24]],"kind":"greenhouse"},"16":{"lock":true,"cells":[[27,18],[28,18],[29,18]],"kind":"library"},"17":{"lock":true,"cells":[[21,22],[22,22],[23,22]],"kind":"library"},"18":{"lock":true,"cells":[[21,14],[22,14],[23,14]],"kind":"corridor"},"19":{"lock":true,"cells":[[15,12],[16,12],[17,12]],"kind":"greenhouse"},"20":{"lock":true,"cells":[[9,16],[10,16],[11,16]],"kind":"greenhouse"},"21":{"lock":true,"cells":[[3,16],[4,16],[5,16]],"kind":"library"},"22":{"lock":true,"cells":[[3,20],[4,20],[5,20]],"kind":"kitchen"},"23":{"lock":true,"cells":[[3,42],[4,42],[5,42]],"kind":"greenhouse"},"24":{"lock":true,"cells":[[9,40],[10,40],[11,40]],"kind":"library"},"25":{"lock":true,"cells":[[15,34],[16,34],[17,34]],"kind":"library"},"26":{"lock":true,"cells":[[21,18],[22,18],[23,18]],"kind":"bedroom"},"27":{"lock":true,"cells":[[21,26],[22,26],[23,26]],"kind":"library"},"28":{"lock":true,"cells":[[15,28],[16,28],[17,28]],"kind":"bedroom"},"29":{"lock":true,"cells":[[27,22],[28,22],[29,22]],"kind":"bedroom"},"30":{"lock":true,"cells":[[15,20],[16,20],[17,20]],"kind":"corridor"},"31":{"lock":true,"cells":[[9,44],[10,44],[11,44]],"kind":"corridor"},"32":{"lock":true,"cells":[[15,50],[16,50],[17,50]],"kind":"library"},"33":{"lock":true,"cells":[[15,24],[16,24],[17,24]],"kind":"bedroom"},"34":{"lock":true,"cells":[[15,16],[16,16],[17,16]],"kind":"library"},"35":{"lock":true,"cells":[[9,24],[10,24],[11,24]],"kind":"bedroom"},"36":{"lock":true,"cells":[[3,24],[4,24],[5,24]],"kind":"greenhouse"},"37":{"lock":true,"cells":[[15,38],[16,38],[17,38]],"kind":"library"},"38":{"lock":true,"cells":[[15,42],[16,42],[17,42]],"kind":"corridor"},"39":{"lock":true,"cells":[[21,42],[22,42],[23,42]],"kind":"library"},"40":{"lock":true,"cells":[[21,46],[22,46],[23,46]],"kind":"kitchen"},"41":{"lock":true,"cells":[[21,38],[22,38],[23,38]],"kind":"greenhouse"},"42":{"lock":true,"cells":[[27,40],[28,40],[29,40]],"kind":"kitchen"},"43":{"lock":true,"cells":[[9,20],[10,20],[11,20]],"kind":"bedroom"},"44":{"lock":true,"cells":[[33,40],[34,40],[35,40]],"kind":"corridor"},"45":{"lock":true,"cells":[[39,42],[40,42],[41,42]],"kind":"greenhouse"},"46":{"lock":true,"cells":[[15,46],[16,46],[17,46]],"kind":"corridor"},"47":{"lock":true,"cells":[[27,44],[28,44],[29,44]],"kind":"bedroom"},"48":{"lock":true,"cells":[[45,42],[46,42],[47,42]],"kind":"greenhouse"},"100":{"lock":false,"kind":"corridor","cells":[[0,3],[0,4],[0,5],[0,2],[0,6],[1,2],[1,6],[2,2],[2,6]],"lvl":1},"101":{"lock":false,"kind":"corridor","cells":[[5,4],[5,3],[5,5]],"lvl":1},"102":{"lock":false,"kind":"corridor","cells":[[5,8],[5,9],[5,10],[5,11],[5,12],[5,13],[5,14],[5,7],[5,15]],"lvl":4},"103":{"lock":false,"kind":"corridor","cells":[[5,17]],"lvl":16},"104":{"lock":false,"kind":"corridor","cells":[[5,19]],"lvl":3},"105":{"lock":false,"kind":"corridor","cells":[[5,22],[5,21],[5,23]],"lvl":22},"106":{"lock":false,"kind":"corridor","cells":[[6,3],[7,3],[8,3],[9,3],[10,3],[11,3],[12,3],[13,3],[14,3],[15,3],[16,3],[17,3],[18,3],[19,3]],"lvl":1},"107":{"lock":false,"kind":"greenhouse","cells":[[6,15]],"garden":{"seed":800876,"w":11,"h":44},"lvl":4},"108":{"lock":false,"kind":"corridor","cells":[[6,16]],"lvl":4},"109":{"lock":false,"kind":"greenhouse","cells":[[6,17]],"garden":{"seed":797927,"w":9,"h":16},"lvl":3},"110":{"lock":false,"kind":"corridor","cells":[[6,18]],"lvl":3},"111":{"lock":false,"kind":"greenhouse","cells":[[6,19]],"garden":{"seed":827037,"w":22,"h":40},"lvl":3},"112":{"lock":false,"kind":"corridor","cells":[[6,20],[6,21],[6,22]],"lvl":4},"113":{"lock":false,"kind":"greenhouse","cells":[[6,23]],"garden":{"seed":936711,"w":13,"h":31},"lvl":4},"114":{"lock":false,"kind":"corridor","cells":[[6,41],[7,41],[5,41]],"lvl":8},"115":{"lock":false,"kind":"corridor","cells":[[7,15],[8,15],[9,15]],"lvl":20},"116":{"lock":false,"kind":"corridor","cells":[[7,17],[8,17],[9,17],[10,17]],"lvl":3},"117":{"lock":false,"kind":"corridor","cells":[[7,23],[8,23],[9,23],[10,23],[11,23]],"lvl":4},"118":{"lock":false,"kind":"corridor","cells":[[8,40],[8,39]],"lvl":22},"119":{"lock":false,"kind":"greenhouse","cells":[[8,41]],"garden":{"seed":799309,"w":41,"h":45},"lvl":8},"120":{"lock":false,"kind":"corridor","cells":[[9,39],[10,39],[11,39]],"lvl":3},"121":{"lock":false,"kind":"greenhouse","cells":[[9,41]],"garden":{"seed":279268,"w":37,"h":46},"lvl":8},"122":{"lock":false,"kind":"corridor","cells":[[9,43],[9,42]],"lvl":23},"123":{"lock":false,"kind":"corridor","cells":[[10,41],[11,41],[12,41],[13,41]],"lvl":8},"124":{"lock":false,"kind":"corridor","cells":[[11,14],[11,13],[11,15]],"lvl":3},"125":{"lock":false,"kind":"greenhouse","cells":[[11,17]],"garden":{"seed":991189,"w":35,"h":38},"lvl":3},"126":{"lock":false,"kind":"corridor","cells":[[11,19],[11,18]],"lvl":34},"127":{"lock":false,"kind":"corridor","cells":[[11,26],[11,25]],"lvl":3},"128":{"lock":false,"kind":"greenhouse","cells":[[11,27]],"garden":{"seed":23407,"w":10,"h":23},"lvl":3},"129":{"lock":false,"kind":"corridor","cells":[[11,28],[11,29],[11,30],[11,31],[11,32],[11,33]],"lvl":3},"130":{"lock":false,"kind":"greenhouse","cells":[[11,34]],"garden":{"seed":984770,"w":8,"h":31},"lvl":3},"131":{"lock":false,"kind":"corridor","cells":[[11,35],[11,36],[11,37]],"lvl":3},"132":{"lock":false,"kind":"greenhouse","cells":[[11,38]],"garden":{"seed":442622,"w":43,"h":48},"lvl":3},"133":{"lock":false,"kind":"greenhouse","cells":[[12,13]],"garden":{"seed":800799,"w":35,"h":43},"lvl":3},"134":{"lock":false,"kind":"corridor","cells":[[12,14],[12,15],[12,16]],"lvl":19},"135":{"lock":false,"kind":"greenhouse","cells":[[12,17]],"garden":{"seed":244407,"w":21,"h":35},"lvl":3},"136":{"lock":false,"kind":"corridor","cells":[[12,18],[12,19],[12,20],[12,21],[12,22]],"lvl":3},"137":{"lock":false,"kind":"greenhouse","cells":[[12,23]],"garden":{"seed":797912,"w":17,"h":39},"lvl":3},"138":{"lock":false,"kind":"corridor","cells":[[12,25],[12,24]],"lvl":3},"139":{"lock":false,"kind":"corridor","cells":[[12,27],[13,27],[14,27],[15,27],[16,27]],"lvl":27},"140":{"lock":false,"kind":"corridor","cells":[[12,34],[13,34],[14,34]],"lvl":4},"141":{"lock":false,"kind":"corridor","cells":[[12,38],[13,38],[14,38]],"lvl":3},"142":{"lock":false,"kind":"corridor","cells":[[12,43],[13,43],[11,43]],"lvl":31},"143":{"lock":false,"kind":"corridor","cells":[[13,13],[14,13],[15,13],[16,13],[17,13],[18,13],[19,13]],"lvl":3},"144":{"lock":false,"kind":"corridor","cells":[[13,17],[14,17],[15,17],[16,17],[17,17],[18,17],[19,17]],"lvl":3},"145":{"lock":false,"kind":"corridor","cells":[[13,23],[14,23],[15,23],[16,23],[17,23]],"lvl":4},"146":{"lock":false,"kind":"corridor","cells":[[14,39],[14,40]],"lvl":3},"147":{"lock":false,"kind":"greenhouse","cells":[[14,41]],"garden":{"seed":22534,"w":22,"h":30},"lvl":3},"148":{"lock":false,"kind":"greenhouse","cells":[[14,42]],"garden":{"seed":966985,"w":20,"h":47},"lvl":3},"149":{"lock":false,"kind":"greenhouse","cells":[[14,43]],"garden":{"seed":758791,"w":31,"h":35},"lvl":3},"150":{"lock":false,"kind":"corridor","cells":[[14,44]],"lvl":3},"151":{"lock":false,"kind":"greenhouse","cells":[[14,45]],"garden":{"seed":348857,"w":42,"h":43},"lvl":3},"152":{"lock":false,"kind":"corridor","cells":[[14,46],[14,47],[14,48],[14,49],[14,50]],"lvl":3},"153":{"lock":false,"kind":"corridor","cells":[[15,41],[16,41],[17,41],[18,41],[19,41]],"lvl":8},"154":{"lock":false,"kind":"corridor","cells":[[15,44],[15,43]],"lvl":31},"155":{"lock":false,"kind":"greenhouse","cells":[[15,45]],"garden":{"seed":525127,"w":44,"h":50},"lvl":4},"156":{"lock":false,"kind":"corridor","cells":[[16,45],[17,45],[18,45],[19,45],[20,45],[21,45]],"lvl":4},"157":{"lock":false,"kind":"corridor","cells":[[17,21]],"lvl":27},"158":{"lock":false,"kind":"corridor","cells":[[17,26],[17,25]],"lvl":27},"159":{"lock":false,"kind":"greenhouse","cells":[[17,27]],"garden":{"seed":870356,"w":46,"h":48},"lvl":13},"160":{"lock":false,"kind":"greenhouse","cells":[[18,21]],"garden":{"seed":297963,"w":45,"h":46},"lvl":13},"161":{"lock":false,"kind":"corridor","cells":[[18,22]],"lvl":13},"162":{"lock":false,"kind":"greenhouse","cells":[[18,23]],"garden":{"seed":887303,"w":28,"h":47},"lvl":13},"163":{"lock":false,"kind":"corridor","cells":[[18,24],[18,25],[18,26]],"lvl":13},"164":{"lock":false,"kind":"greenhouse","cells":[[18,27]],"garden":{"seed":894738,"w":47,"h":48},"lvl":13},"165":{"lock":false,"kind":"corridor","cells":[[18,37],[19,37],[17,37]],"lvl":37},"166":{"lock":false,"kind":"corridor","cells":[[19,21],[20,21],[21,21],[22,21],[23,21]],"lvl":13},"167":{"lock":false,"kind":"corridor","cells":[[19,27],[20,27],[21,27]],"lvl":27},"168":{"lock":false,"kind":"greenhouse","cells":[[20,3]],"garden":{"seed":836139,"w":8,"h":18},"lvl":1},"169":{"lock":false,"kind":"corridor","cells":[[20,4]],"lvl":1},"170":{"lock":false,"kind":"greenhouse","cells":[[20,5]],"garden":{"seed":384958,"w":20,"h":40},"lvl":1},"171":{"lock":false,"kind":"corridor","cells":[[20,6],[20,7],[20,8],[20,9],[20,10],[20,11],[20,12]],"lvl":1},"172":{"lock":false,"kind":"greenhouse","cells":[[20,13]],"garden":{"seed":707250,"w":26,"h":43},"lvl":1},"173":{"lock":false,"kind":"corridor","cells":[[20,14],[20,15],[20,16]],"lvl":1},"174":{"lock":false,"kind":"greenhouse","cells":[[20,17]],"garden":{"seed":696001,"w":35,"h":36},"lvl":1},"175":{"lock":false,"kind":"greenhouse","cells":[[20,37]],"garden":{"seed":546244,"w":24,"h":44},"lvl":37},"176":{"lock":false,"kind":"greenhouse","cells":[[20,38]],"garden":{"seed":768361,"w":41,"h":44},"lvl":34},"177":{"lock":false,"kind":"greenhouse","cells":[[20,39]],"garden":{"seed":737550,"w":8,"h":16},"lvl":8},"178":{"lock":false,"kind":"corridor","cells":[[20,40]],"lvl":8},"179":{"lock":false,"kind":"greenhouse","cells":[[20,41]],"garden":{"seed":606262,"w":41,"h":47},"lvl":8},"180":{"lock":false,"kind":"corridor","cells":[[20,42]],"lvl":37},"181":{"lock":false,"kind":"greenhouse","cells":[[21,3]],"garden":{"seed":526636,"w":19,"h":24},"lvl":1},"182":{"lock":false,"kind":"corridor","cells":[[21,5],[21,4]],"lvl":3},"183":{"lock":false,"kind":"corridor","cells":[[21,13]],"lvl":3},"184":{"lock":false,"kind":"corridor","cells":[[21,17],[22,17]],"lvl":1},"185":{"lock":false,"kind":"corridor","cells":[[21,37]],"lvl":37},"186":{"lock":false,"kind":"corridor","cells":[[21,39],[22,39],[23,39],[24,39],[25,39]],"lvl":8},"187":{"lock":false,"kind":"corridor","cells":[[21,43]],"lvl":31},"188":{"lock":false,"kind":"greenhouse","cells":[[21,44]],"garden":{"seed":209209,"w":13,"h":16},"lvl":4},"189":{"lock":false,"kind":"corridor","cells":[[22,3],[23,3],[24,3],[25,3],[26,3],[27,3],[28,3],[29,3],[30,3],[31,3],[32,3],[33,3],[34,3],[35,3],[36,3],[37,3],[38,3],[39,3],[39,4]],"lvl":1},"190":{"lock":false,"kind":"corridor","cells":[[22,44],[23,44],[24,44],[25,44],[26,44]],"lvl":4},"191":{"lock":false,"kind":"corridor","cells":[[23,16],[23,15]],"lvl":16},"192":{"lock":false,"kind":"greenhouse","cells":[[23,17]],"garden":{"seed":243455,"w":26,"h":47},"lvl":1},"193":{"lock":false,"kind":"greenhouse","cells":[[24,17]],"garden":{"seed":888628,"w":20,"h":30},"lvl":1},"194":{"lock":false,"kind":"corridor","cells":[[24,18],[24,19],[24,20]],"lvl":16},"195":{"lock":false,"kind":"greenhouse","cells":[[24,21]],"garden":{"seed":282360,"w":27,"h":38},"lvl":13},"196":{"lock":false,"kind":"corridor","cells":[[24,22],[24,23],[24,24]],"lvl":16},"197":{"lock":false,"kind":"corridor","cells":[[24,25],[23,25]],"lvl":16},"198":{"lock":false,"kind":"corridor","cells":[[25,17],[26,17],[27,17],[28,17],[29,17],[30,17],[31,17]],"lvl":1},"199":{"lock":false,"kind":"corridor","cells":[[25,21],[26,21],[27,21],[28,21],[29,21]],"lvl":13},"200":{"lock":false,"kind":"greenhouse","cells":[[26,39]],"garden":{"seed":764832,"w":31,"h":43},"lvl":8},"201":{"lock":false,"kind":"corridor","cells":[[26,40],[26,41],[26,42],[26,43]],"lvl":11},"202":{"lock":false,"kind":"corridor","cells":[[27,39],[28,39],[29,39],[30,39],[31,39],[32,39]],"lvl":8},"203":{"lock":false,"kind":"corridor","cells":[[29,23]],"lvl":13},"204":{"lock":false,"kind":"corridor","cells":[[30,19],[29,19],[30,20]],"lvl":15},"205":{"lock":false,"kind":"greenhouse","cells":[[30,21]],"garden":{"seed":860342,"w":8,"h":41},"lvl":13},"206":{"lock":false,"kind":"corridor","cells":[[30,22]],"lvl":15},"207":{"lock":false,"kind":"greenhouse","cells":[[30,23]],"garden":{"seed":537396,"w":47,"h":50},"lvl":13},"208":{"lock":false,"kind":"corridor","cells":[[31,21]],"lvl":13},"209":{"lock":false,"kind":"corridor","cells":[[31,23]],"lvl":13},"210":{"lock":false,"kind":"corridor","cells":[[32,16],[32,15],[33,15]],"lvl":8},"211":{"lock":false,"kind":"greenhouse","cells":[[32,17]],"garden":{"seed":588627,"w":39,"h":45},"lvl":1},"212":{"lock":false,"kind":"corridor","cells":[[32,18],[32,19],[32,20]],"lvl":3},"213":{"lock":false,"kind":"greenhouse","cells":[[32,21]],"garden":{"seed":504472,"w":13,"h":48},"lvl":3},"214":{"lock":false,"kind":"corridor","cells":[[32,22]],"lvl":3},"215":{"lock":false,"kind":"greenhouse","cells":[[32,23]],"garden":{"seed":209547,"w":43,"h":47},"lvl":3},"216":{"lock":false,"kind":"corridor","cells":[[32,25],[32,24],[33,25]],"lvl":3},"217":{"lock":false,"kind":"corridor","cells":[[33,6],[33,7],[33,8],[33,9],[33,10],[33,11],[33,12],[33,13],[33,14],[33,5]],"lvl":8},"218":{"lock":false,"kind":"corridor","cells":[[33,17],[34,17],[35,17],[36,17],[37,17]],"lvl":1},"219":{"lock":false,"kind":"corridor","cells":[[33,21],[34,21]],"lvl":10},"220":{"lock":false,"kind":"corridor","cells":[[33,23],[34,23]],"lvl":13},"221":{"lock":false,"kind":"corridor","cells":[[33,26],[33,27],[33,28],[33,29],[33,30],[33,31],[33,32],[33,33],[33,34],[33,35],[33,36],[33,37],[33,38]],"lvl":3},"222":{"lock":false,"kind":"greenhouse","cells":[[33,39]],"garden":{"seed":852861,"w":47,"h":48},"lvl":3},"223":{"lock":false,"kind":"corridor","cells":[[34,39],[35,39],[36,39],[36,40]],"lvl":3},"224":{"lock":false,"kind":"greenhouse","cells":[[35,21]],"garden":{"seed":564636,"w":18,"h":29},"lvl":10},"225":{"lock":false,"kind":"corridor","cells":[[35,23],[35,22]],"lvl":13},"226":{"lock":false,"kind":"corridor","cells":[[35,41]],"lvl":44},"227":{"lock":false,"kind":"corridor","cells":[[36,21],[37,21]],"lvl":10},"228":{"lock":false,"kind":"greenhouse","cells":[[36,41]],"garden":{"seed":347223,"w":26,"h":45},"lvl":3},"229":{"lock":false,"kind":"corridor","cells":[[37,41],[38,41],[39,41],[40,41],[41,41],[42,41],[43,41],[44,41],[44,42]],"lvl":3},"230":{"lock":false,"kind":"corridor","cells":[[38,6],[38,7],[38,8],[38,9],[38,10],[38,11],[38,12],[38,13],[38,14],[38,15],[38,16],[38,5],[39,5]],"lvl":1},"231":{"lock":false,"kind":"greenhouse","cells":[[38,17]],"garden":{"seed":240759,"w":22,"h":23},"lvl":1},"232":{"lock":false,"kind":"corridor","cells":[[38,18],[38,19],[38,20]],"lvl":10},"233":{"lock":false,"kind":"greenhouse","cells":[[38,21]],"garden":{"seed":189566,"w":30,"h":41},"lvl":10},"234":{"lock":false,"kind":"corridor","cells":[[39,17]],"lvl":1},"235":{"lock":false,"kind":"corridor","cells":[[39,21]],"lvl":11}},"ways":[[1,100],[1,101],[2,106],[3,106],[4,100],[4,101],[4,102],[5,181],[5,189],[6,182],[7,189],[8,189],[8,217],[9,189],[10,232],[10,234],[11,230],[12,210],[12,218],[13,235],[14,219],[14,224],[15,216],[15,220],[15,225],[16,198],[16,204],[17,166],[18,183],[18,191],[19,143],[20,115],[20,124],[21,102],[21,103],[22,104],[22,105],[23,114],[24,120],[24,121],[25,140],[26,184],[26,192],[27,167],[27,197],[28,159],[29,199],[29,203],[30,157],[31,122],[31,142],[32,152],[33,145],[33,158],[34,144],[35,117],[35,127],[36,105],[37,141],[37,165],[38,148],[38,153],[38,154],[39,180],[39,187],[40,156],[41,176],[41,185],[41,186],[42,201],[42,202],[43,126],[44,222],[44,226],[45,229],[46,152],[46,155],[46,156],[47,190],[48,229],[101,106],[102,107],[103,109],[104,111],[105,113],[106,168],[107,108],[107,115],[108,109],[109,110],[109,116],[110,111],[111,112],[112,113],[113,117],[114,119],[116,125],[117,137],[118,119],[118,120],[119,121],[120,132],[121,122],[121,123],[123,147],[124,133],[125,126],[125,135],[127,128],[127,138],[128,129],[128,139],[129,130],[130,131],[130,140],[131,132],[132,141],[133,134],[133,143],[134,135],[135,136],[135,144],[136,137],[137,138],[137,145],[139,159],[141,146],[142,149],[143,172],[144,174],[145,162],[146,147],[147,148],[147,153],[148,149],[149,150],[149,154],[150,151],[151,152],[151,155],[153,179],[154,155],[155,156],[156,188],[157,160],[158,159],[159,164],[160,161],[160,166],[161,162],[162,163],[163,164],[164,167],[165,175],[166,195],[168,169],[168,181],[169,170],[170,171],[170,182],[171,172],[172,173],[172,183],[173,174],[174,184],[175,176],[175,185],[176,177],[177,178],[177,186],[178,179],[179,180],[181,182],[181,189],[184,192],[186,200],[187,188],[188,190],[189,230],[190,201],[191,192],[192,193],[193,194],[193,198],[194,195],[195,196],[195,199],[196,197],[198,211],[199,205],[200,201],[200,202],[202,222],[203,207],[204,205],[205,206],[205,208],[206,207],[207,209],[208,213],[209,215],[210,211],[210,217],[211,212],[211,218],[212,213],[213,214],[213,219],[214,215],[215,216],[215,220],[216,221],[218,231],[219,224],[220,225],[221,222],[222,223],[223,228],[224,225],[224,227],[226,228],[227,233],[228,229],[230,231],[231,232],[231,234],[232,233],[233,235]],"routes":{"2-3":[[11,3],[12,3],[13,3],[14,3],[15,3]],"7-8":[[29,3],[30,3],[31,3],[32,3],[33,3]],"20-21":[[9,15],[8,15],[7,15],[6,15],[5,15]],"16-26":[[27,17],[26,17],[25,17],[24,17],[23,17]],"35-36":[[9,23],[8,23],[7,23],[6,23],[5,23]],"37-41":[[17,37],[18,37],[19,37],[20,37],[21,37]],"42-44":[[29,39],[30,39],[31,39],[32,39],[33,39]],"1-2":[[5,3],[6,3],[7,3],[8,3],[9,3]],"3-5":[[17,3],[18,3],[19,3],[20,3],[21,3]],"3-6":[[17,3],[18,3],[19,3],[20,3],[21,3],[21,4],[21,5]],"5-7":[[23,3],[24,3],[25,3],[26,3],[27,3]],"8-9":[[35,3],[36,3],[37,3],[38,3],[39,3]],"8-11":[[35,3],[36,3],[37,3],[38,3],[39,3],[39,4],[39,5]],"10-12":[[39,17],[38,17],[37,17],[36,17],[35,17]],"13-14":[[39,21],[38,21],[37,21],[36,21],[35,21]],"13-15":[[39,21],[38,21],[37,21],[36,21],[35,21],[35,22],[35,23]],"18-19":[[21,13],[20,13],[19,13],[18,13],[17,13]],"23-24":[[5,41],[6,41],[7,41],[8,41],[9,41]],"27-28":[[21,27],[20,27],[19,27],[18,27],[17,27]],"15-29":[[33,23],[32,23],[31,23],[30,23],[29,23]],"23-31":[[5,41],[6,41],[7,41],[8,41],[9,41],[9,42],[9,43]],"27-33":[[21,27],[20,27],[19,27],[18,27],[17,27],[17,26],[17,25]],"26-34":[[21,17],[20,17],[19,17],[18,17],[17,17]],"31-38":[[11,43],[12,43],[13,43],[14,43],[15,43]],"41-42":[[23,39],[24,39],[25,39],[26,39],[27,39]],"44-45":[[35,41],[36,41],[37,41],[38,41],[39,41]],"31-46":[[11,43],[12,43],[13,43],[14,43],[15,43],[15,44],[15,45]],"16-17":[[27,17],[26,17],[25,17],[24,17],[24,18],[24,19],[24,20],[24,21],[23,21]],"16-18":[[27,17],[26,17],[25,17],[24,17],[23,17],[23,16],[23,15]],"19-20":[[15,13],[14,13],[13,13],[12,13],[11,13],[11,14],[11,15]],"20-22":[[9,15],[8,15],[7,15],[6,15],[6,16],[6,17],[6,18],[6,19],[5,19]],"37-39":[[17,37],[18,37],[19,37],[20,37],[20,38],[20,39],[20,40],[20,41],[20,42]],"38-40":[[15,43],[15,44],[15,45],[16,45],[17,45],[18,45],[19,45],[20,45],[21,45]],"34-43":[[15,17],[14,17],[13,17],[12,17],[11,17],[11,18],[11,19]],"8-12":[[33,5],[33,6],[33,7],[33,8],[33,9],[33,10],[33,11],[33,12],[33,13],[33,14],[33,15]],"10-16":[[39,17],[38,17],[37,17],[36,17],[35,17],[34,17],[33,17],[32,17],[31,17],[30,17],[29,17]],"15-16":[[33,23],[32,23],[31,23],[30,23],[30,22],[30,21],[30,20],[30,19],[29,19]],"5-18":[[21,3],[21,4],[21,5],[20,5],[20,6],[20,7],[20,8],[20,9],[20,10],[20,11],[20,12],[20,13],[21,13]],"24-25":[[11,39],[11,38],[11,37],[11,36],[11,35],[11,34],[12,34],[13,34],[14,34]],"13-29":[[39,21],[38,21],[37,21],[36,21],[35,21],[35,22],[35,23],[34,23],[33,23],[32,23],[31,23],[30,23],[29,23]],"27-30":[[21,27],[20,27],[19,27],[18,27],[18,26],[18,25],[18,24],[18,23],[18,22],[18,21],[17,21]],"31-32":[[11,43],[12,43],[13,43],[14,43],[14,44],[14,45],[14,46],[14,47],[14,48],[14,49],[14,50]],"33-36":[[15,23],[14,23],[13,23],[12,23],[11,23],[10,23],[9,23],[8,23],[7,23],[6,23],[5,23]],"31-37":[[11,43],[12,43],[13,43],[14,43],[14,42],[14,41],[14,40],[14,39],[14,38]],"41-47":[[23,39],[24,39],[25,39],[26,39],[26,40],[26,41],[26,42],[26,43],[26,44]],"16-27":[[27,17],[26,17],[25,17],[24,17],[24,18],[24,19],[24,20],[24,21],[24,22],[24,23],[24,24],[24,25],[23,25]],"29-30":[[27,21],[26,21],[25,21],[24,21],[23,21],[22,21],[21,21],[20,21],[19,21],[18,21],[17,21]],"29-33":[[27,21],[26,21],[25,21],[24,21],[23,21],[22,21],[21,21],[20,21],[19,21],[18,21],[18,22],[18,23],[17,23]],"34-35":[[15,17],[14,17],[13,17],[12,17],[12,18],[12,19],[12,20],[12,21],[12,22],[12,23],[11,23]],"31-39":[[11,43],[12,43],[13,43],[14,43],[15,43],[15,44],[15,45],[16,45],[17,45],[18,45],[19,45],[20,45],[21,45],[21,44],[21,43]],"31-40":[[11,43],[12,43],[13,43],[14,43],[15,43],[15,44],[15,45],[16,45],[17,45],[18,45],[19,45],[20,45],[21,45]],"38-42":[[17,41],[18,41],[19,41],[20,41],[20,40],[20,39],[21,39],[22,39],[23,39],[24,39],[25,39],[26,39],[27,39]],"42-45":[[29,39],[30,39],[31,39],[32,39],[33,39],[34,39],[35,39],[36,39],[36,40],[36,41],[37,41],[38,41],[39,41]],"46-47":[[17,45],[18,45],[19,45],[20,45],[21,45],[21,44],[22,44],[23,44],[24,44],[25,44],[26,44]],"9-10":[[39,3],[39,4],[39,5],[38,5],[38,6],[38,7],[38,8],[38,9],[38,10],[38,11],[38,12],[38,13],[38,14],[38,15],[38,16],[38,17],[39,17]],"11-13":[[38,6],[38,7],[38,8],[38,9],[38,10],[38,11],[38,12],[38,13],[38,14],[38,15],[38,16],[38,17],[38,18],[38,19],[38,20],[38,21],[39,21]],"3-18":[[17,3],[18,3],[19,3],[20,3],[20,4],[20,5],[20,6],[20,7],[20,8],[20,9],[20,10],[20,11],[20,12],[20,13],[21,13]],"5-19":[[21,3],[20,3],[20,4],[20,5],[20,6],[20,7],[20,8],[20,9],[20,10],[20,11],[20,12],[20,13],[19,13],[18,13],[17,13]],"15-44":[[33,25],[33,26],[33,27],[33,28],[33,29],[33,30],[33,31],[33,32],[33,33],[33,34],[33,35],[33,36],[33,37],[33,38],[33,39]],"4-6":[[5,5],[5,4],[5,3],[6,3],[7,3],[8,3],[9,3],[10,3],[11,3],[12,3],[13,3],[14,3],[15,3],[16,3],[17,3],[18,3],[19,3],[20,3],[21,3],[21,4],[21,5]],"13-17":[[39,21],[38,21],[37,21],[36,21],[35,21],[34,21],[33,21],[32,21],[31,21],[30,21],[29,21],[28,21],[27,21],[26,21],[25,21],[24,21],[23,21]],"3-20":[[17,3],[18,3],[19,3],[20,3],[20,4],[20,5],[20,6],[20,7],[20,8],[20,9],[20,10],[20,11],[20,12],[20,13],[19,13],[18,13],[17,13],[16,13],[15,13],[14,13],[13,13],[12,13],[11,13],[11,14],[11,15]],"29-34":[[27,21],[26,21],[25,21],[24,21],[24,20],[24,19],[24,18],[24,17],[23,17],[22,17],[21,17],[20,17],[19,17],[18,17],[17,17]],"31-47":[[11,43],[12,43],[13,43],[14,43],[15,43],[15,44],[15,45],[16,45],[17,45],[18,45],[19,45],[20,45],[21,45],[21,44],[22,44],[23,44],[24,44],[25,44],[26,44]],"3-26":[[17,3],[18,3],[19,3],[20,3],[20,4],[20,5],[20,6],[20,7],[20,8],[20,9],[20,10],[20,11],[20,12],[20,13],[20,14],[20,15],[20,16],[20,17],[21,17]],"29-35":[[27,21],[26,21],[25,21],[24,21],[23,21],[22,21],[21,21],[20,21],[19,21],[18,21],[18,22],[18,23],[17,23],[16,23],[15,23],[14,23],[13,23],[12,23],[11,23]],"34-36":[[15,17],[14,17],[13,17],[12,17],[12,18],[12,19],[12,20],[12,21],[12,22],[12,23],[11,23],[10,23],[9,23],[8,23],[7,23],[6,23],[5,23]],"35-37":[[11,25],[11,26],[11,27],[11,28],[11,29],[11,30],[11,31],[11,32],[11,33],[11,34],[11,35],[11,36],[11,37],[11,38],[12,38],[13,38],[14,38]],"47-48":[[26,44],[26,43],[26,42],[26,41],[26,40],[26,39],[27,39],[28,39],[29,39],[30,39],[31,39],[32,39],[33,39],[34,39],[35,39],[36,39],[36,40],[36,41],[37,41],[38,41],[39,41],[40,41],[41,41],[42,41],[43,41],[44,41],[44,42]],"4-5":[[5,5],[5,4],[5,3],[6,3],[7,3],[8,3],[9,3],[10,3],[11,3],[12,3],[13,3],[14,3],[15,3],[16,3],[17,3],[18,3],[19,3],[20,3],[21,3]],"22-23":[[5,21],[5,22],[5,23],[6,23],[7,23],[8,23],[9,23],[10,23],[11,23],[12,23],[12,24],[12,25],[11,25],[11,26],[11,27],[11,28],[11,29],[11,30],[11,31],[11,32],[11,33],[11,34],[11,35],[11,36],[11,37],[11,38],[11,39],[10,39],[9,39],[8,39],[8,40],[8,41],[7,41],[6,41],[5,41]],"15-28":[[33,23],[32,23],[31,23],[30,23],[30,22],[30,21],[29,21],[28,21],[27,21],[26,21],[25,21],[24,21],[23,21],[22,21],[21,21],[20,21],[19,21],[18,21],[18,22],[18,23],[18,24],[18,25],[18,26],[18,27],[17,27]],"4-34":[[5,5],[5,4],[5,3],[6,3],[7,3],[8,3],[9,3],[10,3],[11,3],[12,3],[13,3],[14,3],[15,3],[16,3],[17,3],[18,3],[19,3],[20,3],[20,4],[20,5],[20,6],[20,7],[20,8],[20,9],[20,10],[20,11],[20,12],[20,13],[20,14],[20,15],[20,16],[20,17],[19,17],[18,17],[17,17]],"34-37":[[15,17],[14,17],[13,17],[12,17],[12,18],[12,19],[12,20],[12,21],[12,22],[12,23],[12,24],[12,25],[11,25],[11,26],[11,27],[11,28],[11,29],[11,30],[11,31],[11,32],[11,33],[11,34],[11,35],[11,36],[11,37],[11,38],[12,38],[13,38],[14,38]],"31-42":[[11,43],[12,43],[13,43],[14,43],[15,43],[15,44],[15,45],[16,45],[17,45],[18,45],[19,45],[20,45],[21,45],[21,44],[22,44],[23,44],[24,44],[25,44],[26,44],[26,43],[26,42],[26,41],[26,40]],"4-35":[[5,7],[5,8],[5,9],[5,10],[5,11],[5,12],[5,13],[5,14],[5,15],[6,15],[6,16],[6,17],[6,18],[6,19],[6,20],[6,21],[6,22],[6,23],[7,23],[8,23],[9,23]],"29-44":[[29,23],[30,23],[31,23],[32,23],[32,24],[32,25],[33,25],[33,26],[33,27],[33,28],[33,29],[33,30],[33,31],[33,32],[33,33],[33,34],[33,35],[33,36],[33,37],[33,38],[33,39]],"3-9":[[17,3],[18,3],[19,3],[20,3],[21,3],[22,3],[23,3],[24,3],[25,3],[26,3],[27,3],[28,3],[29,3],[30,3],[31,3],[32,3],[33,3],[34,3],[35,3],[36,3],[37,3],[38,3],[39,3]],"3-11":[[17,3],[18,3],[19,3],[20,3],[21,3],[22,3],[23,3],[24,3],[25,3],[26,3],[27,3],[28,3],[29,3],[30,3],[31,3],[32,3],[33,3],[34,3],[35,3],[36,3],[37,3],[38,3],[39,3],[39,4],[39,5]],"3-16":[[17,3],[18,3],[19,3],[20,3],[20,4],[20,5],[20,6],[20,7],[20,8],[20,9],[20,10],[20,11],[20,12],[20,13],[20,14],[20,15],[20,16],[20,17],[21,17],[22,17],[23,17],[24,17],[25,17],[26,17],[27,17]],"5-20":[[21,3],[20,3],[20,4],[20,5],[20,6],[20,7],[20,8],[20,9],[20,10],[20,11],[20,12],[20,13],[19,13],[18,13],[17,13],[16,13],[15,13],[14,13],[13,13],[12,13],[11,13],[11,14],[11,15]],"16-21":[[27,17],[26,17],[25,17],[24,17],[23,17],[22,17],[21,17],[20,17],[19,17],[18,17],[17,17],[16,17],[15,17],[14,17],[13,17],[12,17],[11,17],[10,17],[9,17],[8,17],[7,17],[6,17],[5,17]],"34-38":[[15,17],[14,17],[13,17],[12,17],[12,18],[12,19],[12,20],[12,21],[12,22],[12,23],[12,24],[12,25],[11,25],[11,26],[11,27],[11,28],[11,29],[11,30],[11,31],[11,32],[11,33],[11,34],[11,35],[11,36],[11,37],[11,38],[12,38],[13,38],[14,38],[14,39],[14,40],[14,41],[14,42]],"23-42":[[5,41],[6,41],[7,41],[8,41],[9,41],[10,41],[11,41],[12,41],[13,41],[14,41],[15,41],[16,41],[17,41],[18,41],[19,41],[20,41],[20,40],[20,39],[21,39],[22,39],[23,39],[24,39],[25,39],[26,39],[27,39]],"3-22":[[17,3],[18,3],[19,3],[20,3],[20,4],[20,5],[20,6],[20,7],[20,8],[20,9],[20,10],[20,11],[20,12],[20,13],[20,14],[20,15],[20,16],[20,17],[19,17],[18,17],[17,17],[16,17],[15,17],[14,17],[13,17],[12,17],[11,17],[10,17],[9,17],[8,17],[7,17],[6,17],[6,18],[6,19],[5,19]],"34-41":[[15,17],[14,17],[13,17],[12,17],[12,18],[12,19],[12,20],[12,21],[12,22],[12,23],[12,24],[12,25],[11,25],[11,26],[11,27],[11,28],[11,29],[11,30],[11,31],[11,32],[11,33],[11,34],[11,35],[11,36],[11,37],[11,38],[12,38],[13,38],[14,38],[14,39],[14,40],[14,41],[15,41],[16,41],[17,41],[18,41],[19,41],[20,41],[20,40],[20,39],[20,38]],"31-44":[[11,43],[12,43],[13,43],[14,43],[14,42],[14,41],[15,41],[16,41],[17,41],[18,41],[19,41],[20,41],[20,40],[20,39],[21,39],[22,39],[23,39],[24,39],[25,39],[26,39],[27,39],[28,39],[29,39],[30,39],[31,39],[32,39],[33,39]],"14-45":[[33,21],[32,21],[32,22],[32,23],[32,24],[32,25],[33,25],[33,26],[33,27],[33,28],[33,29],[33,30],[33,31],[33,32],[33,33],[33,34],[33,35],[33,36],[33,37],[33,38],[33,39],[34,39],[35,39],[36,39],[36,40],[36,41],[37,41],[38,41],[39,41]],"4-26":[[5,7],[5,8],[5,9],[5,10],[5,11],[5,12],[5,13],[5,14],[5,15],[6,15],[6,16],[6,17],[7,17],[8,17],[9,17],[10,17],[11,17],[12,17],[13,17],[14,17],[15,17],[16,17],[17,17],[18,17],[19,17],[20,17],[21,17]],"13-28":[[39,21],[38,21],[37,21],[36,21],[35,21],[34,21],[33,21],[32,21],[31,21],[30,21],[29,21],[28,21],[27,21],[26,21],[25,21],[24,21],[23,21],[22,21],[21,21],[20,21],[19,21],[18,21],[18,22],[18,23],[18,24],[18,25],[18,26],[18,27],[17,27]],"27-31":[[21,27],[20,27],[19,27],[18,27],[17,27],[16,27],[15,27],[14,27],[13,27],[12,27],[11,27],[11,28],[11,29],[11,30],[11,31],[11,32],[11,33],[11,34],[11,35],[11,36],[11,37],[11,38],[11,39],[10,39],[9,39],[8,39],[8,40],[8,41],[9,41],[9,42],[9,43]],"4-33":[[5,7],[5,8],[5,9],[5,10],[5,11],[5,12],[5,13],[5,14],[5,15],[6,15],[6,16],[6,17],[6,18],[6,19],[6,20],[6,21],[6,22],[6,23],[7,23],[8,23],[9,23],[10,23],[11,23],[12,23],[13,23],[14,23],[15,23]],"36-38":[[5,23],[6,23],[7,23],[8,23],[9,23],[10,23],[11,23],[12,23],[12,24],[12,25],[11,25],[11,26],[11,27],[11,28],[11,29],[11,30],[11,31],[11,32],[11,33],[11,34],[11,35],[11,36],[11,37],[11,38],[12,38],[13,38],[14,38],[14,39],[14,40],[14,41],[14,42]],"34-46":[[15,17],[14,17],[13,17],[12,17],[12,18],[12,19],[12,20],[12,21],[12,22],[12,23],[12,24],[12,25],[11,25],[11,26],[11,27],[11,28],[11,29],[11,30],[11,31],[11,32],[11,33],[11,34],[11,35],[11,36],[11,37],[11,38],[12,38],[13,38],[14,38],[14,39],[14,40],[14,41],[14,42],[14,43],[14,44],[14,45],[14,46]],"14-47":[[33,21],[32,21],[32,22],[32,23],[32,24],[32,25],[33,25],[33,26],[33,27],[33,28],[33,29],[33,30],[33,31],[33,32],[33,33],[33,34],[33,35],[33,36],[33,37],[33,38],[33,39],[32,39],[31,39],[30,39],[29,39],[28,39],[27,39],[26,39],[26,40],[26,41],[26,42],[26,43],[26,44]],"29-45":[[29,23],[30,23],[31,23],[32,23],[32,24],[32,25],[33,25],[33,26],[33,27],[33,28],[33,29],[33,30],[33,31],[33,32],[33,33],[33,34],[33,35],[33,36],[33,37],[33,38],[33,39],[34,39],[35,39],[36,39],[36,40],[36,41],[37,41],[38,41],[39,41]],"19-24":[[15,13],[14,13],[13,13],[12,13],[12,14],[12,15],[12,16],[12,17],[12,18],[12,19],[12,20],[12,21],[12,22],[12,23],[12,24],[12,25],[11,25],[11,26],[11,27],[11,28],[11,29],[11,30],[11,31],[11,32],[11,33],[11,34],[11,35],[11,36],[11,37],[11,38],[11,39]],"10-42":[[38,18],[38,19],[38,20],[38,21],[37,21],[36,21],[35,21],[34,21],[33,21],[32,21],[32,22],[32,23],[32,24],[32,25],[33,25],[33,26],[33,27],[33,28],[33,29],[33,30],[33,31],[33,32],[33,33],[33,34],[33,35],[33,36],[33,37],[33,38],[33,39],[32,39],[31,39],[30,39],[29,39]],"1-9":[[5,3],[6,3],[7,3],[8,3],[9,3],[10,3],[11,3],[12,3],[13,3],[14,3],[15,3],[16,3],[17,3],[18,3],[19,3],[20,3],[21,3],[22,3],[23,3],[24,3],[25,3],[26,3],[27,3],[28,3],[29,3],[30,3],[31,3],[32,3],[33,3],[34,3],[35,3],[36,3],[37,3],[38,3],[39,3]],"4-16":[[5,7],[5,8],[5,9],[5,10],[5,11],[5,12],[5,13],[5,14],[5,15],[6,15],[6,16],[6,17],[7,17],[8,17],[9,17],[10,17],[11,17],[12,17],[13,17],[14,17],[15,17],[16,17],[17,17],[18,17],[19,17],[20,17],[21,17],[22,17],[23,17],[24,17],[25,17],[26,17],[27,17]],"29-46":[[27,21],[26,21],[25,21],[24,21],[23,21],[22,21],[21,21],[20,21],[19,21],[18,21],[18,22],[18,23],[18,24],[18,25],[18,26],[18,27],[17,27],[16,27],[15,27],[14,27],[13,27],[12,27],[11,27],[11,28],[11,29],[11,30],[11,31],[11,32],[11,33],[11,34],[11,35],[11,36],[11,37],[11,38],[12,38],[13,38],[14,38],[14,39],[14,40],[14,41],[14,42],[14,43],[14,44],[14,45],[14,46]],"1-11":[[5,3],[6,3],[7,3],[8,3],[9,3],[10,3],[11,3],[12,3],[13,3],[14,3],[15,3],[16,3],[17,3],[18,3],[19,3],[20,3],[21,3],[22,3],[23,3],[24,3],[25,3],[26,3],[27,3],[28,3],[29,3],[30,3],[31,3],[32,3],[33,3],[34,3],[35,3],[36,3],[37,3],[38,3],[39,3],[39,4],[39,5]],"4-24":[[5,7],[5,8],[5,9],[5,10],[5,11],[5,12],[5,13],[5,14],[5,15],[6,15],[6,16],[6,17],[6,18],[6,19],[6,20],[6,21],[6,22],[6,23],[7,23],[8,23],[9,23],[10,23],[11,23],[12,23],[12,24],[12,25],[11,25],[11,26],[11,27],[11,28],[11,29],[11,30],[11,31],[11,32],[11,33],[11,34],[11,35],[11,36],[11,37],[11,38],[11,39]],"4-25":[[5,7],[5,8],[5,9],[5,10],[5,11],[5,12],[5,13],[5,14],[5,15],[6,15],[6,16],[6,17],[6,18],[6,19],[6,20],[6,21],[6,22],[6,23],[7,23],[8,23],[9,23],[10,23],[11,23],[12,23],[12,24],[12,25],[11,25],[11,26],[11,27],[11,28],[11,29],[11,30],[11,31],[11,32],[11,33],[11,34],[12,34],[13,34],[14,34]],"29-32":[[27,21],[26,21],[25,21],[24,21],[23,21],[22,21],[21,21],[20,21],[19,21],[18,21],[18,22],[18,23],[18,24],[18,25],[18,26],[18,27],[17,27],[16,27],[15,27],[14,27],[13,27],[12,27],[11,27],[11,28],[11,29],[11,30],[11,31],[11,32],[11,33],[11,34],[11,35],[11,36],[11,37],[11,38],[12,38],[13,38],[14,38],[14,39],[14,40],[14,41],[14,42],[14,43],[14,44],[14,45],[14,46],[14,47],[14,48],[14,49],[14,50]],"3-24":[[17,3],[18,3],[19,3],[20,3],[20,4],[20,5],[20,6],[20,7],[20,8],[20,9],[20,10],[20,11],[20,12],[20,13],[20,14],[20,15],[20,16],[20,17],[19,17],[18,17],[17,17],[16,17],[15,17],[14,17],[13,17],[12,17],[12,18],[12,19],[12,20],[12,21],[12,22],[12,23],[12,24],[12,25],[11,25],[11,26],[11,27],[11,28],[11,29],[11,30],[11,31],[11,32],[11,33],[11,34],[11,35],[11,36],[11,37],[11,38],[11,39]],"33-45":[[17,23],[18,23],[18,22],[18,21],[19,21],[20,21],[21,21],[22,21],[23,21],[24,21],[25,21],[26,21],[27,21],[28,21],[29,21],[30,21],[31,21],[32,21],[32,22],[32,23],[32,24],[32,25],[33,25],[33,26],[33,27],[33,28],[33,29],[33,30],[33,31],[33,32],[33,33],[33,34],[33,35],[33,36],[33,37],[33,38],[33,39],[34,39],[35,39],[36,39],[36,40],[36,41],[37,41],[38,41],[39,41]],"3-46":[[17,3],[18,3],[19,3],[20,3],[20,4],[20,5],[20,6],[20,7],[20,8],[20,9],[20,10],[20,11],[20,12],[20,13],[20,14],[20,15],[20,16],[20,17],[19,17],[18,17],[17,17],[16,17],[15,17],[14,17],[13,17],[12,17],[12,18],[12,19],[12,20],[12,21],[12,22],[12,23],[12,24],[12,25],[11,25],[11,26],[11,27],[11,28],[11,29],[11,30],[11,31],[11,32],[11,33],[11,34],[11,35],[11,36],[11,37],[11,38],[12,38],[13,38],[14,38],[14,39],[14,40],[14,41],[14,42],[14,43],[14,44],[14,45],[14,46]],"11-48":[[38,6],[38,7],[38,8],[38,9],[38,10],[38,11],[38,12],[38,13],[38,14],[38,15],[38,16],[38,17],[38,18],[38,19],[38,20],[38,21],[37,21],[36,21],[35,21],[34,21],[33,21],[32,21],[32,22],[32,23],[32,24],[32,25],[33,25],[33,26],[33,27],[33,28],[33,29],[33,30],[33,31],[33,32],[33,33],[33,34],[33,35],[33,36],[33,37],[33,38],[33,39],[34,39],[35,39],[36,39],[36,40],[36,41],[37,41],[38,41],[39,41],[40,41],[41,41],[42,41],[43,41],[44,41],[44,42]],"43-44":[[11,19],[11,18],[11,17],[12,17],[13,17],[14,17],[15,17],[16,17],[17,17],[18,17],[19,17],[20,17],[21,17],[22,17],[23,17],[24,17],[24,18],[24,19],[24,20],[24,21],[25,21],[26,21],[27,21],[28,21],[29,21],[30,21],[31,21],[32,21],[32,22],[32,23],[32,24],[32,25],[33,25],[33,26],[33,27],[33,28],[33,29],[33,30],[33,31],[33,32],[33,33],[33,34],[33,35],[33,36],[33,37],[33,38],[33,39]],"30-45":[[17,21],[18,21],[19,21],[20,21],[21,21],[22,21],[23,21],[24,21],[25,21],[26,21],[27,21],[28,21],[29,21],[30,21],[31,21],[32,21],[32,22],[32,23],[32,24],[32,25],[33,25],[33,26],[33,27],[33,28],[33,29],[33,30],[33,31],[33,32],[33,33],[33,34],[33,35],[33,36],[33,37],[33,38],[33,39],[34,39],[35,39],[36,39],[36,40],[36,41],[37,41],[38,41],[39,41]],"4-10":[[5,7],[5,8],[5,9],[5,10],[5,11],[5,12],[5,13],[5,14],[5,15],[6,15],[6,16],[6,17],[7,17],[8,17],[9,17],[10,17],[11,17],[12,17],[13,17],[14,17],[15,17],[16,17],[17,17],[18,17],[19,17],[20,17],[21,17],[22,17],[23,17],[24,17],[25,17],[26,17],[27,17],[28,17],[29,17],[30,17],[31,17],[32,17],[33,17],[34,17],[35,17],[36,17],[37,17],[38,17],[39,17]],"5-24":[[21,3],[20,3],[20,4],[20,5],[20,6],[20,7],[20,8],[20,9],[20,10],[20,11],[20,12],[20,13],[20,14],[20,15],[20,16],[20,17],[19,17],[18,17],[17,17],[16,17],[15,17],[14,17],[13,17],[12,17],[12,18],[12,19],[12,20],[12,21],[12,22],[12,23],[12,24],[12,25],[11,25],[11,26],[11,27],[11,28],[11,29],[11,30],[11,31],[11,32],[11,33],[11,34],[11,35],[11,36],[11,37],[11,38],[11,39]],"34-45":[[17,17],[18,17],[19,17],[20,17],[21,17],[22,17],[23,17],[24,17],[24,18],[24,19],[24,20],[24,21],[25,21],[26,21],[27,21],[28,21],[29,21],[30,21],[31,21],[32,21],[32,22],[32,23],[32,24],[32,25],[33,25],[33,26],[33,27],[33,28],[33,29],[33,30],[33,31],[33,32],[33,33],[33,34],[33,35],[33,36],[33,37],[33,38],[33,39],[34,39],[35,39],[36,39],[36,40],[36,41],[37,41],[38,41],[39,41]],"8-48":[[33,5],[33,6],[33,7],[33,8],[33,9],[33,10],[33,11],[33,12],[33,13],[33,14],[33,15],[32,15],[32,16],[32,17],[32,18],[32,19],[32,20],[32,21],[32,22],[32,23],[32,24],[32,25],[33,25],[33,26],[33,27],[33,28],[33,29],[33,30],[33,31],[33,32],[33,33],[33,34],[33,35],[33,36],[33,37],[33,38],[33,39],[34,39],[35,39],[36,39],[36,40],[36,41],[37,41],[38,41],[39,41],[40,41],[41,41],[42,41],[43,41],[44,41],[44,42]],"1-10":[[5,3],[6,3],[7,3],[8,3],[9,3],[10,3],[11,3],[12,3],[13,3],[14,3],[15,3],[16,3],[17,3],[18,3],[19,3],[20,3],[20,4],[20,5],[20,6],[20,7],[20,8],[20,9],[20,10],[20,11],[20,12],[20,13],[20,14],[20,15],[20,16],[20,17],[21,17],[22,17],[23,17],[24,17],[25,17],[26,17],[27,17],[28,17],[29,17],[30,17],[31,17],[32,17],[33,17],[34,17],[35,17],[36,17],[37,17],[38,17],[39,17]],"13-32":[[39,21],[38,21],[37,21],[36,21],[35,21],[34,21],[33,21],[32,21],[32,22],[32,23],[32,24],[32,25],[33,25],[33,26],[33,27],[33,28],[33,29],[33,30],[33,31],[33,32],[33,33],[33,34],[33,35],[33,36],[33,37],[33,38],[33,39],[32,39],[31,39],[30,39],[29,39],[28,39],[27,39],[26,39],[25,39],[24,39],[23,39],[22,39],[21,39],[20,39],[20,40],[20,41],[19,41],[18,41],[17,41],[16,41],[15,41],[14,41],[14,42],[14,43],[14,44],[14,45],[14,46],[14,47],[14,48],[14,49],[14,50]],"4-47":[[5,7],[5,8],[5,9],[5,10],[5,11],[5,12],[5,13],[5,14],[5,15],[6,15],[6,16],[6,17],[6,18],[6,19],[6,20],[6,21],[6,22],[6,23],[7,23],[8,23],[9,23],[10,23],[11,23],[12,23],[12,24],[12,25],[11,25],[11,26],[11,27],[11,28],[11,29],[11,30],[11,31],[11,32],[11,33],[11,34],[11,35],[11,36],[11,37],[11,38],[12,38],[13,38],[14,38],[14,39],[14,40],[14,41],[14,42],[14,43],[14,44],[14,45],[15,45],[16,45],[17,45],[18,45],[19,45],[20,45],[21,45],[21,44],[22,44],[23,44],[24,44],[25,44],[26,44]],"11-46":[[38,6],[38,7],[38,8],[38,9],[38,10],[38,11],[38,12],[38,13],[38,14],[38,15],[38,16],[38,17],[38,18],[38,19],[38,20],[38,21],[37,21],[36,21],[35,21],[34,21],[33,21],[32,21],[32,22],[32,23],[32,24],[32,25],[33,25],[33,26],[33,27],[33,28],[33,29],[33,30],[33,31],[33,32],[33,33],[33,34],[33,35],[33,36],[33,37],[33,38],[33,39],[32,39],[31,39],[30,39],[29,39],[28,39],[27,39],[26,39],[26,40],[26,41],[26,42],[26,43],[26,44],[25,44],[24,44],[23,44],[22,44],[21,44],[21,45],[20,45],[19,45],[18,45],[17,45]],"8-23":[[33,5],[33,6],[33,7],[33,8],[33,9],[33,10],[33,11],[33,12],[33,13],[33,14],[33,15],[32,15],[32,16],[32,17],[32,18],[32,19],[32,20],[32,21],[32,22],[32,23],[32,24],[32,25],[33,25],[33,26],[33,27],[33,28],[33,29],[33,30],[33,31],[33,32],[33,33],[33,34],[33,35],[33,36],[33,37],[33,38],[33,39],[32,39],[31,39],[30,39],[29,39],[28,39],[27,39],[26,39],[25,39],[24,39],[23,39],[22,39],[21,39],[20,39],[20,40],[20,41],[19,41],[18,41],[17,41],[16,41],[15,41],[14,41],[13,41],[12,41],[11,41],[10,41],[9,41],[8,41],[7,41],[6,41],[5,41]],"3-48":[[17,3],[18,3],[19,3],[20,3],[20,4],[20,5],[20,6],[20,7],[20,8],[20,9],[20,10],[20,11],[20,12],[20,13],[20,14],[20,15],[20,16],[20,17],[21,17],[22,17],[23,17],[24,17],[25,17],[26,17],[27,17],[28,17],[29,17],[30,17],[31,17],[32,17],[32,18],[32,19],[32,20],[32,21],[32,22],[32,23],[32,24],[32,25],[33,25],[33,26],[33,27],[33,28],[33,29],[33,30],[33,31],[33,32],[33,33],[33,34],[33,35],[33,36],[33,37],[33,38],[33,39],[34,39],[35,39],[36,39],[36,40],[36,41],[37,41],[38,41],[39,41],[40,41],[41,41],[42,41],[43,41],[44,41],[44,42]]}};
