@@ -845,12 +845,12 @@ if(b.id==="zin")return zoom(1/1.25);if(b.id==="zout")return zoom(1.25);if(b.id==
 if(b.id==="hs"){showSteps=!showSteps;return P.kind==="read"?renderRead():renderSteps()}if(b.id==="rn"){W.k++;return renderRead()}if(b.id==="ra"){W.k=P.proof.length;return renderRead()}
 if(b.id==="prev"&&cur>0)return go(ALL[cur-1].id);if(b.id==="next"&&cur<ALL.length-1)return go(ALL[cur+1].id);
 if(b.id==="reset"){W.stop=true;return load(P.id)}});
-/* embed mode (?lock=N): the game's lock plate shows this proof; it hears "step" and "reset", and is told when the proof is won */
+/* embed mode (?lock=N): the game's lock plate shows this proof; it hears "step", "reset" and "solve" (Solve it for me: the game's Solved Puzzles tab), and is told when the proof is won */
 const EMBED=+(new URLSearchParams(location.search).get("lock")||0),toGame=m=>{if(EMBED&&parent!==window)parent.postMessage({euclid:1,id:EMBED,...m},"*")};
 if(EMBED){document.documentElement.classList.add("embed");document.documentElement.dataset.theme="light";setPal();
 new MutationObserver(()=>toGame({say:$("msg").textContent,prg:W&&W.won?"":$("prg").textContent})).observe($("msg"),{childList:true,characterData:true,subtree:true});
 new MutationObserver(()=>toGame({say:$("msg").textContent,prg:W&&W.won?"":$("prg").textContent})).observe($("prg"),{childList:true,characterData:true,subtree:true});
-addEventListener("message",e=>{const c=e.data&&e.data.cmd;if(c==="step"&&W&&!W.busy&&!W.won)runOps(null,true);if(c==="reset"&&P)load(P.id)})}
+addEventListener("message",e=>{const c=e.data&&e.data.cmd;if(c==="step"&&W&&!W.busy&&!W.won)runOps(null,true);if(c==="reset"&&P)load(P.id);if(c==="solve"&&W&&!W.busy)solveAll()})}
 if(typeof NOBOOT==="undefined")go(EMBED||"home");
 
 </script>
