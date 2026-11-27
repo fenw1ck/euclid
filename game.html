@@ -821,7 +821,13 @@ img=new Image();img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(`
 function drawThumb(id,cx,cy,r){const im=thumbImg(id);if(!im||!im.complete||!im.naturalWidth)return false;const w=r*1.7,h=w/im._ar;ctx.drawImage(im,cx-w/2,cy-h/2,w,h);return true}
 function lockFace(id,cx,cy,r){const ok=solved(id);if(id===1)drawL1(cx,cy,r,ok?FULL:BLANK,false);else if(id===4)drawL4(cx,cy,r,ok?FULL4:BLANK4,false);else if(ok)drawThumb(id,cx,cy,r);
  /* (27 Nov 2026) an unsolved lock shows which proposition it is: its number, over a faint ghost of the figure to build */
- else{ctx.save();ctx.globalAlpha=.28;drawThumb(id,cx,cy,r*.9);ctx.restore();ctx.fillStyle="rgba(58,36,16,.9)";ctx.font=`700 ${Math.max(7,r*.42)}px Georgia,serif`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("1."+id,cx,cy+r*.04);ctx.textAlign="left";ctx.textBaseline="alphabetic"}}
+ else startFigure(id,cx,cy,r)}
+/* an unsolved lock's plate shows the figure its proposition starts from (the proof's "Let…" figure: its given points and
+   lines, pts and segs0 in proofs.js), cut into the bronze as on the front doors */
+function startFigure(id,cx,cy,r){const p=PROOF(id);if(!p||!p.pts)return;const P=p.pts,ks=Object.keys(P),xs=ks.map(k=>P[k][0]),ys=ks.map(k=>P[k][1]),x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys),sc=r*1.25/Math.max(60,x1-x0,y1-y0),
+ Q=k=>[cx+(P[k][0]-(x0+x1)/2)*sc,cy+(P[k][1]-(y0+y1)/2)*sc],segs=(p.segs0||[]).map(k=>k.includes("|")?k.split("|"):[k[0],k.slice(1)]).filter(([a,b])=>P[a]&&P[b]);
+ ctx.lineCap="round";for(const[w,c]of[[Math.max(1.5,r*.05),"rgba(255,235,190,.35)"],[Math.max(1,r*.032),"#3b1f08"]]){ctx.strokeStyle=c;ctx.lineWidth=w;ctx.beginPath();for(const[a,b]of segs){const A=Q(a),B=Q(b);ctx.moveTo(A[0]+(c[0]==="r"?.6:0),A[1]+(c[0]==="r"?.6:0));ctx.lineTo(B[0]+(c[0]==="r"?.6:0),B[1]+(c[0]==="r"?.6:0))}ctx.stroke()}
+ ctx.fillStyle="#2a1404";for(const k of ks){if(/^[sq]\d/.test(k))continue;const q=Q(k);circ(q[0],q[1],Math.max(1.2,r*.045));ctx.fill()}}
 const hasLock=id=>id===1||id===4||homeLock(id);
 let lockFrom="doors",hallStack=[];
 function enterHall(id){const from=scene==="hall"?hallId:scene==="doors"?0:null;crossWay(from,id);const k=hallStack.length;if(k>=2&&hallStack[k-2]===id)hallStack.pop();else hallStack.push(id);setView(id,from);hallId=id;CAM={x:entryX(id,from),z:0,target:null};fadeTo("hall",800);setTimeout(()=>lockHint(id),900)}
@@ -987,6 +993,21 @@ function hallBG(key,draw){if(HBG&&HBG.key===key&&!HBG.low){ctx.drawImage(HBG.c,0
 function vignette(){const k=W+"|"+H+"|"+DPR;if(VIG&&VIG.k===k)return VIG.c;const c=document.createElement("canvas");c.width=Math.round(W*DPR);c.height=Math.round(H*DPR);const g=c.getContext("2d");g.setTransform(DPR,0,0,DPR,0,0);
  const vg=g.createRadialGradient(W/2,H*.47,Math.min(W,H)*.25,W/2,H*.47,Math.max(W,H)*.8);vg.addColorStop(0,"rgba(0,0,0,0)");vg.addColorStop(1,"rgba(0,0,0,.65)");g.fillStyle=vg;g.fillRect(0,0,W,H);VIG={k,c};return c}
 function doorGo(h){if(h.st==="amber"){if(hasLock(h.id))openLock(h.id);else{sfxChime(false);toast("This lock is still being made.")}}else if(h.st==="open"){if(h.id===0){crossWay(hallId,0);hallStack=[];fadeTo("doors",700)}else enterHall(h.id)}}
+/* (27 Nov 2026) a lock door that is not yet open is drawn like the temple's front doors: a carved wooden leaf with a brass
+   frame and two iron bands with studs (drawn once, leafCanvas), mapped onto the doorway in perspective, with the big bronze
+   lock plate in the middle showing the proposition's starting figure. An open doorway is dark: that room is unlocked. */
+let LEAFC=null;
+function leafCanvas(){if(LEAFC)return LEAFC;const w=200,h=420,c=document.createElement("canvas");c.width=w;c.height=h;const g=c.getContext("2d");
+ const gr=g.createLinearGradient(0,0,w,0);gr.addColorStop(0,"#4a2f1b");gr.addColorStop(.5,"#6a4428");gr.addColorStop(1,"#40281a");g.fillStyle=gr;g.fillRect(0,0,w,h);
+ g.strokeStyle="rgba(0,0,0,.35)";g.lineWidth=2;for(let k=1;k<5;k++){g.beginPath();g.moveTo(w*k/5,0);g.lineTo(w*k/5,h);g.stroke()}
+ g.strokeStyle="rgba(30,15,5,.18)";g.lineWidth=1;for(let k=0;k<26;k++){const xx=w*((k*.383)%1);g.beginPath();g.moveTo(xx,0);g.bezierCurveTo(xx+6,h*.3,xx-6,h*.6,xx+3,h);g.stroke()}
+ g.strokeStyle="#a77a3a";g.lineWidth=Math.max(3,w*.03);g.strokeRect(w*.05,h*.03,w*.9,h*.94);
+ for(const yy of[.3,.86]){g.fillStyle="#2d2a27";g.fillRect(0,h*yy,w,h*.03);g.fillStyle="#8a8278";for(let k=0;k<6;k++){g.beginPath();g.arc(w*(k+.5)/6,h*(yy+.015),Math.max(2,w*.013),0,7);g.fill()}}
+ return LEAFC=c}
+function mapOnDoor(img,at,clip){const a=at(.5,0),b=at(.5,1);if(dist(a,b)<6)return;const iw=img.width,ih=img.height,N=8;ctx.save();poly(clip);ctx.clip();
+ for(let i=0;i<N;i++){const u0=i/N,u1=(i+1)/N,TL=at(u0,0),TR=at(u1,0),BL=at(u0,1),ux=[(TR[0]-TL[0])/(iw/N),(TR[1]-TL[1])/(iw/N)],vy=[(BL[0]-TL[0])/ih,(BL[1]-TL[1])/ih];
+  ctx.save();poly([TL,at(Math.min(1,u1+.01),0),at(Math.min(1,u1+.01),1),BL]);ctx.clip();ctx.transform(ux[0],ux[1],vy[0],vy[1],TL[0]-ux[0]*u0*iw,TL[1]-ux[1]*u0*iw);const sx=Math.max(0,Math.floor(u0*iw)-1),sw=Math.min(iw-sx,Math.ceil(iw/N)+4);ctx.drawImage(img,sx,0,sw,ih,sx,0,sw,ih);ctx.restore()}
+ ctx.restore()}
 /* (27 Nov 2026) every doorway looks like the room it leads to, so doors are easy to tell apart: its outline (square
    corridor door, round library arch, low bedroom door, broad kitchen arch, pointed glass greenhouse arch), its frame
    colour, a sign over it (the room's mark, and the lock's number for a lock room), and, when it is open, a glimpse of
@@ -1002,27 +1023,27 @@ function doorShape(shape,M,z0,ar,FY,top){const pts=[M(FY,z0)],N=12,u=k=>z0+k/N*2
  else for(let k=0;k<=N;k++){const a=Math.PI*k/N;pts.push(M(top-Math.sin(a)*ar*.9,z0+(1-Math.cos(a))*ar))}
  pts.push(M(FY,z0+2*ar));return pts}
 function doorSign(kind,x,y,r,num){ctx.save();ctx.translate(x,y);ctx.fillStyle="rgba(245,232,200,.92)";ctx.strokeStyle="#4a3420";ctx.lineWidth=Math.max(1,r*.12);ctx.beginPath();if(ctx.roundRect)ctx.roundRect(-r*1.5,-r,r*3,r*2,r*.35);else ctx.rect(-r*1.5,-r,r*3,r*2);ctx.fill();ctx.stroke();
- ctx.strokeStyle="#3a2a18";ctx.fillStyle="#3a2a18";ctx.lineWidth=Math.max(1,r*.14);const q=r*.62,ox=num?-r*.62:0;ctx.translate(ox,0);ctx.beginPath();
+ ctx.strokeStyle="#3a2a18";ctx.fillStyle="#3a2a18";ctx.lineWidth=Math.max(1,r*.14);const q=r*.62,ox=num&&kind!=="none"?-r*.62:0;ctx.translate(ox,0);ctx.beginPath();
  if(kind==="library"){ctx.rect(-q*.9,-q*.6,q*.8,q*1.3);ctx.rect(q*.1,-q*.6,q*.8,q*1.3);ctx.stroke()}
  else if(kind==="bedroom"){ctx.rect(-q,0,q*2,q*.45);ctx.moveTo(-q,-q*.6);ctx.lineTo(-q,q*.7);ctx.moveTo(q,q*.45);ctx.lineTo(q,q*.7);ctx.stroke();ctx.fillRect(-q*.85,-q*.35,q*.6,q*.35)}
  else if(kind==="kitchen"){ctx.arc(0,q*.1,q*.7,0,Math.PI);ctx.closePath();ctx.fill();ctx.fillRect(-q*.9,-q*.2,q*1.8,q*.18);ctx.beginPath();ctx.moveTo(-q*.3,-q*.5);ctx.quadraticCurveTo(-q*.1,-q*.8,-q*.3,-q*1.05);ctx.moveTo(q*.2,-q*.5);ctx.quadraticCurveTo(q*.4,-q*.8,q*.2,-q*1.05);ctx.stroke()}
  else if(kind==="greenhouse"){ctx.fillStyle="#3a7a2a";ctx.ellipse(0,0,q*.45,q*.9,.6,0,7);ctx.fill();ctx.beginPath();ctx.moveTo(-q*.5,q*.7);ctx.lineTo(q*.4,-q*.6);ctx.stroke()}
  else if(kind==="out"){ctx.fillStyle="#d99a1a";ctx.arc(0,0,q*.45,0,7);ctx.fill();for(let k=0;k<8;k++){const a=k*Math.PI/4;ctx.moveTo(Math.cos(a)*q*.6,Math.sin(a)*q*.6);ctx.lineTo(Math.cos(a)*q*.95,Math.sin(a)*q*.95)}ctx.stroke()}
+ else if(kind==="none"){}
  else{ctx.moveTo(-q,q*.7);ctx.lineTo(q,q*.7);ctx.moveTo(-q*.55,q*.7);ctx.lineTo(-q*.55,-q*.6);ctx.moveTo(q*.55,q*.7);ctx.lineTo(q*.55,-q*.6);ctx.moveTo(-q,-q*.6);ctx.lineTo(q,-q*.6);ctx.stroke()}
- ctx.translate(-ox,0);if(num){ctx.fillStyle="#3a2a18";ctx.font=`700 ${r*1.1}px Georgia,serif`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(num,r*.62,r*.08);ctx.textBaseline="alphabetic";ctx.textAlign="left"}ctx.restore()}
+ ctx.translate(-ox,0);if(num&&kind==="none"){ctx.fillStyle="#3a2a18";ctx.font=`700 ${r*1.05}px Georgia,serif`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(num,0,r*.08);ctx.textBaseline="alphabetic";ctx.textAlign="left"}else if(num){ctx.fillStyle="#3a2a18";ctx.font=`700 ${r*1.1}px Georgia,serif`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(num,r*.62,r*.08);ctx.textBaseline="alphabetic";ctx.textAlign="left"}ctx.restore()}
 function hallDoor(pr,f,col,s,z0,id,t,gh,xc){const HW=1.5,FY=1.1,top=-.5,ar=.475,far=s===0,XSd=CURG.RW/1.5,zc=far?z0:z0+ar,st=doorState(id),kind=id===0?"out":roomType(id),DS=DSTYLE[kind]||DSTYLE.corridor,
  M=(y,z)=>far?pr((xc||0)+(-ar+(z-z0))/XSd,y,z0):pr(s*HW,y,z),pts=doorShape(DS.shape,M,z0,ar,FY,top),guide=GUIDE.next===id;gh=gh&&st==="open";
 if(st==="amber"||guide){ctx.save();ctx.globalCompositeOperation="lighter";const c=M(.1,zc),pu=Math.sin(t*(guide?5:3));glow(c[0],c[1],(guide?1.7:1.3)*f/zc,(guide?.45:.28)+.12*pu,[255,160,50]);const fl=far?pr(xc||0,FY,z0-.5):pr(s*1.05,FY,zc);ctx.fillStyle=`rgba(255,160,60,${(guide?.25:.12)+.05*pu})`;ctx.beginPath();ctx.ellipse(fl[0],fl[1],.55*f/zc,.12*f/zc,0,0,7);ctx.fill();ctx.restore()}
 if(st==="open"){const a=M(top,zc),b=M(FY,zc),g=ctx.createLinearGradient(a[0],a[1],b[0],b[1]),c=DS.glow;g.addColorStop(0,"#0d0908");g.addColorStop(1,`rgba(${c.map(v=>Math.round(v*.45*fog0(zc))).join(",")},1)`);ctx.fillStyle=g}else ctx.fillStyle=col(kind==="library"?[86,52,30]:kind==="bedroom"?[150,120,90]:kind==="kitchen"?[120,70,40]:[104,68,40],zc);poly(pts);ctx.fill();
 if(gh){ctx.fillStyle="rgba(120,200,140,.35)";poly(pts);ctx.fill();ctx.strokeStyle="rgba(230,255,235,.55)";ctx.lineWidth=Math.max(1,.02*f/zc);for(const zz of[.33,.66]){ctx.beginPath();ctx.moveTo(...M(FY,z0+zz*2*ar));ctx.lineTo(...M(top-.35,z0+zz*2*ar));ctx.stroke()}for(const yy of[.5,-.1]){ctx.beginPath();ctx.moveTo(...M(yy,z0));ctx.lineTo(...M(yy,z0+2*ar));ctx.stroke()}{const ps=GPICK(id);ctx.save();poly(pts);ctx.clip();ps.forEach((pl,i)=>{const zz=z0+(i+.6)/(ps.length+.2)*2*ar,b=M(FY,zz),k=f/(far?z0:zz);drawPlantS(ctx,pl,b[0],b[1],k*(.85+.3*((i*37)%3)/2),"mature",id*10+i)});ctx.restore();ctx.fillStyle="rgba(190,235,210,.16)";poly(pts);ctx.fill()}}
 if(kind==="kitchen"&&st==="open"){const q=[M(FY,z0),M(FY,z0+2*ar),M(FY+.0,z0+2*ar)];ctx.fillStyle="rgba(240,240,240,.18)";for(let k=0;k<6;k+=2){const a=M(FY-.02,z0+k/6*2*ar),b=M(FY-.02,z0+(k+1)/6*2*ar),c=M(FY-.22,z0+(k+1)/6*2*ar),d=M(FY-.22,z0+k/6*2*ar);poly([a,b,c,d]);ctx.fill()}}
-if(st!=="open"){ctx.strokeStyle=col([60,38,22],zc);ctx.lineWidth=1;for(const zz of[.24,.48,.72]){ctx.beginPath();ctx.moveTo(...M(FY,z0+zz*2*ar));ctx.lineTo(...M(top-.3,z0+zz*2*ar));ctx.stroke()}
-}
+if(st!=="open"){const yT=top-ar*.9;ctx.save();ctx.globalAlpha=Math.min(1,fog0(zc)*1.25);mapOnDoor(leafCanvas(id),(u,v)=>M(yT+v*(FY-yT),s<=0?z0+u*2*ar:z0+2*ar-u*2*ar),pts);ctx.restore()}
 {const yT=top-ar*.9,at=(u,v)=>M(yT+v*(FY-yT),s<=0?z0+u*2*ar:z0+2*ar-u*2*ar),aspect=Math.round((FY-yT)/(2*ar)*20)/20;if(id>0&&id<100)vineOnWall(id,at,pts,aspect,[.5,(.18-yT)/(FY-yT)]);
 /* the lock plate goes on after the vines (27 Nov 2026): they grow round it, so every lock's proposition shows in Dungeon Crawler too */
-if(st!=="open"){const c=M(.12,z0+ar),dz=far?z0:z0+ar,r=.19*f/dz;ctx.save();ctx.translate(c[0],c[1]);ctx.scale(far?1:.55,1);if(st==="amber"){ctx.save();ctx.globalCompositeOperation="lighter";glow(0,0,r*2.4,.6+.25*Math.sin(t*3),[255,190,70]);ctx.restore()}drawPlate(0,0,r);if(st==="amber"){ctx.strokeStyle=`rgba(255,210,90,${.7+.3*Math.sin(t*3)})`;ctx.lineWidth=Math.max(2,r*.1);ctx.beginPath();ctx.arc(0,0,r*1.18,0,7);ctx.stroke()}if(r>9){lockFace(id,0,0,r*FK);plateLabel(id,0,0,r)}else{ctx.fillStyle="#3a2410";ctx.font=`700 ${Math.max(6,r*.8)}px Georgia`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(id,0,0);ctx.textAlign="left";ctx.textBaseline="alphabetic"}if(st==="covered")coverPlate(r);ctx.restore()}if(id===0){ctx.fillStyle="rgba(255,210,150,.18)";poly(pts);ctx.fill()}
+if(st!=="open"){const c=M(.1,z0+ar),dz=far?z0:z0+ar,r=.27*f/dz;ctx.save();ctx.translate(c[0],c[1]);ctx.scale(far?1:.55,1);if(st==="amber"){ctx.save();ctx.globalCompositeOperation="lighter";glow(0,0,r*2.4,.6+.25*Math.sin(t*3),[255,190,70]);ctx.restore()}drawPlate(0,0,r);if(st==="amber"){ctx.strokeStyle=`rgba(255,210,90,${.7+.3*Math.sin(t*3)})`;ctx.lineWidth=Math.max(2,r*.1);ctx.beginPath();ctx.arc(0,0,r*1.18,0,7);ctx.stroke()}if(r>9){lockFace(id,0,0,r*FK);plateLabel(id,0,0,r)}else{ctx.fillStyle="#3a2410";ctx.font=`700 ${Math.max(6,r*.8)}px Georgia`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(id,0,0);ctx.textAlign="left";ctx.textBaseline="alphabetic"}if(st==="covered")coverPlate(r);ctx.restore()}if(id===0){ctx.fillStyle="rgba(255,210,150,.18)";poly(pts);ctx.fill()}
 ctx.strokeStyle=guide?`rgba(255,${170+Math.round(50*Math.sin(t*5))},40,1)`:col(DS.frame,zc);ctx.lineWidth=Math.max(2,(guide?.11:.07)*f/zc);poly(pts);ctx.stroke();
-{const sp=M(top-ar*1.25-.12,zc),r=Math.max(4,.12*f/zc);if(r>4.5){ctx.save();if(!far)ctx.translate(sp[0],sp[1]),ctx.scale(.6,1),ctx.translate(-sp[0],-sp[1]);doorSign(DS.mark,sp[0],sp[1],r,id>0&&id<100?String(id):"");ctx.restore()}}
+{const sp=M(top-ar*1.25-.12,zc),r=Math.max(4,.12*f/zc);if(r>4.5){ctx.save();if(!far)ctx.translate(sp[0],sp[1]),ctx.scale(.6,1),ctx.translate(-sp[0],-sp[1]);doorSign(id>0&&id<100&&st!=="open"?"none":DS.mark,sp[0],sp[1],r,id>0&&id<100?(st!=="open"?"1.":"")+id:"");ctx.restore()}}
 if(guide){const b=M(top-ar*1.25-.5,zc),k=f/zc;ctx.save();ctx.globalCompositeOperation="lighter";glow(b[0],b[1],.5*k,.5+.3*Math.sin(t*5),[255,190,60]);ctx.restore();ctx.fillStyle="#ffc23a";ctx.beginPath();ctx.moveTo(b[0],b[1]+.16*k);ctx.lineTo(b[0]-.1*k,b[1]);ctx.lineTo(b[0]+.1*k,b[1]);ctx.closePath();ctx.fill()}
 hallHits.push({poly:pts,kind:"door",id,st,map:at,gh})}}
 const fog0=z=>Math.exp(-(z-1)*.15);
