@@ -16,6 +16,9 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
 
 ## 2. The building model (how the map becomes architecture)
 
+> **Replaced 27 Nov 2026 by section 3f** (the house comes first, the locks are put in its rooms). The rules below describe the first two buildings and are kept as history: greenhouses are no longer junctions, and halls no longer get doors from the dependency map.
+
+
 - **Halls.** Every proposition *n* is a hall (a long corridor with statues, paintings and torches). You enter hall *n* by opening lock *n*.
 - **Doors in a hall.** Hall *n* only has doors to rooms that *n* opens: a door to *c* appears once everything else *c* relies on is solved, so *n* is the last thing needed. For example, hall 1 starts with just the door to 2; doors to 9, 10 and 11 appear once 3 and 8 (and 9, for 10) are solved. There are no ornamental doors, and no arch at the end: the end wall carries the hall's own finished figure.
 - **Wall art.** Paintings along the walls show finished figures of the next propositions ahead (from the lock engine); near the end of the book, where there are none ahead, earlier ones hang instead.
@@ -122,6 +125,8 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
 
 ## 3d. One fixed building (built 26 Nov 2026)
 
+> The plan described here (lock rooms in bands, routes for every dependency, greenhouse junctions with gardens) was **replaced on 27 Nov 2026** by the house in section 3f. Speed notes below still hold.
+
 - **Map first.** The whole tomb is one floor plan, the same for every player: `world.js`, made by `tools/make-world.py` (run it again only to change the building; its `SEED` and layout numbers are at the top). The plan is a grid of 3 m cells.
 - **Lock rooms** (1–48) are halls three cells long. The book's depths run in bands that snake left to right, right to left, then left to right again, so the plan is about square.
 - **Connecting rooms** (ids 100 and up) hold no lock. Every dependency is a walkable route from one lock room to the next. Routes share corridors, and where corridors cross they meet in a junction, so the building fits on one floor without stairs. Junctions where three or more ways meet are **greenhouses**. Each greenhouse's far wall is the gate to its garden, whose size is fixed in the plan (`GARDEN.plan(seed,{w,h})`).
@@ -142,6 +147,38 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
   - The map's plan is drawn once per change in progress.
   - Measured in headless Chrome at 2× (1280×800): a standing frame went from 40–143 ms to 10–30 ms, walking to 27–46 ms, and the map from 41 ms to under 1 ms.
 - **Copy back to Art-Assets:** `garden.js` gained the optional `{w,h}` size in `GARDEN.plan`, and `items.js` gained a shield drawing and the Ghost Draught's pale blue.
+
+## 3f. The house, Scholar and Dungeon Crawler, and the menu (built 27 Nov 2026)
+
+### The house (world.js v2, `tools/make-world.py`)
+- **The house comes first; the locks are put in its rooms.** The plan is no longer drawn from what relies on what. It is a house of rectangular rooms on the 3 m grid, each a corridor, library, bedroom, kitchen or greenhouse, each with its own width and depth (corridors 1 cell wide and 2 to 5 long, libraries up to 3 × 4, bedrooms square, and so on).
+- **Greenhouses are just another type of room.** They join nothing special and have no garden gate (the garden scene is no longer reached). Each still has the blue statue shop and the campfire in Dungeon Crawler.
+- **The front.** Locks 1 and 4 are the temple's front doors. Behind them are rooms 1 and 4, and both open into the entrance hall (room 100), so the whole house is open once either front door is.
+- **Where the locks are.** Every other proof n is a locked door in the wall of a connecting room (its *host*, `hosts` in world.js), leading into a room of its own (room n) that shows its finished figure. The house is grown outwards from the entrance hall, breadth first, and the locks are handed out in the book's order as it grows, so the book runs outward from the front doors. **A room can hold several locks** (e.g. the entrance hall holds 2 and 3). Some lock rooms have a second door, a shortcut into the next room, which opens with the same lock. 48 is a dead end off the room farthest from the front doors.
+- **Loops.** About a third of the pairs of connecting rooms that touch get a doorway, so the house has loops for the Euler walk.
+- The script checks that each proof's door can be reached as soon as everything it relies on is solved, and that 48 is the farthest lock (47 cells' walk; then 44, 45, 47 at 45).
+- world.js v2 lists every doorway with the cell it leaves from and the way it faces (`doors["a>b"]`); 0 is outside.
+
+### Rooms match the map
+- **Doors where the map has them.** Each doorway is on the left or right wall at its distance down the room, or on the far wall at its place across it (several far-wall doors stand side by side; the room's figure moves out of their way).
+- **The fourth wall.** You come into a room facing straight away from the door you came in by. That door is behind you, in the screen, and is not drawn; turn round (T) to see it, or use Back. (Walking backwards into the screen does not take you through it: the user asked for that to be left out on 27 Nov 2026, because once you have turned round the door is no longer behind you.)
+- **Sizes from the plan.** A room's depth is 3.5 m per cell down the way you face (plus 0.8 m) and its width 2.2 m per cell across (plus 0.8 m), so rooms are as wide and as deep as the map draws them (`roomGeo`). Things placed in a room (items, plates, the Euler path) are laid out for the way you face (`RITEMS`, `PLATES`, `PATHS` are kept per axis); a creature is kept inside the walls.
+- **Doors you can tell apart.** Each door looks like the room it leads to: a square stone door to a corridor, a round dark-wood arch to a library, a low cream door to a bedroom, a broad copper arch with black and white tiles to a kitchen, a pointed glass arch to a greenhouse, and a sign over it with the room's mark (and the lock's number for a lock room). Through an open door you see a glimpse of that room's colour.
+- **Floors by the book's depth.** Rooms holding proofs 1–12 have sandstone floors, 13–24 aventurine (green, glittering), 25–36 marble (white, veined), 37–48 Salamanca golden sandstone. A connecting room takes its earliest lock; one with none takes the part of the book the house was growing at. **Kitchens are always black and white linoleum.** Greenhouse paths are cut from the band's stone.
+
+### Scholar and Dungeon Crawler
+- **New game** on the title screen offers **Scholar** or **Dungeon Crawler** (over a saved game, tap twice to erase it). **Settings** switches between them at any time (`S.mode`; old saves play as Dungeon Crawler).
+- **Scholar:** only the locks and the rooms between them. No vines, traps, health bar, cooking, harvesting, items, chests, creatures, shop, ledges, Euler walk or lock timers. On the map, tap a lock you can open (or a room holding one) to go straight there and open it, or a solved one to go into its room.
+- **Dungeon Crawler:** everything, as before. A new game starts with the **Bronze Ax, the Iron Cauldron and the Bronze Sword** in the inventory (`startKit`, given once, `S.kit`), so the ax and sword no longer lean by the front doors.
+- **No traps in the rooms of the first four proofs:** rooms 1–4, the entrance hall, and any room whose walls hold lock 1, 2, 3 or 4 (`noTraps`).
+
+### HUD, menu and the marker
+- **The HUD** is the minimap, the health bar (Dungeon Crawler) and the compass heading. The clock, firewood and weapon moved to the Inventory tab; the keys to Settings.
+- **The minimap** shows this room and the rooms next to it, turned so the way you face is up. Doors are gaps in the walls: gold open, amber ready, grey covered. N (or a tap) still switches to this room from above.
+- **The menu** (☰ Menu, M, or Bag / I for Inventory) has four tabs: **Inventory, Map, Solved Puzzles, Settings**. The clock stops while it is open.
+- **Markers.** Tap a room on the map to put a marker on it (tap again to take it away). The way there runs through the rooms you can walk now; the door to go through next is lit amber with a beacon in the room, and pulses amber on the minimap. If it is behind you, the minimap says to turn round. Reaching the room clears the marker (`S.marker`, `GUIDE`).
+- **Solved Puzzles** shows every solved proof as its finished figure (the thumbnails); tap one to watch it solved for you: the site's own lock view (`index.html?lock=N`) plays "Solve it for me" (index.html now hears `"solve"`), with Step and Solve again.
+- **Settings:** the way to play; the keyboard (change any action's key: press Change, then the key; Reset the keys; saved in `S.keymap`); the mouse (look speed, invert up and down); the music (on/off, song, volume).
 
 ## 3e. The building's Euler puzzle (built 26 Nov 2026)
 
