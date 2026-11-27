@@ -179,6 +179,9 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
 - **Looking around moves the whole room.** The room's walls, floor and ceiling are kept as one picture per view; that picture now also depends on where looking has moved the vanishing point, so walls and floor move with the furniture when you look around (right mouse button, L, or the right stick). While the view moves it is redrawn at lower resolution, then sharp again.
 - **Armchairs** (libraries, some bedrooms) each hold 1 to 5 coins down the side of the cushion (fixed per chair). Not yet searched, a book lies open on the arm; tap the chair (or E beside it) to search it, and the book moves to the cushion (`S.chairs`). Scholar: no coins; the book stays on the arm.
 
+### A real 3D view (27 Nov 2026)
+- Rooms are seen through a true 3D camera: hold the right mouse button (or L, or a pad's right stick) and turn smoothly all the way round, at any angle. All four walls, the floor and ceiling, every door (including the one you came in by), the pictures and the furniture are drawn in proper perspective from wherever you stand. Walking (WASD, arrows) goes the way you are looking; tap the floor to walk there. You come into a room a step inside its door.
+
 ### HUD, menu and the marker
 - **The HUD** is the minimap, the health bar (Dungeon Crawler) and the compass heading. The clock, firewood and weapon moved to the Inventory tab; the keys to Settings.
 - **The minimap** shows this room and the rooms next to it, turned so the way you face is up. Doors are gaps in the walls: gold open, amber ready, grey covered. N (or a tap) still switches to this room from above.
