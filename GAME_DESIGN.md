@@ -1,12 +1,26 @@
 # Elemental Geometry: the Game (design)
 
-The site's 48 propositions become a tomb you explore. Each proposition is a lock. You open a lock by building its figure, and the opened door leads to the propositions that depend on it. The interactive part follows the site's rule: almost no words, and you learn by doing.
+The site's 48 propositions become a tomb you explore. Each proposition is a door lock. You open a lock by building its figure, and the opened door leads on into the house, towards the propositions that depend on it. The interactive part follows the site's rule: almost no words, and you learn by doing.
 
 File: `game.html` (one self-contained page, linked from the site's **Game** button). Everything is drawn and composed in code, so there are no image or sound files to host.
 
+## 0. Terms (27 Nov 2026)
+
+These are the words this document and the game use. Where an older section below says otherwise, this section wins.
+
+- **Proposition = door lock.** Each of the 48 propositions is a door lock: a gold plate with a circle in the upper centre, set in a door, carrying the proposition's starting figure. A proposition is not a room.
+- **Open a lock by solving its proposition.** Build the figure on the plate (the proposition's puzzle). When the puzzle is complete, the lock opens and the door is unlocked for good.
+- **Prerequisites.** A proposition's prerequisites are the propositions used inside its own proof: the ones it cites. They are `uses` in proofs.js, copied as `USES` in game.html (the two agree for all 48). For example, 1.5 uses 1.3 and 1.4; 1.1 and 1.4 use none.
+- **Door states** follow from that:
+  - *Covered*: some prerequisite is unsolved. The plate shows, but an iron cover sits over it, and the door cannot be opened.
+  - *Available* (amber): every prerequisite is solved (1.48, the last door, waits for every other proposition). The plate glows, and tapping the door opens its puzzle. In Dungeon Crawler, vines may have to be cut first.
+  - *Unlocked* (open): the proposition is solved. The doorway is dark and open, and you walk through.
+- **Rooms.** The house is made of rooms. Every room is one of five types: **hall**, library, bedroom, kitchen and greenhouse. A hall is a long stone room with statues, paintings and lights; the code and world.js call this type `corridor`. A room may hold several door locks in its walls, or none. Behind each lock is a small room of its own (room *n*), whose end wall shows that proposition's finished figure.
+- **Front doors.** 1.1 and 1.4 have no prerequisites, so they are available from the start, as the temple's two front doors.
+
 ## 1. Opening scene (built)
 
-About 38 seconds; skippable at any moment with any key, click or tap. The four lines of text ("When things are too big, too complex to be understood," / "we make connections, we simplify," / "we go back…" / "to the beginning.") are spread across the whole journey, starting in the night sky.
+About 38 seconds; skippable at any moment with any key, click or tap. The four lines of text ("When things are too big" / "to be understood," / "we make connections." / "Go back…" / "to the beginning.") are spread across the whole journey, starting in the night sky.
 
 1. Night sky. Many stars fade in. 48 of them are the propositions, laid out as on the relationship map, and the map's lines draw themselves. The other stars fade.
 2. The camera goes to 48, the most advanced proposition, and travels back along the chain of what it relies on, all the way to 1 (48 → 47 → 41 → 37 → 31 → 23 → 22 → 20 → 19 → 18 → 16 → 15 → 13 → 11 → 8 → 7 → 5 → 3 → 2 → 1). The road travelled glows gold.
@@ -19,13 +33,13 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
 > **Replaced 27 Nov 2026 by section 3f** (the house comes first, the locks are put in its rooms). The rules below describe the first two buildings and are kept as history: greenhouses are no longer junctions, and halls no longer get doors from the dependency map.
 
 
-- **Halls.** Every proposition *n* is a hall (a long corridor with statues, paintings and torches). You enter hall *n* by opening lock *n*.
+- **Locks, not halls.** (History: the first building made every proposition *n* a hall, entered by opening lock *n*. Now every proposition is a door lock, and a hall is just one of the five room types; see section 0.)
 - **Doors in a hall.** Hall *n* only has doors to rooms that *n* opens: a door to *c* appears once everything else *c* relies on is solved, so *n* is the last thing needed. For example, hall 1 starts with just the door to 2; doors to 9, 10 and 11 appear once 3 and 8 (and 9, for 10) are solved. There are no ornamental doors, and no arch at the end: the end wall carries the hall's own finished figure.
 - **Wall art.** Paintings along the walls show finished figures of the next propositions ahead (from the lock engine); near the end of the book, where there are none ahead, earlier ones hang instead.
-- **Door states.**
+- **Door states** (still the rule; see section 0).
   - *Open*: that proposition is solved.
-  - *Amber*: every proposition it relies on is solved, so it is a valid next step. Several doors can be amber at once.
-  - *Covered*: something it relies on is unsolved. The lock stays visible, but an iron cover sits over it.
+  - *Amber*: every proposition it uses is solved, so it is a valid next step. Several doors can be amber at once.
+  - *Covered*: something it uses is unsolved. The lock stays visible, but an iron cover sits over it.
 - **Greenhouses (junctions).** A proposition that relies on two or more others is reached through a greenhouse: a lush, abandoned glasshouse with ivy and fountains, some of them still working. Every parent hall opens into the same greenhouse. Inside, the child's door is covered until all its parents are solved, and paths lead back to each parent hall. If you walk towards the covered door you see what you still need. If you walk the other way you reach the missing proposition's hall.
   - Example: 5 relies on 3 and 4. Halls 3 and 4 both lead into the "5" greenhouse. If 4 is unsolved, the path out of the greenhouse leads back to the front doors.
 - **Front doors.** 1 and 4 rely on nothing, so they are the two front doors. 1 opens the left door. 4 opens the right door. Both locks glow amber from the start.
