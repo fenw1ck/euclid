@@ -21,11 +21,11 @@ canvas{display:block;width:100vw;height:100vh;touch-action:none}
 #bag .bh{display:flex;align-items:center;gap:10px;margin-bottom:8px}#bag .bh b{font-size:20px}#bag .bh span{flex:1;color:#d9c49a}
 #bag .bgrid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}@media(max-width:520px){#bag .bgrid{grid-template-columns:repeat(4,1fr)}}
 #bag .bslot{aspect-ratio:1;border-radius:10px;border:1px solid #6a5434;background:radial-gradient(#2a1f14,#17110b);box-shadow:inset 0 3px 8px rgba(0,0,0,.7);padding:2px;cursor:pointer}#bag .bslot.sel{border-color:#ffd27a;box-shadow:0 0 0 2px #ffd27a inset}#bag .bslot canvas{width:100%;height:100%}#bag .bslot:disabled{cursor:default}
-#bag .ward{display:grid;grid-template-columns:repeat(3,72px);grid-template-areas:". hat ." ". necklace ." "cape shirt gloves" ". pants rings" ". boots .";gap:6px;justify-content:center;margin:0 0 10px;padding:10px;border-radius:12px;background:radial-gradient(ellipse at 50% 40%,#5a4630,#2a1f14);box-shadow:inset 0 2px 10px rgba(0,0,0,.6)}
+#bag .ward{display:grid;grid-template-columns:repeat(3,72px);grid-template-areas:". hat ." "sword necklace shield" "cape shirt gloves" ". pants rings" ". boots .";gap:6px;justify-content:center;margin:0 0 10px;padding:10px;border-radius:12px;background:radial-gradient(ellipse at 50% 40%,#5a4630,#2a1f14);box-shadow:inset 0 2px 10px rgba(0,0,0,.6)}
 #bag .whol{position:relative;width:72px;height:72px;border-radius:40% 40% 46% 46%;border:1px solid #2a1f14;background:radial-gradient(circle at 50% 60%,#1c140c,#3a2c1c 70%);box-shadow:inset 0 6px 12px rgba(0,0,0,.85),inset 0 -2px 3px rgba(255,220,150,.18),0 1px 0 rgba(255,220,150,.15);padding:0;cursor:pointer;touch-action:none}
 #bag .whol i{position:absolute;left:0;right:0;bottom:3px;font:11px system-ui;color:#a8916a;font-style:normal;pointer-events:none}#bag .whol.on i{display:none}#bag .whol canvas{width:100%;height:100%;pointer-events:none}
 #bag .whol.on{box-shadow:inset 0 6px 12px rgba(0,0,0,.85),0 0 0 2px #c9a55a}#bag .whol.fit{box-shadow:inset 0 6px 12px rgba(0,0,0,.85),0 0 12px 3px #ffd27a}
-#bag .w-hat{grid-area:hat}.w-necklace{grid-area:necklace}#bag .w-cape{grid-area:cape}#bag .w-shirt{grid-area:shirt}#bag .w-gloves{grid-area:gloves}#bag .w-rings{grid-area:rings}#bag .w-pants{grid-area:pants}#bag .w-boots{grid-area:boots}
+#bag .w-hat{grid-area:hat}#bag .w-sword{grid-area:sword}#bag .w-shield{grid-area:shield}.w-necklace{grid-area:necklace}#bag .w-cape{grid-area:cape}#bag .w-shirt{grid-area:shirt}#bag .w-gloves{grid-area:gloves}#bag .w-rings{grid-area:rings}#bag .w-pants{grid-area:pants}#bag .w-boots{grid-area:boots}
 #bag .bslot{position:relative;touch-action:none}#bag .bslot em{position:absolute;right:4px;bottom:2px;font:600 12px system-ui;color:#ffd27a;font-style:normal}.bghost{position:fixed;width:72px;height:72px;z-index:20;pointer-events:none;filter:drop-shadow(0 6px 8px rgba(0,0,0,.6))}
 #cook,#keys{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:9;width:min(680px,94vw);max-height:90vh;overflow:auto;background:linear-gradient(#3a2a18,#22180e);border:2px solid #c9a55a;border-radius:14px;padding:12px 14px;box-shadow:0 10px 40px rgba(0,0,0,.7);display:none;color:#f3e6c4;font:15px/1.45 Georgia,serif}
 #cook .bh,#keys .bh{display:flex;align-items:center;gap:10px;margin-bottom:8px}#cook .bh b,#keys .bh b{font-size:20px}#cook .bh span{flex:1;color:#d9c49a}#cook canvas{width:100%;height:auto;display:block}#cook .bn{color:#cdb88e}
@@ -60,28 +60,28 @@ canvas{display:block;width:100vw;height:100vh;touch-action:none}
 <div id="tabs" style="display:none" role="tablist"><button class="btn" data-t="inv" role="tab">Inventory</button><button class="btn" data-t="map" role="tab">Map</button><button class="btn" data-t="solved" role="tab">Solved Puzzles</button><button class="btn" data-t="settings" role="tab">Settings</button><button class="btn" id="tabx" aria-label="Close the menu">✕</button></div>
 <div id="solved" class="dlg" role="dialog" aria-label="Solved puzzles"></div><div id="settings" class="dlg" role="dialog" aria-label="Settings"></div>
 <iframe id="lockf" title="Lock" allowtransparency="true"></iframe><div id="cap"></div>
-<script src="proofs.js?v=20261127f"></script>
-<script src="thumbs.js?v=20261127f"></script>
-<script src="plants.js?v=20261127f"></script>
-<script src="world.js?v=20261127f"></script>
-<script src="core.js?v=20261127f"></script>
-<script src="tools.js?v=20261127f"></script>
-<script src="vines.js?v=20261127f"></script>
-<script src="garden.js?v=20261127f"></script>
-<script src="furniture.js?v=20261127f"></script>
-<script src="floors.js?v=20261127f"></script>
-<script src="bedroom.js?v=20261127f"></script>
-<script src="containers.js?v=20261127f"></script>
-<script src="items.js?v=20261127f"></script>
-<script src="creatures.js?v=20261127f"></script>
-<script src="kitchen.js?v=20261127f"></script>
-<script src="traps.js?v=20261127f"></script>
-<script src="engine.js?v=20261127f"></script>
+<script src="proofs.js?v=20261127g"></script>
+<script src="thumbs.js?v=20261127g"></script>
+<script src="plants.js?v=20261127g"></script>
+<script src="world.js?v=20261127g"></script>
+<script src="core.js?v=20261127g"></script>
+<script src="tools.js?v=20261127g"></script>
+<script src="vines.js?v=20261127g"></script>
+<script src="garden.js?v=20261127g"></script>
+<script src="furniture.js?v=20261127g"></script>
+<script src="floors.js?v=20261127g"></script>
+<script src="bedroom.js?v=20261127g"></script>
+<script src="containers.js?v=20261127g"></script>
+<script src="items.js?v=20261127g"></script>
+<script src="creatures.js?v=20261127g"></script>
+<script src="kitchen.js?v=20261127g"></script>
+<script src="traps.js?v=20261127g"></script>
+<script src="engine.js?v=20261127g"></script>
 <script>
 "use strict";
 /* the build stamp (27 Nov 2026): every script above is loaded as name.js?v=BUILD, so after a deploy the browser never mixes
    cached old files with new ones (GitHub Pages lets browsers keep files for 10 minutes). Change it whenever any .js file changes. */
-const BUILD="20261127f";
+const BUILD="20261127g";
 /* ============================================================
    Elemental Geometry: the game. Phase 1.
    Title, opening scene, front doors, the Proposition 1 lock,
@@ -120,7 +120,12 @@ const rngW=rng;
 const SAVE_KEY="elemGeoGame1";
 const S={solved:[],vol:.6,muted:false,track:0,seenIntro:false,coins:0,inv:[],ax:0,vd:{}};
 try{Object.assign(S,JSON.parse(localStorage.getItem(SAVE_KEY)||"{}"))}catch(e){}
-function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(S))}catch(e){}}
+function save(){try{whereAmI()}catch(e){}try{localStorage.setItem(SAVE_KEY,JSON.stringify(S))}catch(e){}}
+/* where you are, for Continue (27 Nov 2026): the room, the wall you face and where you stand. Inventory and health
+   are in S already. In a lock, the greenhouse or the shop you are still "in" the room they open from. */
+function whereAmI(){if(typeof scene==="undefined")return;if(scene==="doors"){S.at=null;return}if(!["hall","lock","green"].includes(scene)||!hallId||!RV[hallId])return;
+ const cam=scene==="hall"?CAM:(S.at&&S.at.id===hallId?S.at:{x:0,z:Math.min(1.2,Math.max(0,roomGeo(hallId).RL-1.6))});
+ S.at={id:hallId,F:RV[hallId].F,x:+cam.x.toFixed(2),z:+cam.z.toFixed(2),stack:hallStack.slice(-12)}}
 const solved=i=>S.solved.includes(i);
 /* two ways to play (27 Nov 2026), chosen with New game and changed any time in Settings:
    Scholar: only the locks and the rooms between them. No vines, traps, health, cooking, harvest, items or creatures,
@@ -182,7 +187,6 @@ const ITEMS=[
 {id:"gloves-gilded",kind:"gloves",name:"Gilded Gauntlets",price:28,desc:"The fingertips glow faintly gold, as if they remember every figure."},
 {id:"shirt-chiton",kind:"shirt",name:"Linen Chiton",price:8,desc:"A plain linen tunic with a blue border."},
 {id:"pants-wool",kind:"pants",name:"Wool Trousers",price:8,desc:"Warm, scratchy and good for long corridors."},
-{id:"cauldron",kind:"cooking",name:"Iron Cauldron",price:40,desc:"Hang it over a greenhouse campfire to cook ingredients there (2 firewood a dish)."},
 {id:"soil",kind:"soil",name:"Sack of Soil",price:3,desc:"Garden loam. Pour it on a growing potato to earth it up: each time (up to three) gives two more potatoes at harvest. One use."},
 {id:"potion-weak",kind:"potion",name:"Weed Killer (weak)",price:6,cut:.4,desc:"Pale green. Pour it on a door's vines to wither four tenths of them. Kills any plant it touches. One use."},
 {id:"potion-strong",kind:"potion",name:"Weed Killer (strong)",price:14,cut:.7,desc:"Green. Pour it on a door's vines to wither seven tenths of them. Kills any plant it touches. One use."},
@@ -211,6 +215,15 @@ const ITEMS=[
 {id:"bronze-ax",kind:"tool",name:"Bronze Ax",price:0,desc:"Cuts back the vines on a door you may open, in ten strikes. Found by the front doors; never sold."},
 {id:"iron-ax",kind:"tool",name:"Iron Ax",price:30,desc:"A forged iron head on hickory: six strikes."},
 {id:"starmetal-ax",kind:"tool",name:"Starmetal Ax",price:60,desc:"Forged from a fallen star: three strikes."}];
+/* item tiers (27 Nov 2026): the weak, middling and strong versions of the same thing are found (and sold) only in
+   rooms of a band of propositions. Low 1–30, medium 20–40, strong 30–48 (the bands overlap so a step up comes
+   gradually). Rooms use lvl(n), the proposition number of the room. Untiered items (clothes, treasure, scrolls) go anywhere. */
+const TIERS={low:[1,30],mid:[20,40],high:[30,48]};
+const ITEMTIER={"potion-weak":"low","health-minor":"low","necklace-fire-weak":"low","necklace-poison-weak":"low","necklace-heal-gentle":"low","shield-bronze":"low",
+ "potion-strong":"mid","potion-ghost":"mid","health-greater":"mid","necklace-fire-strong":"mid","necklace-poison-strong":"mid","necklace-heal-effective":"mid","iron-ax":"mid",
+ "potion-strongest":"high","health-supreme":"high","necklace-fire-powerful":"high","necklace-poison-powerful":"high","necklace-heal-reckless":"high","starmetal-ax":"high","crown-elements":"high"};
+for(const it of ITEMS)if(ITEMTIER[it.id])it.tier=ITEMTIER[it.id];
+const tierOK=(it,n)=>{if(!it||!it.tier)return true;const[a,b]=TIERS[it.tier];return n>=a&&n<=b};
 /* coins in a chest: 1–20, weighted by the proposition number n (1–48). n=1 gives mostly 1–2; n=47 mostly 18–20. */
 function coinRoll(n,r=Math.random){const m=1+19*(clamp(n,1,48)-1)/47,sd=1.6,w=[];let tot=0;for(let k=1;k<=20;k++){const x=Math.exp(-((k-m)**2)/(2*sd*sd));w.push(x);tot+=x}let u=r()*tot;for(let k=1;k<=20;k++){u-=w[k-1];if(u<=0)return k}return 20}
 
@@ -833,7 +846,7 @@ function startFigure(id,cx,cy,r){const p=PROOF(id);if(!p||!p.pts)return;const P=
  ctx.fillStyle="#2a1404";for(const k of ks){if(/^[sq]\d/.test(k))continue;const q=Q(k);circ(q[0],q[1],Math.max(1.2,r*.045));ctx.fill()}}
 const hasLock=id=>id===1||id===4||homeLock(id);
 let lockFrom="doors",hallStack=[];
-function enterHall(id){const from=scene==="hall"?hallId:scene==="doors"?0:null;crossWay(from,id);const k=hallStack.length;if(k>=2&&hallStack[k-2]===id)hallStack.pop();else hallStack.push(id);setView(id,from);hallId=id;CAM={x:entryX(id,from),z:Math.min(1.2,Math.max(0,roomGeo(id).RL-1.6)),target:null};VIEW.ty=VIEW.yaw=0; /* a step inside the door */fadeTo("hall",800);setTimeout(()=>lockHint(id),900)}
+function enterHall(id){const from=scene==="hall"?hallId:scene==="doors"?0:null;crossWay(from,id);const k=hallStack.length;if(k>=2&&hallStack[k-2]===id)hallStack.pop();else hallStack.push(id);setView(id,from);hallId=id;CAM={x:entryX(id,from),z:Math.min(1.2,Math.max(0,roomGeo(id).RL-1.6)),target:null};VIEW.ty=VIEW.yaw=0; /* a step inside the door */fadeTo("hall",800);setTimeout(()=>{lockHint(id);save()},900)}
 /* (27 Nov 2026) coming into a room whose walls hold a lock you can open now: say which, and where it is from where you stand */
 function lockHint(n){if(scene!=="hall"||hallId!==n)return;const v=curView(),L=v.doors.filter(d=>d.id>0&&d.id<100&&doorState(d.id)==="amber"&&hasLock(d.id));if(!L.length)return;
  const where=d=>d.wall==="far"?"ahead":d.wall==="near"?"behind you (turn round)":d.s<0?"on your left":"on your right";toast(L.map(d=>`Lock 1.${d.id} ${NAMES[d.id]||""}: ${where(d)}`).join(" · "))}
@@ -867,7 +880,7 @@ function drawPlantS(g,pl,x,y,s,stage,seed,o){if(!(s>1))return;stage=stage||"matu
 const FIXT={};
 function fixturesOf(n){if(FIXT[n])return FIXT[n];const RT=roomType(n),HS=Object.assign({},hallStyle(n),ROOMLOOK[RT]||{}),Fc=canonF(n),fr=vframe(n,Fc),G=roomGeo(n,Fc),XS=G.RW/1.5,ZS=G.RL/13,HW=1.5,
  vc=viewOf(n,Fc),slots=doorSlots(vc.doors,ZS,XS),busy=(s,a,b)=>slots.some(([ss,z0])=>ss===s&&z0<b&&z0+.95>a),busyR=(s0,a,b)=>slots.some(([ss,z0])=>ss===s0&&z0*ZS<b&&z0*ZS+.95>a),
- L=[],R0=fr.R,wall=(s,zm,o)=>L.push(Object.assign({wall:1,nrm:[s*R0[0],s*R0[1]],p:toP(fr,s*G.RW,zm)},o)),floor=(xm,zm,o)=>L.push(Object.assign({p:toP(fr,xm,zm)},o)),inward=s=>[-s*R0[0],-s*R0[1]];
+ L=[],R0=fr.R,wall=(s,zm,o)=>L.push(Object.assign({wall:1,nrm:[s*R0[0],s*R0[1]],p:toP(fr,s*G.RW,zm)},o)),floor=(xm,zm,o)=>L.push(Object.assign({p:toP(fr,xm,zm),cx:xm,cz:zm},o)),inward=s=>[-s*R0[0],-s*R0[1]];
  L.ground=[];
  /* lights, each on a pillar (no pillars in the glass greenhouse) */
  for(const zw of[2,6,9,12])for(const s of[-1,1])if(!busy(s,zw-.05,zw+.25))wall(s,zw*ZS,{kind:"pillar",len:.2});
@@ -891,17 +904,35 @@ function fixturesOf(n){if(FIXT[n])return FIXT[n];const RT=roomType(n),HS=Object.
   for(let z=.2;z<G.RL;z+=.42)for(let k=0;k<2;k++){const x0=(-.5+k*.5+(Rg()-.5)*.06)*XS,x1=x0+(.44+(Rg()-.5)*.05)*XS,z0=z+(Rg()-.5)*.04,z1=z+.36+(Rg()-.5)*.04,c=BANDSTONE[roomBand(n)].pal[Math.floor(Rg()*4)].map(v=>v*(.9+Rg()*.15));L.ground.push({kind:"tile",pts:pts(x0,x1,z0,z1),col:c})}
   for(let i=0;i<160;i++){const z=Rg()*G.RL,x=(Rg()<.5?-1:1)*(.55+Rg()*.38)*XS;L.ground.push({kind:"tuft",pts:[toP(fr,x,z)],col:Rg()<.5?[110,160,70]:[70,120,50]})}
   floor(0,Math.min(3.4,G.RL*.4),{kind:"campfire"})}
- if(RT==="library"&&window.FURNITURE)[[-1,5.0],[1,8.4],[-1,11.4],[1,3.2]].forEach(([s,z],i)=>{if(busy(s,z-.5,z+1.2))return;floor(s*(HW-.4)*XS,(z+.75)*ZS,{kind:"table",seed:n+i});floor(s*(HW-.55)*XS,z*ZS,{kind:"chair",seed:n*7+i,face:inward(s),key:n+":c"+i})});
- if(RT==="kitchen"){const K=kitchenOf(n);floor(0,G.RL-.55,{kind:"stove",shelf:K.shelf});floor((n%2?-1:1)*G.RW*.42,G.RL*.5,{kind:K.island?"island":"ktable",rack:K.rack})}
- if(RT==="bedroom"&&window.BEDROOM){const B=bedLayout(n),xs=B.beds>1?[-G.RW*.42,G.RW*.42]:[0],types=[B.t1,B.t2],zb=G.RL-1.55,zn=G.RL-.3;
-  xs.forEach((x,i)=>floor(x,zb+i*.001,{kind:"bed",type:types[i],seed:n+i,head:Fc}));
-  (B.beds>1?[0]:[B.side*.86]).forEach((x,i)=>floor(x,zn,{kind:"nightstand",seed:n+i,light:B.light1}));if(B.beds>1)floor(xs[1]+.86*B.side,zn,{kind:"nightstand",seed:n+2,light:B.light2});
-  const mi=types.slice(0,xs.length).findIndex(tp=>tp!=="bunk"&&tp!=="canopy");if(B.mobile&&mi>=0)floor(xs[mi],G.RL-1.0-.01,{kind:"mobile",theme:B.mobile,seed:n});
-  if(B.chair){const s=-B.side;for(let z=1.0;z<G.RL-2;z+=.3)if(!busyR(s,z-.5,z+.6)){floor(s*(G.RW-.5),z,{kind:"chair",seed:n*7,face:inward(s),key:n+":cb"});break}}}
+ if(RT==="library"&&window.FURNITURE)[[-1,5.0],[1,8.4],[-1,11.4],[1,3.2]].forEach(([s,z],i)=>{if(busy(s,z-.5,z+1.2))return;floor(s*(G.RW-.26),(z+.75)*ZS,{kind:"table",seed:n+i,top:.63});floor(s*(G.RW-.4),z*ZS,{kind:"chair",seed:n*7+i,face:inward(s),key:n+":c"+i})});
+ if(RT==="kitchen"){const K=kitchenOf(n);floor(0,G.RL-.34,{kind:"stove",shelf:K.shelf});
+  {let s=n%2?-1:1,zc=null;for(let t=0;t<2&&zc==null;t++,s=-s)for(const z of[G.RL*.5,G.RL*.4,G.RL*.6,G.RL*.3,G.RL*.7])if(!busyR(s,z-.85,z+.85)){zc=z;break}if(zc==null){zc=G.RL*.5;s=n%2?-1:1}
+   floor(s*(G.RW-.38),zc,{kind:K.island?"island":"ktable",rack:K.rack,top:K.island?.9:.76,along:fr.F})}}
+ if(RT==="bedroom"&&window.BEDROOM){const B=bedLayout(n),types=[B.t1,B.t2];
+  /* (27 Nov 2026) the beds stand with their headboards against an end wall, facing out into the room, clear of its
+     doorways: the far wall if they fit there, else the near one, else one bed fewer. Each bed has a bedside table at
+     its side against the same wall. zb is the middle of a 2.05 m bed. */
+  const lim=G.RW-.66,doorX=w=>slots.filter(([s0])=>s0===w).map(([,u])=>u*XS),clear=(w,a,b)=>doorX(w).every(u=>u+.5<=a||u-.5>=b)&&a>=-G.RW-.01&&b<=G.RW+.01,
+   fit=(w,k)=>{const want=k>1?[-G.RW*.42,G.RW*.42]:[0],beds=[],ns=[];
+    for(const x0 of want){let best=null;for(let x=-lim;x<=lim+1e-6;x+=.1){if(!clear(w,x-.66,x+.66)||(Math.abs(x)+.66>G.RW-.3&&busyR(Math.sign(x),w?0:G.RL-2.15,w?2.15:G.RL))||beds.some(b=>Math.abs(b-x)<1.32+.62))continue;if(best==null||Math.abs(x-x0)<Math.abs(best-x0))best=x}if(best==null)return null;beds.push(best)}
+    for(const x of beds){const sd=beds.length>1?Math.sign(x)||B.side:B.side;for(const s0 of[sd,-sd]){const nx=x+s0*.9;if(clear(w,nx-.26,nx+.26)&&!beds.some(b=>Math.abs(b-nx)<.66+.25)&&!ns.some(q=>Math.abs(q-nx)<.52)){ns.push(nx);break}}}
+    return{w,beds,ns}},
+   P=fit(0,B.beds)||fit(9,B.beds)||fit(0,1)||fit(9,1)||{w:0,beds:[0],ns:[B.side*.9]},near=P.w===9,
+   zz=z=>near?G.RL-z:z,zb=zz(G.RL-1.05),zn=zz(G.RL-.21),head=near?[-Fc[0],-Fc[1]]:Fc,xs=P.beds;
+  xs.forEach((x,i)=>floor(x,zb+i*.001,{kind:"bed",type:types[i],seed:n+i,head}));
+  P.ns.forEach((x,i)=>floor(x,zn,{kind:"nightstand",seed:n+(i?2:0),light:i?B.light2:B.light1,top:.6}));
+  const mi=types.slice(0,xs.length).findIndex(tp=>tp!=="bunk"&&tp!=="canopy");if(B.mobile&&mi>=0)floor(xs[mi],zz(G.RL-1.0-.01),{kind:"mobile",theme:B.mobile,seed:n});
+  if(B.chair){const s=-B.side;for(let z=near?2.6:1.0;z<(near?G.RL-.6:G.RL-2);z+=.3)if(!busyR(s,z-.5,z+.6)){floor(s*(G.RW-.4),z,{kind:"chair",seed:n*7,face:inward(s),key:n+":cb"});break}}}
+ /* a place against a side wall, clear of doorways and of other furniture, for a chest (its x, z in this frame) */
+ L.wallSpot=(n0,w,R)=>{const ok=(s,z)=>!busyR(s,z-w/2-.1,z+w/2+.1)&&!L.some(o=>!o.wall&&o.cx!=null&&Math.abs(o.cx-s*G.RW)<1.1&&Math.abs(o.cz-z)<w/2+.55);
+  const s0=R()<.5?-1:1,z0=1.3+R()*Math.max(.5,G.RL-2.6);for(let t=0;t<40;t++){const s=t%2?-s0:s0,z=clamp(z0+(t>>1)*.3*((t>>1)%2?1:-1)*Math.ceil((t>>1)/2),.6,G.RL-.6);if(ok(s,z))return[s*(G.RW-.32),z]}
+  return[s0*(G.RW-.32),z0]};
  return FIXT[n]=L}
 function fixView(n){const F=viewF(n),k=fkey(F),X=fixturesOf(n);if(X._vk===k)return X;const fr=vframe(n,F);
  for(const o of X){const v=toV(fr,o.p);o.x=v.x;o.z=v.z;if(o.wall){const a=vdot(o.nrm,F),b=vdot(o.nrm,fr.R);o.side=b>.5?1:b<-.5?-1:0;o.far=a>.5;o.near=a<-.5}
-  if(o.face){o.fs=vdot(o.face,fr.R);o.ff=vdot(o.face,F)}if(o.head){o.hs=vdot(o.head,fr.R);o.hf=vdot(o.head,F)}}
+  if(o.face){o.fs=vdot(o.face,fr.R);o.ff=vdot(o.face,F)}if(o.head){o.hs=vdot(o.head,fr.R);o.hf=vdot(o.head,F)}
+  if(o.kind==="bed"){if(Math.abs(o.hs)>.5)o.z-=.5;else{o.x+=.1*o.hs;o.z+=.1*o.hf}} /* the front-view art is flat: stand it nearer its head, so the headboard meets the wall it is against */
+  if(o.along)o.end=Math.abs(vdot(o.along,fr.R))<.5}
  for(const g of X.ground)g.v=g.pts.map(p=>toV(fr,p));X._vk=k;return X}
 const fixFind=kind=>fixView(hallId).find(o=>o.kind===kind);
 /* a picture, shelf or light on the far wall: flat, facing you */
@@ -930,6 +961,8 @@ function chairBook(x,y,s,view,mirror,searched){ctx.save();ctx.translate(x,y);if(
 function drawChair(o,p,k){const view=Math.abs(o.fs)>.5?"side":"front",mirror=view==="side"&&o.fs<0,s=.85*k,done=!!S.chairs[o.key];
  FURNITURE.armchair(ctx,p[0],p[1],s,o.seed,{view,mirror});chairBook(p[0],p[1],s,view,mirror,done);
  hallHits.push({kind:"chair",key:o.key,poly:[[p[0]-s*.55,p[1]-s*1.1],[p[0]+s*.55,p[1]-s*1.1],[p[0]+s*.55,p[1]],[p[0]-s*.55,p[1]]]})}
+/* a kitchen counter along a side wall is seen from its end: squeeze it to its depth (0.7 m of its 1.5 m) */
+function endOn(o,p,fn){if(!o.end)return fn();ctx.save();ctx.translate(p[0],p[1]);ctx.scale(.46,1);ctx.translate(-p[0],-p[1]);fn();ctx.restore()}
 function drawFixtures(addR,pr,P,col,quad,f,CZ,ZN,XS,ZF,t,HS,RT){const X=fixView(hallId),HW=1.5,FY=1.1,CY=-1.75,ZFr=ZF-CZ;
  for(const o of X){
   if(o.wall){
@@ -945,10 +978,10 @@ function drawFixtures(addR,pr,P,col,quad,f,CZ,ZN,XS,ZF,t,HS,RT){const X=fixView(
     case"plant":{if(S.picked[o.key])break;const h=o.sz*k,stg=plantStage(o.key,o.seed);drawPlantS(ctx,o.pl,p[0],p[1],h,stg,o.seed,{hill:S.hill[o.key]||0});if(stg==="mature")readyCue(o.pl,o.key,o.seed,p[0],p[1]-h*1.02,h,t);hallHits.push({kind:"plant",key:o.key,pl:o.pl,seed:o.seed,x:o.x,z:o.z,poly:[[p[0]-h*.35,p[1]-h],[p[0]+h*.35,p[1]-h],[p[0]+h*.35,p[1]],[p[0]-h*.35,p[1]]]});break}
     case"table":FURNITURE.sideTable(ctx,p[0],p[1],.5*k,o.seed,{lamp:true,t});break;
     case"chair":drawChair(o,p,k);break;
-    case"campfire":KITCHEN.campfire(ctx,p[0],p[1],.55*k,t,{});if(!scholar()){if(S.inv.includes("cauldron"))KITCHEN.cauldron(ctx,p[0],p[1],.55*k,t,{fill:"#6a5030",bubbling:!!(COOK&&COOK.run)});hallHits.push({kind:"cook",src:"fire",poly:[[p[0]-.4*k,p[1]-.9*k],[p[0]+.4*k,p[1]-.9*k],[p[0]+.4*k,p[1]+4],[p[0]-.4*k,p[1]+4]]})}break;
+    case"campfire":KITCHEN.campfire(ctx,p[0],p[1],.55*k,t,{});KITCHEN.cauldron(ctx,p[0],p[1],.55*k,t,{fill:"#6a5030",bubbling:!!(COOK&&COOK.run)});if(!scholar()){hallHits.push({kind:"cook",src:"fire",poly:[[p[0]-.4*k,p[1]-.9*k],[p[0]+.4*k,p[1]-.9*k],[p[0]+.4*k,p[1]+4],[p[0]-.4*k,p[1]+4]]})}break;
     case"stove":if(o.shelf)KITCHEN.shelf(ctx,p[0]+1.1*k,p[1]-1.7*k,.8*k,hallId);KITCHEN.stove(ctx,p[0],p[1],k*1.15,hallId,{t,open:!!(COOK&&COOK.src==="oven")});if(!scholar())hallHits.push({kind:"cook",src:"oven",poly:[[p[0]-.6*k,p[1]-.9*k],[p[0]+.6*k,p[1]-.9*k],[p[0]+.6*k,p[1]],[p[0]-.6*k,p[1]]]});break;
-    case"island":KITCHEN.island(ctx,p[0],p[1],k*.9,hallId,{rack:o.rack});break;
-    case"ktable":KITCHEN.table(ctx,p[0],p[1],k*.9,hallId);break;
+    case"island":endOn(o,p,()=>KITCHEN.island(ctx,p[0],p[1],k*.9,hallId,{rack:o.rack}));break;
+    case"ktable":endOn(o,p,()=>KITCHEN.table(ctx,p[0],p[1],k*.9,hallId));break;
     case"bed":{const side=Math.abs(o.hs)>.5;BEDROOM.bed(ctx,p[0],p[1],k,o.type,o.seed,side?{view:"side",mirror:o.hs>0}:{view:"front"});break}
     case"nightstand":BEDROOM.nightstand(ctx,p[0],p[1],k,o.seed,{light:o.light,t});break;
     case"mobile":{const q=P(o.x,CY,r);BEDROOM.mobile(ctx,q[0],q[1],1.3*k,o.theme,o.seed,t);break}}},o.x)}}
@@ -1667,6 +1700,8 @@ const KINDROOMS={scroll:{library:3,corridor:1,bedroom:1,greenhouse:0},necklace:{
  sword:{corridor:2,bedroom:1,library:0,greenhouse:0},cape:{bedroom:3,corridor:1,library:0,greenhouse:0},gloves:{bedroom:2,corridor:1,library:1,greenhouse:1},boots:{bedroom:3,corridor:1,library:0,greenhouse:0},shirt:{bedroom:2,corridor:1,library:0,greenhouse:0},pants:{bedroom:2,corridor:1,library:0,greenhouse:0},
  treasure:{corridor:2,library:2,bedroom:1,greenhouse:1},soil:{greenhouse:3,corridor:0,library:0,bedroom:0,kitchen:0},cooking:{corridor:0,library:0,bedroom:0,greenhouse:0,kitchen:0},food:{corridor:0,library:0,bedroom:0,greenhouse:0},potion:{greenhouse:3,corridor:1,library:1,bedroom:1},tool:{corridor:0,library:0,bedroom:0,greenhouse:0}};
 const ITEMROOMS={"necklace-fire-powerful":{corridor:.15,library:.15,bedroom:.3,greenhouse:.1,kitchen:.1},"necklace-poison-powerful":{corridor:.15,library:.15,bedroom:.3,greenhouse:.1,kitchen:.1},"necklace-heal-reckless":{corridor:.1,library:.1,bedroom:.2,greenhouse:.1,kitchen:.05},"potion-strongest":{greenhouse:1,corridor:.3,library:.3,bedroom:.3,kitchen:0},"potion-weak":{kitchen:0},"potion-strong":{kitchen:0},"health-minor":{corridor:1.5,library:1,bedroom:1.5,greenhouse:1,kitchen:1.5},"health-greater":{corridor:.7,library:.6,bedroom:.8,greenhouse:.5,kitchen:.8},"health-supreme":{corridor:.2,library:.2,bedroom:.25,greenhouse:.15,kitchen:.25},"backpack-rucksack":{corridor:0,library:0,bedroom:0,greenhouse:0,kitchen:0},"backpack-expedition":{corridor:0,library:0,bedroom:0,greenhouse:0,kitchen:0},map:{library:3,corridor:1,bedroom:0,greenhouse:0},astrolabe:{library:3},compass:{library:3},straightedge:{library:3},hourglass:{library:2,bedroom:2},lamp:{library:2,bedroom:2},amphora:{greenhouse:2,corridor:2},tile:{greenhouse:2},"crown-elements":{corridor:0,library:0,bedroom:0,greenhouse:0}};
+/* the ax upgrades can also be found (tiered: iron 20–40, starmetal 30–48); picking one up swaps it for your ax */
+Object.assign(ITEMROOMS,{"iron-ax":{corridor:.5,library:.3,bedroom:.3,greenhouse:.5,kitchen:.2},"starmetal-ax":{corridor:.35,library:.2,bedroom:.2,greenhouse:.35,kitchen:.1}});
 const itemById=id=>id==="chest"?{id:"chest",kind:"container",name:"Chest",price:12,desc:"Empty now. Carry it and set it down in any room."}:ITEMS.find(x=>x.id===id)||foodItem(id);
 /* food from the greenhouse (25 Nov 2026): harvested, not found. A raw potato must be cooked (in the Bag, in any room:
    over its lamps or torches) before it can be eaten; other produce is eaten as it is. Art: items.js potato / produce. */
@@ -1681,7 +1716,7 @@ function foodItem(id){id=String(id||"");const sk=id.match(/^potato-(red|purple|b
  const wm=id.match(/^(weapon-[a-z]+-[a-z]+)(?:@(\d+))?$/),w=wm&&EN.combat.weapon(wm[1]);if(w){const left=wm[2]!=null?+wm[2]:w.dur,st=EN.combat.wear(left,w.dur);return{id,kind:"weapon",name:w.name+(st==="perfect"?"":` (${st})`),price:Math.max(1,Math.round(w.price*(.3+.7*left/w.dur))),dur:w.dur,left,desc:`${w.dmg} damage, reach ${w.reach} m. ${left} of ${w.dur} uses left.`}}
  if(id==="firewood")return{id,kind:"fuel",name:"Firewood",price:EN.fuel.FIREWOOD_PRICE,desc:"A split log. A cauldron dish takes 2."};
  return null}
-function itemW(it,RT,n){if(it.find)return 0; /* the speed boots are one-time finds (BOOTFIND), never random */const w=(ITEMROOMS[it.id]||{})[RT];if(it.id==="crown-elements"&&n>=40&&RT!=="greenhouse")return .3;return w!=null?w:((KINDROOMS[it.kind]||{})[RT]??1)}
+function itemW(it,RT,n){if(it.find||!tierOK(it,n))return 0; /* the speed boots are one-time finds (BOOTFIND), never random */const w=(ITEMROOMS[it.id]||{})[RT];if(it.id==="crown-elements"&&RT!=="greenhouse")return .3;return w!=null?w:((KINDROOMS[it.kind]||{})[RT]??1)}
 function pickItem(R,RT,n){const pool=ITEMS.map(it=>[it,itemW(it,RT,n)]).filter(x=>x[1]>0),tot=pool.reduce((a,x)=>a+x[1],0);let u=R()*tot;for(const[it,w]of pool){u-=w;if(u<=0)return it.id}return pool[0][0].id}
 const RITEMS={};
 /* a kitchen is stocked with 3–5 Ingredients on its table or island (once per room, seeded): usually everything one
@@ -1691,14 +1726,23 @@ function kitchenStock(n,G){const R=rng(n*4721+13),k=3+Math.floor(R()*3),rec=EN.c
  const pid=need=>need==="potato"?"potato-"+["red","purple","brown"][Math.floor(R()*3)]:"produce-"+(KSTOCK.find(x=>x===need||x.startsWith(need+"_"))||need);
  for(const nd of rec.needs)if(out.length<k)out.push(pid(nd));
  const must=KSTOCK.filter(x=>window.PLANTS&&PLANTS.byId[x]&&PLANTS.harvest(PLANTS.byId[x]).ingredient);while(out.length<k)out.push(pid(must[Math.floor(R()*must.length)]));
- const xi=(n%2?-1:1)*G.RW*.42,zi=G.RL*.5;return out.filter(id=>itemById(id)).map((id,i)=>({uid:`${n}:k${i}`,id,x:xi+(i-(out.length-1)/2)*.16,z:zi-.12+(i%2)*.18,lift:.86,small:1}))}
+ const C=fixturesOf(n).find(o=>o.kind==="island"||o.kind==="ktable")||{cx:0,cz:G.RL*.5,top:.86};return out.filter(id=>itemById(id)).map((id,i)=>({uid:`${n}:k${i}`,id,x:C.cx+((i%2)-.5)*.14,z:C.cz+(i-(out.length-1)/2)*.22,lift:C.top,small:1}))} /* along the counter, which runs along its side wall */
 function roomItems(n){if(scholar())return[];if(RITEMS[n]){for(const it of RITEMS[n])fitView(n,it);return RITEMS[n]}const RT=roomType(n),Fc=canonF(n),G=roomGeo(n,Fc),ik=n;const R=rng(n*7919+11),k=1+Math.floor(R()*3),L=[],ci=R()<.35?Math.floor(R()*k):-1; /* about one room in three has a chest */
- for(let i=0;i<k;i++){const isChest=i===ci;L.push({uid:`${n}:${i}`,id:isChest?"chest":pickItem(R,RT,lvl(n)),x:(R()*2-1)*(G.RW-.55),z:1.3+R()*Math.max(.5,G.RL-2.6)})}
+ /* (27 Nov 2026) nothing lies on the floor: each find sits on a table (library side tables, bedside tables, the kitchen
+    table), and what has no table to go on goes into a chest; the room's ledge may take one out to sit up there (ledgeOf). */
+ const FX=fixturesOf(n),spots=FX.filter(o=>o.top&&o.kind!=="island"&&o.kind!=="ktable"),picks=[];let chest=null;
+ for(let i=0;i<k;i++){if(i===ci){chest={uid:`${n}:${i}`,id:"chest",holds:[pickItem(R,RT,lvl(n))]};continue}picks.push([i,pickItem(R,RT,lvl(n))])}
+ for(const[i,id]of picks){const sp=spots.shift();if(sp){L.push({uid:`${n}:${i}`,id,x:sp.cx+(R()-.5)*.08,z:sp.cz-.03,lift:sp.top,on:sp.kind});continue}
+  if(!chest)chest={uid:`${n}:${i}`,id:"chest",holds:[]};chest.holds.push(id)}
+ if(chest){const at=FX.wallSpot(n,.7,R);chest.x=at[0];chest.z=at[1];L.push(chest)}
  if(RT==="kitchen")L.push(...kitchenStock(n,G));
  for(const it of L)it.vf=fkey(Fc);RITEMS[ik]=L;return roomItems(n)}
 S.taken=S.taken||{};S.opened=S.opened||{};S.drops=S.drops||{};
 const bagCount=()=>S.inv.filter(id=>!(S.worn&&Object.values(S.worn).includes(id))).length;
-function addInv(id){if(bagCount()>=bagSize()){toast("Your bag is full. Drop or sell something first.");return false}S.inv.push(id);if((itemById(id)||{}).speed)S.got[id]=1;save();bagIcon();return true}
+function addInv(id){if(/^(iron|starmetal)-ax$/.test(id)&&window.TOOLS){const t=TOOLS.AXES.findIndex(a=>a.id===id)+1;
+  if(t>(S.ax||0)){S.ax=t;save();axIcon();toast(`${TOOLS.AXES[t-1].name}: vines come down in fewer blows`);return true}
+  const c=Math.floor((itemById(id).price||0)/2);S.coins=(S.coins||0)+c;save();toast(`Your ax is as good already: the ${itemById(id).name} is worth ${c} coins.`);return true}
+ if(bagCount()>=bagSize()){toast("Your bag is full. Drop or sell something first.");return false}S.inv.push(id);if((itemById(id)||{}).speed)S.got[id]=1;save();bagIcon();return true}
 /* items lying in this room: the room's own (not yet taken) and anything dropped here */
 function roomFloorItems(n){if(scholar())return[];for(const d of S.drops[n]||[])fitView(n,d);return roomItems(n).filter(it=>!S.taken[it.uid]).concat(bootFind(n),S.drops[n]||[])}
 /* boots: three speed upgrades, each found once, hidden at the far end of a set hall, in order (the next only appears
@@ -1714,8 +1758,8 @@ function drawRoomItems(addR,P,f,CZ,t){if(!window.ITEMART)return;const FY=1.1;
    const tw=(.5+.5*Math.sin(t*3+it.x*5))*(it.hidden?(r<3?.6:0):1);if(!open){ctx.save();ctx.globalCompositeOperation="lighter";ctx.fillStyle=`rgba(255,240,190,${.35*tw})`;ctx.beginPath();ctx.arc(p[0]+h*.25,p[1]-h*.9,Math.max(2,h*.08),0,7);ctx.fill();ctx.restore()}
    const w=Math.max(28,h*1.1);hallHits.push({kind:"item",it,poly:[[p[0]-w/2,p[1]-h*1.1],[p[0]+w/2,p[1]-h*1.1],[p[0]+w/2,p[1]+6],[p[0]-w/2,p[1]+6]]})})}}
 function itemTap(it){if(it.ledge&&PLY.base<it.ledge-.05){toast(it.ledge>EN.moves.JUMP_H?"Out of reach, up on the ledge. Climb up (C).":"Out of reach, up on the ledge. Jump up (Space).");return}const chest=it.id==="chest",dropped=!!(S.drops[hallId]||[]).includes(it),open=chest&&(S.opened[it.uid]||it.opened);
- if(chest&&!open){const c=coinRoll(Math.min(48,Math.max(1,lvl(hallId)))),pick=pickItem(Math.random,roomType(hallId),hallId),nm=itemById(pick).name;S.coins=(S.coins||0)+c;S.opened[it.uid]=1;if(dropped)it.opened=1;
-  sfxChime(true);const ok=addInv(pick);if(!ok){(S.drops[hallId]=S.drops[hallId]||[]).push({uid:"d"+Date.now(),id:pick,x:it.x+.3,z:it.z-.2})}save();toast(`+${c} coin${c>1?"s":""}${ok?" · "+nm:""}`);bagIcon();return}
+ if(chest&&!open&&!dropped){const c=coinRoll(Math.min(48,Math.max(1,lvl(hallId)))),picks=it.holds&&it.holds.length?it.holds:[pickItem(Math.random,roomType(hallId),lvl(hallId))],got=[];S.coins=(S.coins||0)+c;S.opened[it.uid]=1;
+  sfxChime(true);picks.forEach((pick,j)=>{if(addInv(pick))got.push(itemById(pick).name);else(S.drops[hallId]=S.drops[hallId]||[]).push({uid:"d"+Date.now()+j,id:pick,x:it.x+(it.x>0?-.3:.3),z:it.z-.2*(j+1)})});save();toast(`+${c} coin${c>1?"s":""}${got.length?" · "+got.join(", "):""}`);bagIcon();return} /* a chest you carried and set down is empty */
  if(!addInv(it.id))return;if(dropped)S.drops[hallId]=S.drops[hallId].filter(x=>x!==it);else if(!it.hidden)S.taken[it.uid]=1;save();sfxChime(!!it.hidden);toast(itemById(it.id).name+(it.hidden?": hidden here all along! Wear them (Bag) to walk faster.":""))}
 /* the bag */
 function bagIcon(){const b=document.getElementById("bagb");if(!b)return;b.style.display=!scholar()&&(scene==="doors"||scene==="hall"||scene==="map"||scene==="lock")?"":"none";document.getElementById("bagn").textContent=bagCount()||""}
@@ -1724,14 +1768,16 @@ function bagOpen(){const box=document.getElementById("bag");box.style.display="b
 function bagClose(){if(MENU==="inv"){MENU=null;syncTabs()}const tp=document.getElementById("stip");if(tp)tp.style.display="none";document.getElementById("bag").style.display="none";BAGSEL=-1;SHOP=false}
 /* the wardrobe: eight carved hollows, one per slot (the necklace hollow, under the hat, added 26 Nov 2026) (the gem-and-hollow idea from the locks). Drag clothes from the bag
    into the hollow they fit, and back out to take them off; Wear / Take off buttons do the same. Worn clothes leave the bag. */
-const SLOTS=[["hat","Hat"],["necklace","Necklace"],["cape","Cape"],["shirt","Shirt"],["gloves","Gloves"],["rings","Rings"],["pants","Trousers"],["boots","Boots"]];
-const slotOf=it=>!it?null:it.kind==="crown"?"hat":it.kind==="necklace"?"necklace":it.id==="ring"?"rings":["boots","cape","gloves","shirt","pants"].includes(it.kind)?it.kind:null;
-function wear(i){const id=S.inv[i],sl=slotOf(itemById(id));if(!sl)return;S.inv.splice(i,1);if(S.worn[sl])S.inv.push(S.worn[sl]);S.worn[sl]=id;save();sfxChime(false);BAGSEL=-1;bagIcon();renderBag();
+/* (27 Nov 2026) two more hollows either side of the necklace: the sword (the weapon in your hand, S.wield) and the shield */
+const SLOTS=[["sword","Sword"],["hat","Hat"],["shield","Shield"],["necklace","Necklace"],["cape","Cape"],["shirt","Shirt"],["gloves","Gloves"],["rings","Rings"],["pants","Trousers"],["boots","Boots"]];
+const slotOf=it=>!it?null:it.kind==="weapon"?"sword":it.kind==="shield"?"shield":it.kind==="crown"?"hat":it.kind==="necklace"?"necklace":it.id==="ring"?"rings":["boots","cape","gloves","shirt","pants"].includes(it.kind)?it.kind:null;
+const wornId=k=>k==="sword"?(S.wield?weaponId(S.wield):null):S.worn[k];
+function wear(i){const id=S.inv[i],sl=slotOf(itemById(id));if(!sl)return;if(sl==="sword")return wieldItem(i);S.inv.splice(i,1);if(S.worn[sl])S.inv.push(S.worn[sl]);S.worn[sl]=id;save();sfxChime(false);BAGSEL=-1;bagIcon();renderBag();
  const sp=itemById(id).speed;if(sp)toast(`Walking speed ×${sp}`)}
-function unwear(sl){if(!S.worn[sl])return;if(S.inv.length>=bagSize()){toast("Your bag is full.");return}S.inv.push(S.worn[sl]);delete S.worn[sl];save();BAGSEL=-1;bagIcon();renderBag()}
+function unwear(sl){if(sl==="sword")return unwield();if(!S.worn[sl])return;if(S.inv.length>=bagSize()){toast("Your bag is full.");return}S.inv.push(S.worn[sl]);delete S.worn[sl];save();BAGSEL=-1;bagIcon();renderBag()}
 let BDRAG=null;
 function bagDrag(box){
- box.onpointerdown=e=>{const el=e.target.closest(".bslot,.whol");if(!el)return;const id=el.dataset.i!=null?S.inv[+el.dataset.i]:S.worn[el.dataset.s];if(!id||!slotOf(itemById(id)))return;
+ box.onpointerdown=e=>{const el=e.target.closest(".bslot,.whol");if(!el)return;const id=el.dataset.i!=null?S.inv[+el.dataset.i]:wornId(el.dataset.s);if(!id||!slotOf(itemById(id)))return;
   BDRAG={el,id,x:e.clientX,y:e.clientY,on:false,from:el.dataset.s||null,i:el.dataset.i!=null?+el.dataset.i:-1}};
  box.onpointermove=e=>{const d=BDRAG;if(!d)return;if(!d.on&&Math.hypot(e.clientX-d.x,e.clientY-d.y)>8){d.on=true;try{box.setPointerCapture(e.pointerId)}catch(_){}const g=document.createElement("canvas");g.width=g.height=96;g.className="bghost";ITEMART.draw(g.getContext("2d"),d.id,48,86,72,{fill:0});document.body.appendChild(g);d.g=g;
    const sl=slotOf(itemById(d.id));box.querySelectorAll(".whol").forEach(h=>h.classList.toggle("fit",!d.from&&h.dataset.s===sl))}
@@ -1746,7 +1792,9 @@ let BDRAG_T=-1e9;
 let SHOP=false,SHOPSEL=null;
 function shopOpen(){SHOP=true;SHOPSEL=null;const box=document.getElementById("bag");box.style.display="block";sfxChime(false);renderBag()}
 const owns=id=>S.inv.includes(id)||Object.values(S.worn).includes(id);
-function shopStock(){return["health-minor","health-greater","health-supreme","necklace-fire-weak","necklace-poison-weak","necklace-heal-gentle",...(nextPack()?[nextPack()[0]]:[]),"firewood",...EN.combat.allWeapons(),...(owns("cauldron")?[]:["cauldron"])].concat(ITEMS.filter(it=>(it.speed||it.kind==="scroll"||it.kind==="soil"||it.ghost||it.kind==="shield")&&!(it.speed&&owns(it.id))).map(it=>it.id).concat(S.sold.filter((x,i,a)=>a.indexOf(x)===i&&!itemById(x).speed&&itemById(x).kind!=="scroll")))}
+/* the shop keeps to the room's tier too: a statue in a room of proposition 12 sells the weak potions, one in 44 the strong */
+function shopStock(){const n=lvl(hallId);return shopAll().filter((id,i,a)=>a.indexOf(id)===i&&(S.sold.includes(id)||tierOK(itemById(id),n)))}
+function shopAll(){return["health-minor","health-greater","health-supreme","necklace-fire-weak","necklace-poison-weak","necklace-heal-gentle",...(nextPack()?[nextPack()[0]]:[]),"firewood",...EN.combat.allWeapons()].concat(ITEMS.filter(it=>(it.speed||it.kind==="scroll"||it.kind==="soil"||it.ghost||it.kind==="shield")&&!(it.speed&&owns(it.id))).map(it=>it.id).concat(S.sold.filter((x,i,a)=>a.indexOf(x)===i&&!itemById(x).speed&&itemById(x).kind!=="scroll")))}
 function shopBuy(id){const it=itemById(id),p=it.price;if((S.coins||0)<p){toast(`You need ${p-(S.coins||0)} more coin${p-(S.coins||0)===1?"":"s"}.`);return}if(it.kind==="pack"){S.coins-=p;S.pack=id;save();sfxChime(true);toast(`${it.name}: your bag now holds ${it.slots}.`);SHOPSEL=null;bagIcon();renderBag();return}if(id==="firewood"){S.coins-=p;S.wood=(S.wood||0)+1;save();sfxChime(false);toast(`Bought a log: firewood ${S.wood}.`);hudUpdate();renderBag();return}if(!addInv(id))return;S.coins-=p;const k=S.sold.indexOf(id);if(k>=0)S.sold.splice(k,1);save();sfxChime(true);toast(`Bought: ${it.name}`);SHOPSEL=null;renderBag()}
 function shopSell(i){const id=S.inv[i],it=itemById(id),p=Math.floor((it.price||0)/2);S.inv.splice(i,1);S.coins=(S.coins||0)+p;S.sold.push(id);save();bagIcon();sfxChime(false);toast(`Sold: ${it.name} · +${p} coin${p===1?"":"s"}`);SHOPSEL=null;renderBag()}
 function drawShopStatue(pr,f,col,s,z,t,xl){const x=xl!=null?xl:s*1.08,k=f/Math.max(.3,fwd3(x*CURG.RW/1.5,z));statue(pr,f,col,s,z,null,x);
@@ -1810,15 +1858,15 @@ const itemHp=it=>it.heal||(it.kind==="food"&&!it.ingredient?(it.hp||EN.cook.RAW_
 function renderBag(){const box=document.getElementById("bag"),inv=S.inv;if(SHOP)return renderShop(box);
  if(scholar()){box.innerHTML=`<div class="bh"><b>Inventory</b><span></span><button class="btn" id="bagx">✕</button></div><p class="bn">Scholar mode has no items: only the locks and the rooms between them. Switch to Dungeon Crawler in Settings for the bag, tools, food and creatures.</p>`;document.getElementById("bagx").onclick=bagClose;return}
  box.innerHTML=`<div class="bh"><b>Inventory</b><span>${bagCount()} / ${bagSize()} · ${coinsTxt(S.coins||0)} · firewood ${S.wood||0}, kindling ${S.kindling||0} · ${EN.clock.isNight(S.time)?"☾":"☀"} ${EN.clock.fmt(S.time)}</span><button class="btn" id="bagx">✕</button></div><p class="bn">Tools: ${S.ax?esc(axT().name)+" (tap the ax at the bottom left for its card)":"none"}</p><p class="bn">In hand: ${S.wield?`${esc(itemById(S.wield.id).name)}, ${S.wield.left} of ${itemById(S.wield.id).dur} uses left <button class="btn" id="bunw">Put away</button>`:"nothing (fists). Wield a knife, sword or staff from the bag."}</p>
- <div class="ward">${SLOTS.map(([k,nm])=>`<button class="whol w-${k}${S.worn[k]?" on":""}" data-s="${k}" aria-label="${nm}">${S.worn[k]?`<canvas width="96" height="96"></canvas>`:""}<i>${nm}</i></button>`).join("")}</div>
+ <div class="ward">${SLOTS.map(([k,nm])=>`<button class="whol w-${k}${wornId(k)?" on":""}" data-s="${k}" aria-label="${nm}">${wornId(k)?`<canvas width="96" height="96"></canvas>`:""}<i>${nm}</i></button>`).join("")}</div>
  <div class="bgrid">${Array.from({length:bagSize()},(_,i)=>`<button class="bslot${i===BAGSEL?" sel":""}" data-i="${i}" ${i<inv.length?"":"disabled"}>${i<inv.length?`<canvas width="96" height="96"></canvas>`:""}</button>`).join("")}</div><div class="bdet" id="bdet"></div>`;
- itemCanvas("#bag .bslot canvas",inv);itemCanvas("#bag .whol canvas",SLOTS.map(x=>S.worn[x[0]]).filter(Boolean));bagDrag(box);
+ itemCanvas("#bag .bslot canvas",inv);itemCanvas("#bag .whol canvas",SLOTS.map(x=>wornId(x[0])).filter(Boolean));bagDrag(box);
  box.querySelectorAll(".bslot").forEach(b=>b.onclick=()=>{if(now()-BDRAG_T<300)return;BAGSEL=+b.dataset.i;renderBag()});
  box.querySelectorAll(".whol").forEach(b=>b.onclick=()=>{if(now()-BDRAG_T<300)return;BAGSEL=b.dataset.s;renderBag()});document.getElementById("bagx").onclick=bagClose;
  const d=document.getElementById("bdet");
- if(typeof BAGSEL==="string"){const id=S.worn[BAGSEL];if(!id){d.innerHTML=`<p class="bn">The ${SLOTS.find(x=>x[0]===BAGSEL)[1].toLowerCase()} hollow is empty. Drag clothes from your bag into it.</p>`;return}
-  const it=itemById(id);d.innerHTML=`<h3>${esc(it.name)}</h3><p class="bn">worn${it.speed?` · walking speed ×${it.speed}`:""}${neckLine(it)}</p><p>${esc(it.desc)}</p><div class="bbtn"><button class="btn" id="boff">Take off</button></div>`;document.getElementById("boff").onclick=()=>unwear(BAGSEL);return}
- if(BAGSEL<0||BAGSEL>=inv.length){d.innerHTML=`<p class="bn">Tap an item to see it. Drag clothes into the hollows above to wear them.${inv.length?"":" Items lie in every room: tap one to pick it up."}</p>`;return}
+ if(typeof BAGSEL==="string"){const id=wornId(BAGSEL);if(!id){d.innerHTML=`<p class="bn">The ${SLOTS.find(x=>x[0]===BAGSEL)[1].toLowerCase()} hollow is empty. Drag clothes from your bag into it.</p>`;return}
+  const it=itemById(id);d.innerHTML=`<h3>${esc(it.name)}</h3><p class="bn">${BAGSEL==="sword"?`in hand, ${S.wield.left} of ${it.dur} uses left`:BAGSEL==="shield"?`worn, ${3-((S.shieldHits||{})[id]||0)} blows left`:"worn"}${it.speed?` · walking speed ×${it.speed}`:""}${neckLine(it)}</p><p>${esc(it.desc)}</p><div class="bbtn"><button class="btn" id="boff">Take off</button></div>`;document.getElementById("boff").onclick=()=>unwear(BAGSEL);return}
+ if(BAGSEL<0||BAGSEL>=inv.length){d.innerHTML=`<p class="bn">Tap an item to see it. Drag clothes into the hollows above to wear them, a weapon into the sword hollow to hold it, a shield into the shield hollow.${inv.length?"":" Items lie in every room: tap one to pick it up."}</p>`;return}
  const it=itemById(inv[BAGSEL]),sl=slotOf(it);d.innerHTML=`<h3>${esc(it.name)}</h3><p class="bn">${esc(it.heal?"health potion":it.kind)}${it.speed?` · walking speed ×${it.speed}`:""}${neckLine(it)}${itemHp(it)?` · +${itemHp(it)} health`:""} · sells for ${coinsTxt(Math.floor((it.price||0)/2))}</p><p>${esc(it.desc)}</p><div class="bbtn">${sl?`<button class="btn" id="bwear">Wear</button>`:""}${it.use||it.kind==="scroll"||it.kind==="potion"||it.kind==="soil"||(it.kind==="food"&&!it.ingredient)?`<button class="btn" id="buse">${it.heal?"Drink":it.kind==="potion"||it.kind==="soil"?"Pour":it.kind==="food"?"Eat":"Use"}</button>`:""}${it.kind==="weapon"?`<button class="btn" id="bwield">Wield</button>`:""}${it.kind!=="tool"?`<button class="btn" id="bdrop">${it.id==="chest"?"Place it here":"Drop"}</button>`:""}</div>`;
  const bun=document.getElementById("bunw");if(bun)bun.onclick=unwield;const bw=document.getElementById("bwear");if(bw)bw.onclick=()=>wear(BAGSEL);const bwi=document.getElementById("bwield");if(bwi)bwi.onclick=()=>wieldItem(BAGSEL);
  const u=document.getElementById("buse");if(u)u.onclick=()=>useItem(BAGSEL);const dr=document.getElementById("bdrop");if(dr)dr.onclick=()=>{dropItem(BAGSEL);BAGSEL=-1;renderBag()}}
@@ -1837,7 +1885,7 @@ function renderShop(box){const stock=shopStock(),inv=S.inv,sell=inv.map((id,i)=>
  itemCanvas("#bag [data-b] canvas",stock);itemCanvas("#bag [data-s] canvas",sell.map(x=>x[0]));shopTip(box,{buy:stock,sell:sell.map(x=>x[0])});document.getElementById("bagx").onclick=bagClose;
  box.onpointerdown=box.onpointermove=box.onpointerup=box.onpointercancel=null;
  box.querySelectorAll("[data-b]").forEach(b=>b.onclick=()=>{SHOPSEL={b:+b.dataset.b};renderBag()});box.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{SHOPSEL={s:+b.dataset.s};renderBag()});
- const d=document.getElementById("bdet");if(!SHOPSEL){d.innerHTML=`<p class="bn">The statue glows blue. It always sells health potions, and the next size of backpack; also boots, scrolls, weapons, a cauldron and firewood. It buys anything at half price, and will sell back what you sold it.</p>`;return}
+ const d=document.getElementById("bdet");if(!SHOPSEL){d.innerHTML=`<p class="bn">The statue glows blue. It always sells health potions, and the next size of backpack; also boots, scrolls, weapons and firewood. It buys anything at half price, and will sell back what you sold it.</p>`;return}
  if(SHOPSEL.b!=null){const id=stock[SHOPSEL.b],it=itemById(id);d.innerHTML=`<h3>${esc(it.name)}</h3><p class="bn">${coinsTxt(it.price)}${it.speed?` · walking speed ×${it.speed}`:""}${neckLine(it)}${S.sold.includes(id)?" · you sold this":""}</p><p><b>${esc(useLine(it))}</b></p><p>${esc(it.desc)}</p><div class="bbtn"><button class="btn" id="bbuy">Buy</button></div>`;document.getElementById("bbuy").onclick=()=>shopBuy(id)}
  else{const[id,i]=sell[SHOPSEL.s],it=itemById(id);d.innerHTML=`<h3>${esc(it.name)}</h3><p class="bn">sells for ${coinsTxt(Math.floor((it.price||0)/2))}</p><p>${esc(it.desc)}</p><div class="bbtn"><button class="btn" id="bsell">Sell</button></div>`;document.getElementById("bsell").onclick=()=>shopSell(i)}}
 
@@ -1846,7 +1894,7 @@ function renderShop(box){const stock=shopStock(),inv=S.inv,sell=inv.map((id,i)=>
    only applies them to this game's rooms. Saved: S.time, S.hp, S.cool, S.wood, S.kindling, S.wield, S.mob, S.path,
    S.fruit, S.chop. ---------- */
 const EN=window.ENGINE;
-S.cool=S.cool||{};S.mob=S.mob||{};S.path=S.path||{};S.fruit=S.fruit||{};S.chop=S.chop||{};if(S.hp==null)S.hp=EN.health.MAX;if(S.time==null)S.time=EN.clock.START;
+S.cool=S.cool||{};S.mob=S.mob||{};S.path=S.path||{};S.fruit=S.fruit||{};S.chop=S.chop||{};if(S.hp==null)S.hp=EN.health.MAX;S.inv=(S.inv||[]).filter(id=>id!=="cauldron"); /* the cauldron is part of the campfire now */if(S.time==null)S.time=EN.clock.START;
 if(S.gv!==2){S.grow={};S.gv=2} /* growing plants used to wait for the next lock; now they wait for the clock */
 const PZ=()=>CAM.z+1.25; /* where you stand: a little ahead of the camera */
 /* --- time and health --- */
@@ -1886,7 +1934,9 @@ if(a==="look"){lookToggle();return}
 const PLY={y:0,jt:-1,base:0,climb:null};const LEDGES={};
 function ledgeOf(n,busyR){if(n in LEDGES)return LEDGES[n];if(scholar())return LEDGES[n]=null;const RT=roomType(n),G=roomGeo(n,RT),R=rng(n*733+29);R(); /* every room has a ledge (26 Nov 2026): it is the safe way past the room's doorway trap */
  let s=R()<.5?-1:1;const len=1.4+R()*.6;R();const h=EN.moves.LEDGE_HEIGHTS[0];let z0=null;for(let k=0;k<16;k++){if(k===8)s=-s;const z=1.0+(k%8)*.1;if(!busyR||!busyR(s,z,z+len)){z0=z;break}}if(z0==null)z0=1.0;
- const L={s,z0,z1:z0+len,h,d:.8,item:R()<EN.moves.LEDGE_ITEM_CHANCE};if(L.item){const it=roomItems(n).find(x=>x.id!=="chest");if(it){L.uid=it.uid;it.x=s*(G.RW-.4);it.z=(L.z0+L.z1)/2;it.ledge=L.h;it.vf=fkey(viewF(n))}}return LEDGES[n]=L}
+ const L={s,z0,z1:z0+len,h,d:.8,item:R()<EN.moves.LEDGE_ITEM_CHANCE};if(L.item){let it=roomItems(n).find(x=>x.id!=="chest");const ch=!it&&roomItems(n).find(x=>x.id==="chest"&&x.holds&&x.holds.length>1&&!S.opened[x.uid]);
+   if(ch){it={uid:`${n}:L`,id:ch.holds.pop()};RITEMS[n].push(it)} /* no table find: the ledge takes one out of the chest */
+   if(it){it.lift=0;L.uid=it.uid;it.x=s*(G.RW-.4);it.z=(L.z0+L.z1)/2;it.ledge=L.h;it.vf=fkey(viewF(n))}}return LEDGES[n]=L}
 function onLedgeArea(L,x,z){return L&&z>=L.z0&&z<=L.z1&&L.s*x>=CURG.RW-L.d-.05}
 function jump(){if(PLY.jt>=0||PLY.climb)return;PLY.jt=0;sfxChime(false)}
 function climb(){const L=LEDGES[hallId];if(!L||PLY.base>=L.h){toast("Nothing to climb here.");return}const z=PZ();if(z<L.z0-.2||z>L.z1+.2||L.s*CAM.x<CURG.RW-L.d-1.1){toast("Walk up to the ledge to climb it.");return}
@@ -1929,8 +1979,8 @@ function stripTick(){if(PEND&&!CAM.target){const f=PEND;PEND=null;f();return}con
  if(t.kind==="floor"&&PLY.y>.05)return;           /* jumped the spikes */
  FX.push({kind:t.kind==="floor"?"spikes":"flame",x:CAM.x,z:pz,t0:now()});
  if(!shieldBlock())hurt(EN.traps.BACKTRACK_DMG,t.kind==="floor"?"spikes from the floor":"flames from the walls",t.kind==="floor"?null:"fire")}
-function shieldBlock(){S.shieldHits=S.shieldHits||{};const i=S.inv.indexOf("shield-bronze");
- if(i>=0){const h=(S.shieldHits["shield-bronze"]||0)+1;if(h>=3){S.inv.splice(i,1);S.shieldHits["shield-bronze"]=0;toast("Your Bronze Shield takes the blow, and splits.")}else{S.shieldHits["shield-bronze"]=h;toast(`Your Bronze Shield takes the blow (${3-h} left).`)}sfxClang();save();bagIcon();return true}
+function shieldBlock(){S.shieldHits=S.shieldHits||{};const worn=S.worn&&S.worn.shield==="shield-bronze",i=worn?-2:S.inv.indexOf("shield-bronze");
+ if(i!==-1){const h=(S.shieldHits["shield-bronze"]||0)+1;if(h>=3){if(worn)delete S.worn.shield;else S.inv.splice(i,1);S.shieldHits["shield-bronze"]=0;toast("Your Bronze Shield takes the blow, and splits.")}else{S.shieldHits["shield-bronze"]=h;toast(`Your Bronze Shield takes the blow (${3-h} left).`)}sfxClang();save();bagIcon();return true}
  if(S.worn&&S.worn.cape&&S.capeDay!==today()){S.capeDay=today();save();sfxRustle();toast("Your cape takes the blow. It can do that once a day.");return true}return false}
 /* an item set down on a set strip: the trap springs on it, the item is lost, and the trap is spent until it is set again */
 function stripDrop(n){const t=armTrap(n),L=S.drops[n];if(!t||!L)return;const k=L.findIndex(d=>d.z>=t.z0-.15&&d.z<=t.z1+.15);if(k<0)return;const d=L.splice(k,1)[0];S.arm[n]=0;save();
@@ -1988,13 +2038,13 @@ function drawMob(addR,P,f,CZ,t){const m=mobOf(hallId);if(!m)return;const r=m.z-C
  hallHits.push({kind:"mob",poly:[[b[0]-h*.4,b[1]-h],[b[0]+h*.4,b[1]-h],[b[0]+h*.4,b[1]],[b[0]-h*.4,b[1]]]})})}
 function drawSwingFP(){if(!SWING)return;const u=(now()-SWING.t0)/350;if(u>1){SWING=null;return}const s=Math.min(W,H)*.45,a=-1.2+u*1.6;ctx.save();ctx.translate(W*.72,H+s*.1);ctx.rotate(a);
  if(SWING.id)ITEMART.draw(ctx,SWING.id,0,0,s,{state:EN.combat.wear(S.wield?S.wield.left:1,(itemById(S.wield&&S.wield.id)||{dur:1}).dur)});else{ctx.fillStyle="#d8b090";ctx.beginPath();ctx.ellipse(0,-s*.4,s*.12,s*.16,0,0,7);ctx.fill()}ctx.restore()}
-function wieldItem(i){const id=S.inv[i],m=String(id).match(/^(weapon-[a-z]+-[a-z]+)(?:@(\d+))?$/);if(!m)return;const w=EN.combat.weapon(m[1]);S.inv.splice(i,1);if(S.wield)S.inv.push(weaponId(S.wield));S.wield={id:m[1],left:m[2]!=null?+m[2]:w.dur};save();BAGSEL=-1;renderBag();hudUpdate();toast(`${w.name} in hand: F (or tap a creature) to strike.`)}
+function wieldItem(i){const id=S.inv[i],m=String(id).match(/^(weapon-[a-z]+-[a-z]+)(?:@(\d+))?$/);if(!m)return;const w=EN.combat.weapon(m[1]);S.inv.splice(i,1);if(S.wield)S.inv.push(weaponId(S.wield));S.wield={id:m[1],left:m[2]!=null?+m[2]:w.dur};save();BAGSEL=-1;renderBag();bagIcon();hudUpdate();toast(`${w.name} in hand: F (or tap a creature) to strike.`)}
 const weaponId=wd=>{const w=EN.combat.weapon(wd.id);return wd.left>=w.dur?wd.id:`${wd.id}@${wd.left}`};
-function unwield(){if(!S.wield)return;if(bagCount()>=bagSize()){toast("Your bag is full.");return}S.inv.push(weaponId(S.wield));S.wield=null;save();renderBag();hudUpdate()}
+function unwield(){if(!S.wield)return;if(bagCount()>=bagSize()){toast("Your bag is full.");return}S.inv.push(weaponId(S.wield));S.wield=null;save();renderBag();bagIcon();hudUpdate()}
 /* --- cooking: an oven in a kitchen, or a cauldron over a greenhouse campfire. Only ingredients go in. --- */
 const isIngredient=id=>{const it=itemById(id);return!!(it&&it.ingredient)};
 let COOK=null;
-function cookOpen(src){if(src==="fire"&&!S.inv.includes("cauldron")){toast("A campfire burns here. Bring a cauldron (the statue shop sells them) to cook on it.");return}
+function cookOpen(src){ /* the greenhouse campfire always has its cauldron over it (27 Nov 2026): cooking is open from the start */
  COOK={src,sel:0,run:null};bagClose();renderCook()}
 function cookClose(){COOK=null;const b=document.getElementById("cook");if(b)b.style.display="none"}
 function renderCook(){const box=document.getElementById("cook");if(!COOK){box.style.display="none";return}box.style.display="block";const L=EN.cook.available(S.inv,isIngredient).filter((r,i,a)=>r.use.some(k=>isIngredient(S.inv[k]))&&a.findIndex(x=>x.id===r.id)===i); /* only ingredients go in; one entry per dish */COOK.list=L;const fire=COOK.src==="fire";
@@ -2090,7 +2140,7 @@ const winLine=id=>{const p=PROOF(id);return(p&&(p.winTxt||p.win))||""};
 /* ---------- Settings: the way to play, the keys and the mouse, the music ---------- */
 function setMode(m){if(S.mode===m)return;S.mode=m;if(m==="crawler")startKit();for(const k in LEDGES)delete LEDGES[k];HBG=null;MINIC=null;MAPC=null;LT=null;save();hudUpdate();bagIcon();axIcon();toast(m==="scholar"?"Scholar mode: only the locks and the rooms between them.":"Dungeon Crawler: vines, traps, creatures and all.")}
 /* Dungeon Crawler starts with the Bronze Ax, the Iron Cauldron and the Bronze Sword in the inventory (given once) */
-function startKit(){if(S.kit)return;S.kit=1;if(!S.ax)S.ax=1;S.sword=1;for(const id of["cauldron",SWORD0])if(!S.inv.includes(id)&&!(S.wield&&S.wield.id===id))S.inv.push(id);save()}
+function startKit(){if(S.kit)return;S.kit=1;if(!S.ax)S.ax=1;S.sword=1;for(const id of[SWORD0])if(!S.inv.includes(id)&&!(S.wield&&S.wield.id===id))S.inv.push(id);save()}
 let MUSICPARENT=null;
 function musicHome(){const m=document.getElementById("music");if(MUSICPARENT&&m.parentNode!==MUSICPARENT){MUSICPARENT.appendChild(m)}}
 function renderSettings(){const box=document.getElementById("settings");box.style.display="block";const sens=S.lookSens||1;
@@ -2147,7 +2197,10 @@ cv.addEventListener("pointercancel",()=>{if(SW&&!SW.up)SW.up=now();if(scene==="l
 addEventListener("keydown",e=>{if(e.target&&(e.target.tagName==="INPUT"||e.target.tagName==="SELECT"))return;audioInit();if(scene==="title"){if(hasProgress()&&e.key==="Enter")contGame()}else if(scene==="intro")endIntro()});
 document.getElementById("back").addEventListener("click",()=>{if(scene==="green"){if(GHS)hallId=GHS.from;fadeTo("hall",600);return}if(scene==="lock")fadeTo(lockFrom,600);else if(scene==="hall"){if(stripBetween(PZ(),1.25)){CAM.target=[CAM.x,0];PEND=()=>document.getElementById("back").click();toast("You walk back to the door you came in by.");return}const was=hallId;hallStack.pop();if(hallStack.length){hallId=hallStack[hallStack.length-1];crossWay(was,hallId);setView(hallId,WNB[hallId]&&WNB[hallId].includes(was)?was:null);CAM={x:entryX(hallId,was),z:Math.min(1.2,Math.max(0,roomGeo(hallId).RL-1.6)),target:null};VIEW.ty=VIEW.yaw=0;fadeTo("hall",600)}else{crossWay(was,0);fadeTo("doors",600)}}});
 document.getElementById("replay").addEventListener("click",()=>{audioInit();fade=null;go("intro")});
-function contGame(){audioInit();hallStack=[];fadeTo("doors",800)}
+function contGame(){audioInit();const a=S.at;if(a&&WR(a.id)&&Array.isArray(a.F)){try{hallStack=(a.stack&&a.stack.length?a.stack:[a.id]).slice();if(hallStack[hallStack.length-1]!==a.id)hallStack.push(a.id);
+  hallId=a.id;RV[a.id]=viewOf(a.id,a.F);delete LEDGES[a.id];const G=roomGeo(a.id);CAM={x:clamp(a.x,-(G.RW-.3),G.RW-.3),z:clamp(a.z,0,Math.max(0,G.RL-.3)),target:null};VIEW.ty=VIEW.yaw=0;fadeTo("hall",800);return}catch(e){}}
+ hallStack=[];fadeTo("doors",800)}
+addEventListener("pagehide",save);document.addEventListener("visibilitychange",()=>{if(document.hidden)save()});
 document.getElementById("cont").addEventListener("click",contGame);document.getElementById("hkeys").addEventListener("click",keyHelp);
 /* New game (27 Nov 2026): Scholar or Dungeon Crawler. Over a saved game it asks once more before erasing progress. */
 let newArm={};
