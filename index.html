@@ -60,7 +60,7 @@ html.embed #stage,html.embed #stage svg{background:transparent!important;border:
 </div>
 </main>
 <script src="thumbs.js"></script>
-<script src="proofs.js?v=20261127g"></script>
+<script src="proofs.js?v=20261127h"></script>
 <script>
 const $=id=>document.getElementById(id),svg=$("s"),FAST=typeof FASTMODE!=="undefined";
 const dist=(p,q)=>Math.hypot(p[0]-q[0],p[1]-q[1]),sleep=ms=>FAST?Promise.resolve():new Promise(r=>setTimeout(r,ms));
@@ -513,20 +513,31 @@ async function strDone(op){const q=W.pret,n=q.n;if(q.path){W.pret=null;W.sti=nul
 /* ---- the stretchy angle ----
    ["stretch",{pairs:[[w1,w2],...]}]: a pretend figure would make two angles equal (Proposition 5 on a pretend triangle,
    say). The engine picks the listed pair that differs most. The learner drags the smaller angle onto the bigger one: it
-   sits inside, and a red slice shows what is missing. Then they pull its free edge wider until the slice closes: the gem
-   stretches, dashed and strained, because it is pretending. On release it snaps back: angles don't stretch. The gem and
-   the red slice stay on show until the pretend point is gone. */
+   sits inside, and a red slice shows what is missing. (27 Nov 2026) Angles don't stretch, so the learner closes the red
+   slice by putting the figure right: they swing the slice's far edge in towards the gem, and the move that comes next
+   in the proof (a pretend point going home, its bowed line straightening, or a line swinging back) runs with it, step
+   for step (`stFollow`, `stAt`). The red slice is always the live difference of the two angles, scaled by (1 - t), so
+   it is gone exactly when the figure is right. Let go part way and it stays there; close it and both moves finish. */
 function stPick(op){let best=null;for(const[a,b]of op.pairs){if(![...a,...b].every(n=>W.pts[n]))continue;const ga=gemOf(a),gb=gemOf(b),df=Math.abs(ga.d-gb.d);if(!best||df>best.df)best=ga.d<gb.d?{s:a,b,df}:{s:b,b:a,df}}return best}
-function stretchSVG(sc){const S=W.sti;if(!S||!S.placed)return"";const r=GR(),V=S.V,A=k=>[V[0]+r*Math.cos(k),V[1]+r*Math.sin(k)],f=v=>v[0].toFixed(1)+" "+v[1].toFixed(1),e=S.t1+S.st,z=S.t1+S.td;
+const FOLLOW=["straighten","home","raise"];
+function stFollow(op){const o=OPS.find(x=>x.i>op.i&&!W.done.has(x.i));return o&&FOLLOW.includes(o.t)?o:null}
+function stInit(op,S){if(S.fo!==undefined)return;S.fo=stFollow(op);S.t=0;const fo=S.fo;if(!fo)return;
+ if(fo.t==="straighten"){if(W.pret&&W.pret.path)W.pret.s0=W.pret.s;S.D0=W.pts[fo.n].slice()}
+ if(fo.t==="home")S.s0=(W.wrongS&&W.wrongS[fo.n])||0;if(fo.t==="raise"){W.raise0=null;raiseAt(fo,0)}stLive(S);S.full0=Math.max(.05,S.full)}
+/* the wedge from the points as they are now: the bigger angle carved, the gem inside it, the red slice (1 - t) of the gap */
+function stLive(S){if(!S.k)return;const tg=gemOf(S.k.b),g=gemOf(S.k.s);if(![tg.a1,tg.d,g.d].every(Number.isFinite))return;S.V=tg.V;S.t1=tg.a1;S.gd=g.d;S.st=g.d;S.full=Math.max(0,tg.d-g.d);S.td=S.gd+S.full*(1-(S.t||0))}
+function stAt(S,t){S.t=t;const fo=S.fo;if(fo){if(fo.t==="straighten")strAt({D0:S.D0},t);else if(fo.t==="home")wrongAt(wrongOf(fo),S.s0*(1-t));else if(fo.t==="raise")raiseAt(fo,t)}stLive(S)}
+async function stClose(op){const own=!W.busy;W.busy=true;const S=W.sti,t0=S.t||0,end=S.fo&&S.fo.t==="straighten"&&!(W.pret&&W.pret.path)?.995:1;for(let i=1;i<=6;i++){stAt(S,t0+(end-t0)*i/6);draw();await sleep(FAST?0:22)}
+ finish(op);const fo=S.fo;if(!fo){fx("Equal only when the figure is right")}else if(fo.t==="straighten"){strAt({D0:S.D0},1);await strDone(fo)}else if(fo.t==="home")await homeDone(fo);else{raiseAt(fo,1);finish(fo);fx("One straight line")}
+ W.sti=null;say("");if(own){W.busy=false;update();check()}else draw()}
+function stretchSVG(sc){const S=W.sti;if(!S||!S.placed)return"";stLive(S);if((S.k&&!W.pts[S.k.b[0]])||![S.t1,S.td,S.gd].every(Number.isFinite))return"";const r=GR(),V=S.V,A=k=>[V[0]+r*Math.cos(k),V[1]+r*Math.sin(k)],f=v=>v[0].toFixed(1)+" "+v[1].toFixed(1),e=S.t1+S.st,z=S.t1+S.td;
 let h=carveWedge({V,a1:S.t1,d:S.td},sc);if(z-e>.004)h+=`<path d="M${f(V)} L${f(A(e))} A${r} ${r} 0 ${z-e>Math.PI?1:0} 1 ${f(A(z))}Z" fill="#d62728" fill-opacity=".6"/>`;
 h+=gemSVG(V,S.t1,S.st,r,S.col,S.st>S.gd+.01?.75:1);if(S.st>S.gd+.01)h+=`<path d="M${f(V)} L${f(A(S.t1))} A${r} ${r} 0 ${S.st>Math.PI?1:0} 1 ${f(A(e))}Z" fill="none" stroke="var(--ink)" stroke-width="${2*sc}" stroke-dasharray="${5*sc} ${4*sc}"/>`;
-if(pending(o=>o.t==="stretch").length&&!W.busy){const q=A(e-.05);h+=`<circle class="pulse" cx="${q[0]}" cy="${q[1]}" r="10"/>`+arrowSVG(q,A(Math.min(z,e+.6)),sc)}return h}
-function stSame(k){if(k&&k.s[0]===k.b[0]&&!W.sti){const g=gemOf(k.s),t=gemOf(k.b);W.sti={V:t.V.slice(),t1:t.a1,gd:g.d,td:t.d,st:g.d,col:gemCol(k.s),placed:true}}}
+if(pending(o=>o.t==="stretch").length&&!W.busy&&z-e>.02){const q=A(z-.02);h+=`<circle class="pulse" cx="${q[0]}" cy="${q[1]}" r="10"/>`+arrowSVG(q,A(Math.max(e+.02,z-.6)),sc)}return h}
+function stSame(k){if(k&&k.s[0]===k.b[0]&&!W.sti){const g=gemOf(k.s),t=gemOf(k.b);W.sti={V:t.V.slice(),t1:t.a1,gd:g.d,td:t.d,st:g.d,col:gemCol(k.s),placed:true,k}}}
 function stHint(n,sc){const k=stPick(n);if(!k)return"";stSame(k);if(W.sti)return"";const g=gemOf(k.s),t=gemOf(k.b),m=g.a1+g.d/2,p=[g.V[0]+GR()*.55*Math.cos(m),g.V[1]+GR()*.55*Math.sin(m)];return carveWedge(t,sc)+gemSVG(g.V,g.a1,g.d,GR(),gemCol(k.s))+`<circle class="pulse" cx="${p[0]}" cy="${p[1]}" r="10"/>`+arrowSVG(p,lerp(p,t.V,.75),sc)}
-async function stPlace(op,from,k){const own=!W.busy;W.busy=true;W.gemDrag=null;const g=gemOf(k.s),t=gemOf(k.b),S={V:t.V.slice(),t1:t.a1,gd:g.d,td:t.d,st:g.d,col:gemCol(k.s),placed:false};
-for(let i=1;i<=12;i++){const e=ease(i/12);W.gemDrag={V:lerp(from.V,t.V,Math.min(1,e)),a1:from.a1+nrm(t.a1-from.a1)*e,d:g.d,col:S.col};draw();await sleep(FAST?0:24)}W.gemDrag=null;S.placed=true;W.sti=S;say("If they were equal, the red slice would close. Pull the edge wider.");if(own){W.busy=false}draw()}
-async function stBack(op,closed){const own=!W.busy;W.busy=true;const S=W.sti,s0=S.st;for(let i=1;i<=16;i++){const t=i/16,w=Math.exp(-4*t)*Math.cos(10*t);S.st=S.gd+(s0-S.gd)*w;draw();await sleep(FAST?0:24)}S.st=S.gd;
-if(closed){finish(op);fx("Angles don't stretch");say("")}else say("Stretch it until the red slice closes.");if(own){W.busy=false;update();check()}else draw()}
+async function stPlace(op,from,k){const own=!W.busy;W.busy=true;W.gemDrag=null;const g=gemOf(k.s),t=gemOf(k.b),S={V:t.V.slice(),t1:t.a1,gd:g.d,td:t.d,st:g.d,col:gemCol(k.s),placed:false,k};
+for(let i=1;i<=12;i++){const e=ease(i/12);W.gemDrag={V:lerp(from.V,t.V,Math.min(1,e)),a1:from.a1+nrm(t.a1-from.a1)*e,d:g.d,col:S.col};draw();await sleep(FAST?0:24)}W.gemDrag=null;S.placed=true;W.sti=S;stInit(op,S);say("They would be equal only if the red slice closed. Swing its far edge in.");if(own){W.busy=false}draw()}
 /* ---- area tiles ----
    Areas become purple tiles the learner moves; the shape they must match is carved into the page.
    ["morph",{from:[...],to:[...],grab:i}]: the tile slides into a new shape of the same area. Every corner moves in
@@ -692,7 +703,7 @@ const spo2=pending(o=>o.t==="spin")[0];if(spo2){const th=W.sp&&W.sp.i===spo2.i?W
 const sgo=pending(o=>o.t==="string")[0];if(sgo){const t=W.sg&&W.sg.i===sgo.i?W.sg.t:0,q=strShape(sgo,t,0),en=q[q.length-1];if(dist(p,en)<32*sc||q.some((v,i)=>i&&distSeg(p,q[i-1],v)<12*sc)){svg.setPointerCapture(e.pointerId);W.sg={i:sgo.i,t};W.drag={mode:"sg",op:sgo,p0:p,t0:t};say("");draw();return}}
 const pro=pending(o=>o.t==="pretend")[0];if(pro&&dist(p,W.pts[pro.home])<36*sc){svg.setPointerCapture(e.pointerId);W.pret={n:pro.n,rods:pro.rods,home:pro.home};W.pts[pro.n]=W.pts[pro.home].slice();pretEq(pro);W.drag={mode:"pret",op:pro};say("");draw();return}
 const sto=pending(o=>o.t==="straighten")[0];if(sto){const i=bowGrab(p,sc);if(i>=0){svg.setPointerCapture(e.pointerId);const R=rodsNow()[i],A=W.pts[R.r[0]],D0=W.pts[sto.n].slice(),L=dist(A,D0),n0=[-(D0[1]-A[1])/L,(D0[0]-A[0])/L],s0=(p[0]-A[0])*n0[0]+(p[1]-A[1])*n0[1],n=s0<0?[-n0[0],-n0[1]]:n0,h0=Math.max(8*sc,Math.abs(s0));if(W.pret.path)W.pret.s0=W.pret.s;W.drag={mode:"str",op:sto,A,D0,h0,n};say("");draw();return}}
-const sto2=pending(o=>o.t==="stretch")[0];if(sto2){stSame(stPick(sto2));if(!(W.sti&&W.sti.placed)){const k=stPick(sto2),g=k&&gemOf(k.s);if(g&&dist(p,g.V)<GR()*1.05&&(dist(p,g.V)<10*sc||m2(angOf(g.V,p)-g.a1)<=g.d)){svg.setPointerCapture(e.pointerId);W.drag={mode:"stg",op:sto2,k,start:p,g};W.gemDrag={V:g.V.slice(),a1:g.a1,d:g.d,col:gemCol(k.s)};say("");draw();return}}else{const S=W.sti;if(dist(p,S.V)<GR()*1.15&&m2(angOf(S.V,p)-S.t1)<=S.td+.3){svg.setPointerCapture(e.pointerId);W.drag={mode:"stw",op:sto2};say("");draw();return}}}
+const sto2=pending(o=>o.t==="stretch")[0];if(sto2){stSame(stPick(sto2));if(!(W.sti&&W.sti.placed)){const k=stPick(sto2),g=k&&gemOf(k.s);if(g&&dist(p,g.V)<GR()*1.05&&(dist(p,g.V)<10*sc||m2(angOf(g.V,p)-g.a1)<=g.d)){svg.setPointerCapture(e.pointerId);W.drag={mode:"stg",op:sto2,k,start:p,g};W.gemDrag={V:g.V.slice(),a1:g.a1,d:g.d,col:gemCol(k.s)};say("");draw();return}}else{const S=W.sti;stInit(sto2,S);stLive(S);if(dist(p,S.V)<GR()*1.25&&m2(angOf(S.V,p)-S.t1)<=S.td+.3){svg.setPointerCapture(e.pointerId);W.drag={mode:"stw",op:sto2,V:S.V.slice(),t1:S.t1,a0:m2(angOf(S.V,p)-S.t1),t0:S.t||0,red:Math.max(.05,S.td-S.gd)}; /* sweeping the pointer across the red slice as it is now closes it */say("");draw();return}}}
 const gmo=pending(o=>o.t==="hollow"||o.t==="gemin")[0];if(gmo){const w=gemHit(p,gmo);if(w){svg.setPointerCapture(e.pointerId);const g=gemOf(w);W.drag={mode:"gem",op:gmo,w,start:p,g};W.gemDrag={V:g.V.slice(),a1:g.a1,d:g.d,col:gemCol(w)};say("");draw();return}}
 const wco=pending(o=>o.t==="wcmp")[0];if(wco){W.wc=W.wc||{st:0,oa:[0,0],ob:[0,0]};const g=W.wc.st?"b":"a";if(wcIn(p,g==="a"?wco.ga:wco.gb,[0,0],sc)){svg.setPointerCapture(e.pointerId);W.drag={mode:"wc",op:wco,g,start:p};say("");draw();return}}
 const tso=pending(o=>o.t==="tapseg")[0];if(tso&&distSeg(p,W.pts[tso.s[0]],W.pts[tso.s[1]])<16*sc){finish(tso);say("");update();check();return}
@@ -732,7 +743,7 @@ if(d.mode==="sg"){const op=d.op,a=strShape(op,0,0).pop(),b=strShape(op,1,0).pop(
 if(d.mode==="pret"){W.pts[d.op.n]=pretClamp(d.op,p);draw();return}
 if(d.mode==="str"){const t=strT(d,p);strAt(d,t);if(t>.97){W.drag=null;(async()=>{W.busy=true;for(let i=1;i<=4;i++){strAt(d,t+(1-t)*i/4);draw();await sleep(FAST?0:20)}await strDone(d.op);W.busy=false;update();check()})();return}draw();return}
 if(d.mode==="stg"){W.gemDrag.V=[d.g.V[0]+p[0]-d.start[0],d.g.V[1]+p[1]-d.start[1]];draw();return}
-if(d.mode==="stw"){const S=W.sti;let a=m2(angOf(S.V,p)-S.t1);if(a>S.td+1)a=S.gd;S.st=Math.max(S.gd,Math.min(S.td,a));draw();return}
+if(d.mode==="stw"){const S=W.sti;let a=m2(angOf(d.V,p)-d.t1);if(a>TAU-.6)a=0;const t=Math.max(0,Math.min(1,d.t0+(1-d.t0)*(d.a0-a)/d.red));stAt(S,Math.min(t,.97));if(t>=.95){W.drag=null;stClose(d.op);return}draw();return}
 if(d.mode==="gem"){W.gemDrag.V=[d.g.V[0]+p[0]-d.start[0],d.g.V[1]+p[1]-d.start[1]];draw();return}
 if(d.mode==="wc"){W.wc[d.g==="a"?"oa":"ob"]=[p[0]-d.start[0],p[1]-d.start[1]];draw();return}
 if(d.mode==="spinw"){const op=d.op,g=d.g0,V=g.V,th=nrm(angOf(V,p)-d.a0),T=nrm(angOf(V,W.pts[op.to[1]])-angOf(V,W.pts[op.w[1]]));W.spg={V,a1:g.a1+th,a2:g.a2+th};if(Math.abs(nrm(th-T))<.1){W.drag=null;(async()=>{W.busy=true;for(let i=1;i<=6;i++){W.spg={V,a1:g.a1+th+nrm(T-th)*i/6,a2:g.a2+th+nrm(T-th)*i/6};draw();await sleep(FAST?0:25)}W.busy=false;finish(op);fx("Equal angles");say("");update();check()})();return}draw();return}
@@ -758,7 +769,7 @@ if(d.mode==="mo"||d.mode==="sp"||d.mode==="sg"){W.drag=null;say(d.mode==="mo"?"D
 if(d.mode==="pret"){W.drag=null;const v=pretValid(W.vb[2]/640);if(!v){finish(d.op);say("What if D really fit?");update();check();return}say(v==="far"?"Pull D further out of C.":v==="near"?"Not so close to A or B.":"Put D nearer A or B, so one line has to bow out.");pretBack(d.op);return}
 if(d.mode==="str"){W.drag=null;(async()=>{W.busy=true;const D1=W.pts[d.op.n].slice();for(let i=1;i<=8;i++){W.pts[d.op.n]=lerp(D1,d.D0,i/8);draw();await sleep(FAST?0:20)}W.busy=false;say("Press the bow all the way flat.");draw()})();return}
 if(d.mode==="stg"){W.drag=null;const g=W.gemDrag,T=gemOf(d.k.b).V;if(dist(g.V,T)<50*W.vb[2]/640||dist(xy(e),T)<40*W.vb[2]/640){stPlace(d.op,g,d.k);return}say(`Drop it on the corner ${d.k.b[0]}.`);gemFly(g,d.g.V);return}
-if(d.mode==="stw"){W.drag=null;const S=W.sti;stBack(d.op,S.st>=S.td-.025);return}
+if(d.mode==="stw"){W.drag=null;say("Swing the edge all the way in, until the red slice is gone.");draw();return}
 if(d.mode==="gem"){W.drag=null;const g=W.gemDrag,pp=xy(e),op=d.op;if(op.t==="hollow"){const H=P.hollow;if(dist(g.V,H.at)<H.r*1.15||dist(pp,H.at)<H.r*1.1){dropGem(op,d.w,g);return}say("Drop the angle into the hollow.");gemFly(g,d.g.V);return}const T=W.pts[op.to[0]];if(dist(g.V,T)<50*W.vb[2]/640||dist(pp,T)<40*W.vb[2]/640){gemSnap(op,g);return}say(`Drop it on the corner ${op.to[0]}.`);gemFly(g,d.g.V);return}
 if(d.mode==="wc"){W.drag=null;const sc=W.vb[2]/640,S=W.wc,op=d.op;if(d.g==="a"){if(Math.hypot(...S.oa)>55*sc){const V=W.pts[op.ga[0][0]];(async()=>{W.busy=true;await wcAnim(op,"oa",S.oa,[op.at[0]-V[0],op.at[1]-V[1]]);W.busy=false;S.st=1;say("Now drag the outlined angle out and lay it on top.");draw()})()}else{S.oa=[0,0];say("Pull the shaded pieces right out of the figure.");draw()}return}
 if(dist(S.ob,S.oa)<38*sc){(async()=>{W.busy=true;S.snap=true;await wcAnim(op,"ob",S.ob,S.oa);await sleep(FAST?0:450);W.busy=false;finish(op);fx("They fit exactly");say("");update();check()})()}else{S.ob=[0,0];say("Lay it right on top of the pieces you pulled out.");draw()}return}
@@ -832,7 +843,7 @@ else if(op.t==="home"){const wo=wrongOf(op),s0=(W.wrongS&&W.wrongS[op.n])||0;awa
 else if(op.t==="morph"){const g=op.grab||0;tileStart(op);W.mo={i:op.i,t:0};await glide(W.pts[op.from[g]]);for(let i=1;i<=24&&!W.stop;i++){W.mo.t=i/24*.97;setCursor(lerp(W.pts[op.from[g]],W.pts[op.to[g]],W.mo.t));draw();await sleep(30)}await tileDone(op);await sleep(300)}
 else if(op.t==="spin"){const T=spT(op),c=spC(op),q0=spQ(op,0),k=q0.reduce((b,v,i)=>dist(v,c)>dist(q0[b],c)?i:b,0);W.sp={i:op.i,th:0};await glide(q0[k]);for(let i=1;i<=24&&!W.stop;i++){W.sp.th=T*i/24*.97;setCursor(rotP(q0[k],c,W.sp.th));draw();await sleep(30)}await tileDone(op);await sleep(300)}
 else if(op.t==="string"){W.sg={i:op.i,t:0};const a=strShape(op,0,0).pop();await glide(a);for(let i=1;i<=24&&!W.stop;i++){W.sg.t=i/24*.97;setCursor(strShape(op,W.sg.t,0).pop());draw();await sleep(30)}await sgDone(op);await sleep(300)}
-else if(op.t==="stretch"){const k=stPick(op);stSame(k);if(!(W.sti&&W.sti.placed)){const g=gemOf(k.s),T=gemOf(k.b),m=g.a1+g.d/2,p=[g.V[0]+GR()*.55*Math.cos(m),g.V[1]+GR()*.55*Math.sin(m)];await glide(p);for(let i=1;i<=16&&!W.stop;i++){const V=lerp(g.V,T.V,i/16*.9);W.gemDrag={V,a1:g.a1,d:g.d,col:gemCol(k.s)};setCursor([V[0]+p[0]-g.V[0],V[1]+p[1]-g.V[1]]);draw();await sleep(26)}await stPlace(op,W.gemDrag,k);await sleep(300)}const S=W.sti,r=GR()*.8;for(let i=0;i<=18&&!W.stop;i++){S.st=S.gd+(S.td-S.gd)*i/18;setCursor([S.V[0]+r*Math.cos(S.t1+S.st),S.V[1]+r*Math.sin(S.t1+S.st)]);draw();await sleep(30)}await stBack(op,true);await sleep(300)}
+else if(op.t==="stretch"){const k=stPick(op);stSame(k);if(!(W.sti&&W.sti.placed)){const g=gemOf(k.s),T=gemOf(k.b),m=g.a1+g.d/2,p=[g.V[0]+GR()*.55*Math.cos(m),g.V[1]+GR()*.55*Math.sin(m)];await glide(p);for(let i=1;i<=16&&!W.stop;i++){const V=lerp(g.V,T.V,i/16*.9);W.gemDrag={V,a1:g.a1,d:g.d,col:gemCol(k.s)};setCursor([V[0]+p[0]-g.V[0],V[1]+p[1]-g.V[1]]);draw();await sleep(26)}await stPlace(op,W.gemDrag,k);await sleep(300)}const S=W.sti,r=GR()*.8;stInit(op,S);for(let i=0;i<=18&&!W.stop;i++){stAt(S,(S.t||0)+(.95-(S.t||0))*i/18);setCursor([S.V[0]+r*Math.cos(S.t1+S.td),S.V[1]+r*Math.sin(S.t1+S.td)]);draw();await sleep(30)}await stClose(op);await sleep(300)}
 else if(op.t==="pretend"){const H=W.pts[op.home],T=op.try||[H[0]+60,H[1]+60];await glide(H);W.pret={n:op.n,rods:op.rods,home:op.home};W.pts[op.n]=H.slice();pretEq(op);for(let i=0;i<=18&&!W.stop;i++){W.pts[op.n]=lerp(H,T,i/18);setCursor(W.pts[op.n]);draw();await sleep(28)}finish(op);draw();await sleep(400)}
 else if(op.t==="straighten"){const b=rodsNow().find(x=>x.g.kind==="bow");if(W.pret&&W.pret.path)W.pret.s0=W.pret.s;if(b){const D0=W.pts[op.n].slice();await glide(b.g.apex);for(let i=1;i<=20&&!W.stop;i++){strAt({D0},i/20);const nb=rodsNow()[rodsNow().findIndex(x=>x.r===b.r)];setCursor(nb.g.apex||nb.g.pts[Math.floor(nb.g.pts.length/2)]);draw();await sleep(30)}}await strDone(op);draw();await sleep(300)}
 else if(op.t==="hollow"){for(const w of gemLeft(op)){if(W.stop)break;const g=gemOf(w),m=g.a1+g.d/2,p=[g.V[0]+GR()*.55*Math.cos(m),g.V[1]+GR()*.55*Math.sin(m)];await glide(p);for(let i=1;i<=16&&!W.stop;i++){const V=lerp(g.V,P.hollow.at,i/16*.9);W.gemDrag={V,a1:g.a1,d:g.d,col:gemCol(w)};setCursor([V[0]+p[0]-g.V[0],V[1]+p[1]-g.V[1]]);draw();await sleep(26)}const from=W.gemDrag;await dropGem(op,w,from);await sleep(250)}draw();await sleep(300)}
