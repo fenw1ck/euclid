@@ -169,7 +169,7 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
 ### Scholar and Dungeon Crawler
 - **New game** on the title screen offers **Scholar** or **Dungeon Crawler** (over a saved game, tap twice to erase it). **Settings** switches between them at any time (`S.mode`; old saves play as Dungeon Crawler).
 - **Scholar:** only the locks and the rooms between them. No vines, traps, health bar, cooking, harvesting, items, chests, creatures, shop, ledges, Euler walk or lock timers. On the map, tap a lock you can open (or a room holding one) to go straight there and open it, or a solved one to go into its room.
-- **Dungeon Crawler:** everything, as before. A new game starts with the **Bronze Ax, the Iron Cauldron and the Bronze Sword** in the inventory (`startKit`, given once, `S.kit`), so the ax and sword no longer lean by the front doors.
+- **Dungeon Crawler:** everything, as before. A new game starts with the **Bronze Ax and the Bronze Sword** (the cauldron is part of every greenhouse campfire since 27 Nov 2026) (`startKit`, given once, `S.kit`), so the ax and sword no longer lean by the front doors.
 - **No traps in the rooms of the first four proofs:** rooms 1–4, the entrance hall, and any room whose walls hold lock 1, 2, 3 or 4 (`noTraps`).
 
 ### Locks always show, fixed rooms, armchairs (27 Nov 2026, second round)
@@ -181,6 +181,14 @@ About 38 seconds; skippable at any moment with any key, click or tap. The four l
 
 ### A real 3D view (27 Nov 2026)
 - Rooms are seen through a true 3D camera: hold the right mouse button (or L, or a pad's right stick) and turn smoothly all the way round, at any angle. All four walls, the floor and ceiling, every door (including the one you came in by), the pictures and the furniture are drawn in proper perspective from wherever you stand. Walking (WASD, arrows) goes the way you are looking; tap the floor to walk there. You come into a room a step inside its door.
+
+### Tiers, tables and chests, Continue (27 Nov 2026, eighth round)
+- **Finds by band.** The weak, middling and strong versions of a thing turn up only in rooms of a band of propositions: **low 1–30, medium 20–40, strong 30–48** (the bands overlap so the step up comes gradually). This covers the weed killers, health potions, charm necklaces, the shield, the Ghost Draught, the ax upgrades (Iron, Starmetal: found ones replace your ax) and the Crown of the Elements. The statue shop keeps to its room's bands too. Clothes, treasure and scrolls turn up anywhere.
+- **Where things are.** Nothing lies on the floor. Finds sit on tables (library side tables, bedside tables, the kitchen table) and on ledges, or in a chest; coins are in armchairs (1–5, once each) and chests.
+- **Furniture against the walls.** Tables, armchairs, the kitchen range and counter, chests and bedside tables all stand against a wall, clear of doorways. Beds have their headboard against an end wall and face out into the room.
+- **The campfire's cauldron.** Every greenhouse campfire burns with a cauldron over it, so cooking is open from the start. The cauldron is not an item.
+- **Continue** puts you back in the room you stopped in, facing the same way and standing where you were, with the same bag and health.
+- **Wardrobe:** a Sword hollow (the weapon in your hand) and a Shield hollow sit either side of the Necklace.
 
 ### HUD, menu and the marker
 - **The HUD** is the minimap, the health bar (Dungeon Crawler) and the compass heading. The clock, firewood and weapon moved to the Inventory tab; the keys to Settings.
@@ -309,9 +317,9 @@ The rules and numbers live in **engine.js** (Art Assets; see its "Game engine" t
 - **Ledges:** about one corridor, library or bedroom in three has a stone ledge along a wall, 0.6 m (jump onto it with Space) or 1.2 m (climb with C), usually with one of the room's items on top (out of reach from the floor). Stepping off a 1.2 m ledge costs 13 health.
 - **Traps:** pressure plates (faint slabs; spikes spring up, −12; jump over them). Path rooms (from hall 5, about one in six): bronze studs and lines on the floor; walk every line once without going back over one (an Euler trail). Backtracking fires the room's trap (flame throwers in the walls, spikes or poison fog, −15); finishing pays coins from a hidden drawer.
 - **Combat:** from hall 3, about one room in five holds a creature (harpy from hall 3, basilisk 8, minotaur 14, manticore 20, hydra 28). About a third are friendly until struck (E to look at them). Hostile ones close in and bite on a timer. Wield a knife, sword or staff (Bag → Wield; bronze, iron or starmetal; bought at the statue) and press F or tap the creature; fists do 2. Weapons wear out (perfect, damaged, broken) and can be put away again. A slain creature drops coins.
-- **Cooking:** ingredients (food that must be cooked: raw potatoes, eggplant, beans, winter squash, rhubarb, asparagus, sunflower seeds, lavender) can't be eaten raw. Cook them in a **kitchen** oven (a new room type: a cast-iron range always, and a table or an island) or in a **cauldron over the campfire** that burns in every greenhouse (buy the cauldron at the statue; each dish takes 2 firewood). Only dishes with at least one ingredient can be cooked. Cooking is a timing check per ingredient (stop the marker in the lit range: one wide range for a baked potato; three or four narrow ones for Potato Soup, Bean Stew or Ratatouille). Miss and you get a Burnt Lump.
+- **Cooking:** ingredients (food that must be cooked: raw potatoes, eggplant, beans, winter squash, rhubarb, asparagus, sunflower seeds, lavender) can't be eaten raw. Cook them in a **kitchen** oven (a new room type: a cast-iron range always, and a table or an island) or in the **cauldron over the campfire** that burns in every greenhouse (it is always there, from the start of the game; each dish takes 2 firewood). Only dishes with at least one ingredient can be cooked. Cooking is a timing check per ingredient (stop the marker in the lit range: one wide range for a baked potato; three or four narrow ones for Potato Soup, Bean Stew or Ratatouille). Miss and you get a Burnt Lump.
 - **Fuel:** every strike on vines gives 1 kindling; 5 kindling count as 1 firewood. Fruit trees in greenhouses give fruit (again a day later), and with the ax they can be cut down for 3 firewood. The statue sells firewood.
-- **Shop:** now also sells the nine weapons, the cauldron and firewood.
+- **Shop:** now also sells the nine weapons and firewood (no cauldron since 27 Nov 2026: it hangs over every campfire).
 
 ## 5. Sound
 
