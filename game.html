@@ -1357,16 +1357,16 @@ function drawCornerMap(t){const bw=Math.min(220,W*.3),bh=Math.round(bw*.78),x0=W
  ctx.restore();ctx.textBaseline="alphabetic";ctx.textAlign="left";
  if(GUIDE.next!=null){const d=curView().doors.find(x=>x.id===GUIDE.next);if(d&&d.wall==="near"){const p=.5+.5*Math.sin(t*5);ctx.fillStyle=`rgba(255,${170+Math.round(60*p)},40,1)`;ctx.font="700 11px system-ui";ctx.textAlign="center";ctx.fillText("↓ lit door behind you: turn round (T)",x0+bw/2,y0+bh-8);ctx.textAlign="left"}}
  ctx.strokeStyle="#c9a55a";ctx.lineWidth=2;ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x0,y0,bw,bh,10);else ctx.rect(x0,y0,bw,bh);ctx.stroke();ctx.fillStyle="rgba(20,14,8,.7)";ctx.fillRect(x0,y0+bh,bw,16);ctx.fillStyle="#f3e6c4";ctx.font="11px Georgia";
- ctx.fillText(`${hallId<100?"room "+hallId:hostsOf(hallId).length?"locks "+hostsOf(hallId).join(", "):"·"} · ${roomType(hallId)} · tap: this room`,x0+6,y0+bh+12)}
+ ctx.fillText(`${hallId<100?"room "+hallId:hostsOf(hallId).length?"locks "+hostsOf(hallId).join(", "):"·"} · ${roomName(hallId)} · tap: this room`,x0+6,y0+bh+12)}
 /* the statue shop on maps: a small blue statue on a plinth in a glow (every greenhouse room has one) */
 function shopMark(x,y,r,t){ctx.save();ctx.globalCompositeOperation="lighter";const g=ctx.createRadialGradient(x,y,0,x,y,r*1.8);g.addColorStop(0,`rgba(90,160,255,${.55+.15*Math.sin(t*2)})`);g.addColorStop(1,"rgba(90,160,255,0)");ctx.fillStyle=g;ctx.fillRect(x-r*1.8,y-r*1.8,r*3.6,r*3.6);ctx.restore();
  ctx.fillStyle="#cfe4ff";ctx.strokeStyle="#2a4a80";ctx.lineWidth=Math.max(1,r*.12);ctx.beginPath();ctx.arc(x,y-r*.55,r*.28,0,7);ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(x-r*.32,y-r*.25);ctx.lineTo(x+r*.32,y-r*.25);ctx.lineTo(x+r*.24,y+r*.45);ctx.lineTo(x-r*.24,y+r*.45);ctx.closePath();ctx.fill();ctx.stroke();ctx.fillRect(x-r*.5,y+r*.45,r,r*.3);ctx.strokeRect(x-r*.5,y+r*.45,r,r*.3)}
 /* tap a room on the map: it tells you about the room. There is no jumping: you walk every doorway, which is the puzzle */
 function mapTap(x,y){let best=null,bd=1e9;for(const h of mapHits){const d=dist([x,y],h.q);if(d<h.r*1.4&&d<bd){bd=d;best=h.id}}if(best==null)return;const id=best;sfxChime(false);
  const lockTxt=n=>{const st=doorState(n);return`1.${n} ${NAMES[n]||""}: `+(st==="open"?"solved.":st==="amber"?(vined(n)?"ready, under vines.":"ready to open."):n===48?"the last lock. It opens once every other proof is solved.":"a plate covers it until what it relies on is solved.")};
- if(scholar()){if(id<100&&doorState(id)!=="covered")return scholarJump(id);const hs=hostsOf(id).filter(n=>doorState(n)!=="covered");if(hs.length)return scholarJump(hs[0]);toast(id<100?lockTxt(id):`A ${roomType(id)}`+(hostsOf(id).length?` holding lock${hostsOf(id).length>1?"s":""} ${hostsOf(id).join(", ")}: not open to you yet.`:"."));return}
+ if(scholar()){if(id<100&&doorState(id)!=="covered")return scholarJump(id);const hs=hostsOf(id).filter(n=>doorState(n)!=="covered");if(hs.length)return scholarJump(hs[0]);toast(id<100?lockTxt(id):`A ${roomName(id)}`+(hostsOf(id).length?` holding lock${hostsOf(id).length>1?"s":""} ${hostsOf(id).join(", ")}: not open to you yet.`:"."));return}
  if(S.marker===id){S.marker=null;save();GUIDE.key="";toast("Marker taken away.");return}
- S.marker=id;save();GUIDE.key="";const nm=id<100?lockTxt(id):`the ${roomType(id)}${hostsOf(id).length?` holding lock${hostsOf(id).length>1?"s":""} ${hostsOf(id).join(", ")}`:""}`;
+ S.marker=id;save();GUIDE.key="";const nm=id<100?lockTxt(id):`the ${roomName(id)}${hostsOf(id).length?` holding lock${hostsOf(id).length>1?"s":""} ${hostsOf(id).join(", ")}`:""}`;
  toast(`Marker set on ${nm}${id<100?"":"."} In the rooms, the door to take is lit amber.`+(S.arm[id]?" A trap is set there.":""))}
 /* ---------- the ax and the vines ----------
    Vines grow over every door (art: vines.js, from Art-Assets). Only the ax cuts them, and only on a door whose lock
@@ -1524,6 +1524,10 @@ addEventListener("keyup",e=>KEYS.delete(e.key.toLowerCase()));addEventListener("
    or library (panelled walls of bookshelves, wall-to-wall carpet, armchairs and side tables with lamps).
    All rooms share the corridor's view and its doors, and you can walk them. Art: plants.js, furniture.js (Art-Assets). */
 const ROOMTYPES=["corridor","greenhouse","library","bedroom","kitchen"];
+/* (27 Nov 2026) the words: a proposition is a door lock, not a room; a room is one of five types, and "hall" is one of them
+   (the long stone room with statues, paintings and lights, called "corridor" in the code and in world.js). roomName gives
+   the word the player sees. */
+const ROOMNAMES={corridor:"hall",greenhouse:"greenhouse",library:"library",bedroom:"bedroom",kitchen:"kitchen"},roomName=n=>ROOMNAMES[roomType(n)]||roomType(n);
 const ROOMLOOK={greenhouse:{wl:[150,190,170],wr:[140,182,162],ce:[178,208,212],fa:[86,130,60],fb:[78,120,54],far:[150,186,168],rug:null,win:false},
   bedroom:{wl:[184,166,146],wr:[176,158,138],ce:[160,146,130],fa:[120,100,80],fb:[112,94,76],far:[184,166,146],rug:null,win:false},
   kitchen:{wl:[206,186,150],wr:[198,178,142],ce:[150,120,90],fa:[150,90,60],fb:[140,84,56],far:[206,186,150],rug:null,win:false},
