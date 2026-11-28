@@ -6,7 +6,7 @@ File: `game.html` (one self-contained page, linked from the site's **Game** butt
 
 ## 1. Opening scene (built)
 
-About 38 seconds; skippable at any moment with any key, click or tap. The four lines of text ("When things are too big, too complex to be understood," / "we make connections, we simplify," / "we go back…" / "to the beginning.") are spread across the whole journey, starting in the night sky.
+About 38 seconds; skippable at any moment with any key, click or tap. The four lines of text ("When things are too big" / "to be understood," / "we make connections." / "Go back…" / "to the beginning.") are spread across the whole journey, starting in the night sky.
 
 1. Night sky. Many stars fade in. 48 of them are the propositions, laid out as on the relationship map, and the map's lines draw themselves. The other stars fade.
 2. The camera goes to 48, the most advanced proposition, and travels back along the chain of what it relies on, all the way to 1 (48 → 47 → 41 → 37 → 31 → 23 → 22 → 20 → 19 → 18 → 16 → 15 → 13 → 11 → 8 → 7 → 5 → 3 → 2 → 1). The road travelled glows gold.
